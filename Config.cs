@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,7 @@ namespace DiscordBot
     internal class Config
     {
         static Dictionary<string, string> logValue = new Dictionary<string, string>();
+
         /// <summary>
         /// Server chính dùng để điều khiển bot (dùng lệnh /admin, báo lỗi, cache ảnh cho <see cref="Music.Local.LocalMusic"/>)
         /// </summary>
@@ -20,42 +22,42 @@ namespace DiscordBot
         /// ID Server chính
         /// </summary>
         internal static ulong MainServerID => GetConfigValue<ulong>("MainServerID");
+
         /// <summary>
         /// Server chứa các thành viên được sử dụng SFX đặc biệt và được sử dụng lệnh /emoji với emoji trong server này
         /// </summary>
-
         internal static DiscordGuild adminServer;
         /// <summary>
         /// ID server admin
         /// </summary>
         internal static ulong AdminServerID => GetConfigValue<ulong>("AdminServerID");
+
         /// <summary>
         /// Kênh cache ảnh
         /// </summary>
-
         internal static DiscordChannel cacheImageChannel;
         /// <summary>
         /// ID kênh cache ảnh
         /// </summary>
         internal static ulong CacheImageChannelID => GetConfigValue<ulong>("CacheImageChannelID");
+
         /// <summary>
         /// Kênh báo lỗi bot
         /// </summary>
- 
         internal static DiscordChannel exceptionReportChannel;
         /// <summary>
         /// ID kênh báo lỗi bot
         /// </summary>
         internal static ulong ExceptionReportChannelID => GetConfigValue<ulong>("ExceptionReportChannelID");
+
         /// <summary>
         /// ID tác giả của bot
         /// </summary>
-  
         internal static ulong[] BotAuthorsID => GetConfigValue<string>("BotAuthorsID").Split(',').Select(s => ulong.Parse(s)).ToArray();
+
         /// <summary>
         /// Đường dẫn tới thư mục chứa nhạc
         /// </summary>
-   
         internal static string MusicFolder => GetConfigValue<string>("MusicFolder") ?? Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
         /// <summary>
         /// Đường dẫn tới thư mục chứa SFX
@@ -96,36 +98,42 @@ namespace DiscordBot
         /// <summary>
         /// Token bot (để login vào Discord)
         /// </summary>
-        internal static string BotToken
-        {
-            get
-            {
+        internal static string BotToken =>
 #if DEBUG
-                return GetConfigValue<string>("BotTokenDebug");
+                GetConfigValue<string>("BotTokenDebug");
 #else
-                return GetConfigValue<string>("BotToken");
+                GetConfigValue<string>("BotToken");
 #endif
-            }
-        }
+
 
         /// <summary>
         /// Prefix lệnh
         /// </summary>
-        internal static string Prefix
-        {
-            get
-            {
+        internal static string Prefix =>
 #if DEBUG
-                return GetConfigValue<string>("PrefixDebug");
+                GetConfigValue<string>("PrefixDebug");
 #else
-                return GetConfigValue<string>("Prefix"); 
+                GetConfigValue<string>("Prefix"); 
 #endif
-            }
-        }
+
 
         static T GetConfigValue<T>(string configName)
         {
             string configFile = "Config\\Config.txt";
+            if (!File.Exists(configFile))
+            {
+                Console.WriteLine("Config file not found, creating one...");
+                Directory.CreateDirectory("Config");
+                File.Create(configFile);
+                Process.Start(Path.GetFullPath(configFile));
+                Environment.Exit(1);
+            }
+            if (string.IsNullOrWhiteSpace(File.ReadAllText(configFile)))
+            {
+                Console.WriteLine("Empty config file!");
+                Process.Start(Path.GetFullPath(configFile));
+                Environment.Exit(1);
+            }
             IEnumerable<string> configs = File.ReadAllLines(configFile).Where(s => !s.StartsWith("#"));
             if (configs.Any(s => s.StartsWith(configName + '=')))
             {
