@@ -70,7 +70,7 @@ namespace DiscordBot.Admin
             serverInstance.supressOnVoiceStateUpdatedEvent = false;
         }
 
-        internal static async Task AddSFX(DiscordMessage message, string sfxName, string isSecretStr)
+        internal static async Task AddSFX(DiscordMessage message, string isSpecialStr, string sfxName)
         {
             if (!Config.BotAuthorsID.Contains(message.Author.Id))
             {
@@ -89,8 +89,10 @@ namespace DiscordBot.Admin
             }
             string sfxUrl = message.Attachments[0].Url;
             string path = Config.SFXFolder;
-            if (isSecretStr.Equals("secret", StringComparison.InvariantCultureIgnoreCase))
-                path = Config.SFXFolderSecret;
+            if (string.IsNullOrWhiteSpace(sfxName))
+                sfxName = message.Attachments[0].FileName;
+            if (isSpecialStr.Equals("special", StringComparison.InvariantCultureIgnoreCase))
+                path = Config.SFXFolderSpecial;
             try
             {
                 string tempPath = Path.GetTempFileName();
@@ -112,7 +114,7 @@ namespace DiscordBot.Admin
             }
         }
 
-        internal static async Task DeleteSFX(DiscordMessage message, string sfxName, string isSecretStr)
+        internal static async Task DeleteSFX(DiscordMessage message, string sfxName, string isSpecialStr)
         {
             if (!Config.BotAuthorsID.Contains(message.Author.Id))
             {
@@ -120,8 +122,8 @@ namespace DiscordBot.Admin
                 return;
             }
             string path = Config.SFXFolder;
-            if (isSecretStr.Equals("secret", StringComparison.InvariantCultureIgnoreCase))
-                path = Config.SFXFolderSecret;
+            if (isSpecialStr.Equals("special", StringComparison.InvariantCultureIgnoreCase))
+                path = Config.SFXFolderSpecial;
             if (File.Exists(Path.Combine(path, sfxName + ".pcm")))
             {
                 File.Delete(Path.Combine(path, sfxName + ".pcm"));

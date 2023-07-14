@@ -10,8 +10,8 @@ namespace DiscordBot.Voice
 {
     public class TTSBaseCommand : BaseCommandModule
     {
-        [Command("tts")]
-        public async Task SpeakTTS(CommandContext ctx, [RemainingText] string tts)
+        [Command("tts"), Description("Sử dụng bot để nói")]
+        public async Task SpeakTTS(CommandContext ctx, [RemainingText, Description("Nội dung bạn muốn bot nói")] string tts)
         {
             List<string> strs = tts.Split(' ').ToList();
             if (Enum.TryParse(strs[0], true, out VoiceID result))

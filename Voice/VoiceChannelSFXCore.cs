@@ -85,8 +85,8 @@ namespace DiscordBot.Voice
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
             embed.Title = "Danh sách file";
             FileInfo[] sfxs = new DirectoryInfo(Config.SFXFolder).GetFiles();
-            FileInfo[] sfxSecrets = new DirectoryInfo(Config.SFXFolderSecret).GetFiles();
-            embed.Title += " (tổng số file: " + (sfxs.Length + sfxSecrets.Length) + ")";
+            FileInfo[] sfxSpecials = new DirectoryInfo(Config.SFXFolderSpecial).GetFiles();
+            embed.Title += " (tổng số file: " + (sfxs.Length + sfxSpecials.Length) + ")";
             embed.Description += "**Các file thông thường (có thể được mọi người sử dụng):**" + Environment.NewLine;
             for (int i = 0; i < sfxs.Length; i++)
                 embed.Description += Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
@@ -95,8 +95,8 @@ namespace DiscordBot.Voice
             {
                 DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder();
                 embed2.Description = "**Các file đặc biệt (chỉ có người có quyền mới được sử dụng):**" + Environment.NewLine;
-                for (int i = 0; i < sfxSecrets.Length; i++)
-                    embed2.Description += Path.GetFileNameWithoutExtension(sfxSecrets[i].Name) + ", ";
+                for (int i = 0; i < sfxSpecials.Length; i++)
+                    embed2.Description += Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                 embed2.Description = embed2.Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
                 if (messageToReply is DiscordInteraction interaction)
                     await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
@@ -194,7 +194,7 @@ namespace DiscordBot.Voice
                         {
                             try
                             {
-                                FileStream file = File.OpenRead(Path.Combine(Config.SFXFolderSecret, fileName.TrimEnd(',') + ".pcm"));
+                                FileStream file = File.OpenRead(Path.Combine(Config.SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm"));
                                 while (file.Read(buffer, 0, buffer.Length) != 0)
                                 {
                                     if (isStop)
@@ -210,7 +210,7 @@ namespace DiscordBot.Voice
                                 filesNotFound += Path.GetFileNameWithoutExtension(ex2.FileName) + ", ";
                             }
                         }
-                        else if (File.Exists(Path.Combine(Config.SFXFolderSecret, fileName.TrimEnd(',') + ".pcm")))
+                        else if (File.Exists(Path.Combine(Config.SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm")))
                             permissions += fileName.TrimEnd(',') + ", ";
                         else
                             filesNotFound += Path.GetFileNameWithoutExtension(ex.FileName) + ", ";

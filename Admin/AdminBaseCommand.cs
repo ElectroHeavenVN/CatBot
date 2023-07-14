@@ -11,13 +11,13 @@ namespace DiscordBot.Admin
 {
     public class AdminBaseCommand : BaseCommandModule
     {
-        [Command("addsfx")]
-        public async Task AddSFX(CommandContext ctx, string sfxName, string isSecret = "") => await AdminCommandsCore.AddSFX(ctx.Message, sfxName, isSecret);
+        [Command("addsfx"), Description("(Lệnh chỉ dành cho tác giả của bot) Thêm SFX vào danh sách SFX")]
+        public async Task AddSFX(CommandContext ctx, [Description("SFX có phải SFX đặc biệt không?")] string isSpecial = "", [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx.Message, isSpecial, sfxName);
 
-        [Command("deletesfx"), Aliases("delsfx")]
-        public async Task DeleteSFX(CommandContext ctx, string sfxName, string isSecret = "") => await AdminCommandsCore.DeleteSFX(ctx.Message, sfxName, isSecret);
+        [Command("deletesfx"), Aliases("delsfx"), Description("(Lệnh chỉ dành cho tác giả của bot) Xóa SFX khỏi danh sách SFX")]
+        public async Task DeleteSFX(CommandContext ctx, [Description("Tên SFX")] string sfxName, [Description("SFX có phải SFX đặc biệt không?")] string isSpecial = "") => await AdminCommandsCore.DeleteSFX(ctx.Message, sfxName, isSpecial);
 
-        [Command("downloadmusic")]
+        [Command("downloadmusic"), Description("(Lệnh chỉ dành cho tác giả của bot) Thêm nhạc vào danh sách nhạc local")]
         public async Task DownloadMusic(CommandContext ctx) => await AdminCommandsCore.DownloadMusic(ctx.Message);
     }
 }

@@ -66,7 +66,7 @@ namespace DiscordBot
         /// <summary>
         /// Đường dẫn tới thư mục chứa SFX đặc biệt
         /// </summary>
-        internal static string SFXFolderSecret => GetConfigValue<string>("SFXFolderSecret") ?? "SFX\\Secret";
+        internal static string SFXFolderSpecial => GetConfigValue<string>("SFXFolderSpecial") ?? "SFX\\Special";
 
         #region Zing MP3
         /// <summary>

@@ -108,6 +108,8 @@ namespace DiscordBot
                 StringPrefixes = new string[] { Config.Prefix },
             });
             commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
+            commandNext.SetHelpFormatter<HelpFormatter>();
+
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
             //slashCommand.RegisterCommands<OfflineMusicPlayer>();
             //slashCommand.RegisterCommands<ZingMP3Player>();

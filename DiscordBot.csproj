@@ -183,6 +183,7 @@
     <Compile Include="Emoji\EmojiReplyCore.cs" />
     <Compile Include="Emoji\EmojiReplyBaseCommand.cs" />
     <Compile Include="Emoji\EmojiReplySlashCommand.cs" />
+    <Compile Include="HelpFormatter.cs" />
     <Compile Include="Instance\BotServerInstance.cs" />
     <Compile Include="Music\IMusic.cs" />
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiSearch.cs" />
