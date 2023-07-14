@@ -127,7 +127,7 @@ namespace DiscordBot.Music.Local
 
         public string[] GetFilesInUse() => new string[] { pcmFile };
 
-        public string GetIcon() => "<:Local:1124988058136231988>";
+        public string GetIcon() => Config.LocalMusicIcon;
 
         public void Dispose()
         {

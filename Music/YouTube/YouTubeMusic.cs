@@ -133,7 +133,7 @@ namespace DiscordBot.Music.YouTube
 
         public string[] GetFilesInUse() => new string[] { webmFilePath, pcmFile };
 
-        public string GetIcon() => isYouTubeMusicVideo ? "<:YouTubeMusic:1126482892332224522>" : "<:YouTube:1125189836194709595>";
+        public string GetIcon() => isYouTubeMusicVideo ? Config.YouTubeMusicIcon : Config.YouTubeIcon;
 
         static void DownloadWEBM(string link, ref string tempFile)
         {

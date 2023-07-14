@@ -34,6 +34,7 @@
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <Deterministic>False</Deterministic>
+    <DocumentationFile>bin\Release\DiscordBot.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>DiscordBot.Program</StartupObject>
@@ -222,10 +223,21 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Files\ffmpeg.exe" />
+    <Content Include="Files\libopus.dll" />
+    <Content Include="Files\libsodium.dll" />
+    <Content Include="Files\Local.png" />
+    <Content Include="Files\Lyrist.png" />
+    <Content Include="Files\NCT.png" />
+    <Content Include="Files\YouTubeMusic.png" />
+    <Content Include="Files\yt-dlp_x86.exe" />
+    <Content Include="Files\YouTubeIcon.png" />
+    <Content Include="Files\ZaloAI.png" />
+    <Content Include="Files\ZingMP3.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy $(ProjectDir)Files\* $(TargetDir)</PostBuildEvent>
   </PropertyGroup>
 </Project>

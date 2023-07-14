@@ -19,7 +19,7 @@ namespace DiscordBot.Music.NhacCuaTui
         internal static readonly string nhacCuaTuiLink = "https://www.nhaccuatui.com/";
         internal static Regex regexMatchIDSong = new Regex(".*-\\.([a-zA-Z0-9]*)\\.html", RegexOptions.Compiled);
         static readonly string findArtistLink = "https://www.nhaccuatui.com/tim-kiem?b=singer&q=";
-        static readonly string nhacCuaTuiIconLink = "https://cdn.discordapp.com/emojis/1124397223359299725.webp?quality=lossless";
+        static readonly string nhacCuaTuiIconLink = "https://cdn.discordapp.com/emojis/1124397223359299725.webp?quality=lossless";  //You may need to change this
         string link;
         TimeSpan duration;
         string title = "";
@@ -178,7 +178,7 @@ namespace DiscordBot.Music.NhacCuaTui
 
         public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
 
-        public string GetIcon() => "<:NhacCuaTui:1124397223359299725>";
+        public string GetIcon() => Config.NCTIcon;
 
         internal static XmlDocument GetXML(string link)
         {

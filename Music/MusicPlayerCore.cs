@@ -514,7 +514,7 @@ namespace DiscordBot.Music
                     }
                     embed = serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
                     if (serverInstance.musicPlayer.currentlyPlayingSong is LocalMusic)
-                        embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");
+                        embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");    //You may need to change this
                 }
                 else
                 {
@@ -529,7 +529,7 @@ namespace DiscordBot.Music
                         return;
                     }
                     lyricData = new LyricData(jsonLyricData["title"].ToString(), jsonLyricData["artist"].ToString(), jsonLyricData["lyrics"].ToString(), jsonLyricData["image"].ToString());
-                    embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");
+                    embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");    //You may need to change this
                 }
                 embed = embed.WithTitle($"Lời bài hát {lyricData.Title} - {lyricData.Artists}").WithDescription(lyricData.Lyric).WithThumbnail(lyricData.AlbumThumbnailLink);
                 embed.Build();

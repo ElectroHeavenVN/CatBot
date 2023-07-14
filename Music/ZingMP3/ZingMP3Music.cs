@@ -153,7 +153,7 @@ namespace DiscordBot.Music.ZingMP3
 
         public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
 
-        public string GetIcon() => "<:ZingMP3:1124356310503276634>";
+        public string GetIcon() => Config.ZingMP3Icon;
 
         internal static JToken GetSongInfo(string linkOrID)
         {

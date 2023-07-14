@@ -22,7 +22,7 @@ namespace DiscordBot.Voice
             serverInstance.lastChannel = message.TryGetChannel();
             if (serverInstance.isVoicePlaying)
             {
-                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Có người đang dùng lệnh rồi!").WithColor(DiscordColor.Yellow).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());
+                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Có người đang dùng lệnh rồi!").WithColor(DiscordColor.Yellow).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  //You may need to change this
                 return;
             }
             if (Enum.TryParse(voiceIDStr, true, out VoiceID voiceID))
@@ -33,7 +33,7 @@ namespace DiscordBot.Voice
                 }) { IsBackground = true }.Start();
             }
             else
-                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Giọng nói không hợp lệ!").WithColor(DiscordColor.Red).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());
+                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Giọng nói không hợp lệ!").WithColor(DiscordColor.Red).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  //You may need to change this
         }
 
         async Task InternalSpeakTTS(SnowflakeObject message, string tts, VoiceID voiceId)
