@@ -1,0 +1,696 @@
+﻿using DiscordBot.Instance;
+using DiscordBot.Music.Local;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace DiscordBot.Music
+{
+    internal class MusicPlayerCore
+    {
+        DiscordChannel m_lastChannel;
+        internal CancellationTokenSource cts = new CancellationTokenSource();
+        internal Queue<IMusic> musicQueue = new Queue<IMusic>();
+        internal bool isPaused;
+        internal bool isStopped;
+        internal bool isSkipThisSong;
+        internal bool sentOutOfTrack = true;
+        internal DiscordChannel lastChannel
+        {
+            get => m_lastChannel;
+            set
+            {
+                lastTimeSetLastChannel = DateTime.Now.Ticks;
+                m_lastChannel = value;
+            }
+        }
+        internal long lastTimeSetLastChannel;
+        internal bool isThreadAlive;
+        internal IMusic currentlyPlayingSong;
+        internal bool isPreparingNextSong;
+        internal bool isPlaying;
+        Thread prepareNextMusicStreamThread;
+
+        internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+
+                await ctx.DeferAsync();
+                IMusic music = null;
+                try
+                {
+                    if (!MusicUtils.TryCreateMusicInstance(input, out music))
+                        music = MusicUtils.CreateMusicInstance(input, musicType);
+                }
+                catch (WebException ex)
+                {
+                    if (ex.Message == "songs not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
+                        return;
+                    }
+                    else if (ex.Message == "not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
+                        return;
+                    }
+                    else if (ex.Message == "not available")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
+                        return;
+                    }
+                    throw;
+                }
+                serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                serverInstance.musicPlayer.isStopped = false;
+                serverInstance.isDisconnect = false;
+                serverInstance.musicPlayer.InitMainPlay();
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào hàng đợi!");
+                music.AddFooter(embed);
+                embed.Build();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task PlayNextUp(InteractionContext ctx, string input, MusicType musicType)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+
+                await ctx.DeferAsync();
+                List<IMusic> oldQueue = serverInstance.musicPlayer.musicQueue.ToList();
+                IMusic music = null;
+                try
+                {
+                    if (!MusicUtils.TryCreateMusicInstance(input, out music))
+                        music = MusicUtils.CreateMusicInstance(input, musicType);
+                }
+                catch (WebException ex)
+                {
+                    if (ex.Message == "songs not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
+                        return;
+                    }
+                    else if (ex.Message == "not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
+                        return;
+                    }
+                    else if (ex.Message == "not available")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
+                        return;
+                    }
+                    throw;
+                }
+                oldQueue.Insert(0, music);
+                serverInstance.musicPlayer.musicQueue.Peek().DeletePCMFile();
+                serverInstance.musicPlayer.musicQueue = new Queue<IMusic>(oldQueue);
+                serverInstance.musicPlayer.isPreparingNextSong = false;
+                serverInstance.musicPlayer.isStopped = false;
+                serverInstance.isDisconnect = false;
+                serverInstance.musicPlayer.InitMainPlay();
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào đầu hàng đợi!");
+                music.AddFooter(embed);
+                embed.Build();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task PlayRandomLocalMusic(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+
+                FileInfo[] musicFiles = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToArray();
+                string musicFileName = Path.GetFileNameWithoutExtension(musicFiles[new Random().Next(0, musicFiles.Length)].Name);
+                    IMusic music = MusicUtils.CreateMusicInstance(musicFileName, MusicType.Local);
+                serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                serverInstance.musicPlayer.isStopped = false;
+                serverInstance.isDisconnect = false;
+                serverInstance.musicPlayer.InitMainPlay();
+                await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào hàng đợi!").Build());
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task PlayAllLocalMusic(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                await ctx.DeferAsync();
+                List<FileInfo> musicFiles2 = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
+                musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
+                foreach (FileInfo musicFile in musicFiles2)
+                    serverInstance.musicPlayer.musicQueue.Enqueue(MusicUtils.CreateMusicInstance(musicFile.Name, MusicType.Local));
+                serverInstance.musicPlayer.isPaused = false;
+                serverInstance.musicPlayer.isStopped = false;
+                serverInstance.isDisconnect = false;
+                serverInstance.musicPlayer.InitMainPlay();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle($"Đã thêm {musicFiles2.Count} bài vào hàng đợi! Hiện tại hàng đợi có {serverInstance.musicPlayer.musicQueue.Count} bài!").Build()));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task NowPlaying(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                    await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithTitle("Không có bài nào đang phát!").WithColor(DiscordColor.Red).Build());
+                else
+                {
+                    await ctx.DeferAsync();
+                    string musicDesc = serverInstance.musicPlayer.currentlyPlayingSong.GetSongDesc(true);
+                    DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
+                    serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
+                    string albumThumbnailLink = serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink;
+                    if (!string.IsNullOrEmpty(albumThumbnailLink))
+                    {
+                        DiscordMessage message = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.WithThumbnail(albumThumbnailLink).Build()));
+                        if (serverInstance.musicPlayer.currentlyPlayingSong is LocalMusic localMusic)
+                            await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
+                    }
+                    else
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()));
+                }
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Seek(InteractionContext ctx, long seconds)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                try
+                {
+                    int bytesPerSeconds = (int)(serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length / serverInstance.musicPlayer.currentlyPlayingSong.Duration.TotalSeconds);
+                    bytesPerSeconds -= bytesPerSeconds % 2;
+                    int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                    serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
+                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, (int)seconds).toVietnameseString()}!");
+                }
+                catch (WebException ex)
+                {
+                    if (ex.Message.StartsWith("-1110") && serverInstance.musicPlayer.currentlyPlayingSong.MusicType == MusicType.ZingMP3)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!"));
+                        return;
+                    }
+                    else if (serverInstance.musicPlayer.currentlyPlayingSong.MusicType == MusicType.NhacCuaTui)
+                    {
+                        if (ex.Message == "not available") 
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
+                            return;
+                        }
+                        else if (ex.Message == "not found") 
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
+                            return;
+                        }
+                    }
+
+                    throw;
+                }
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Clear(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.musicQueue.Count == 0)
+                {
+                    await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
+                    return;
+                }
+                for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+                    serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
+                serverInstance.musicPlayer.musicQueue.Clear();
+                serverInstance.musicPlayer.isPreparingNextSong = false;
+                if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                    serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                serverInstance.musicPlayer.isPreparingNextSong = false;
+                await ctx.CreateResponseAsync("Đã xóa hết nhạc trong hàng đợi!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Pause(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                serverInstance.musicPlayer.isPaused = true;
+                await ctx.CreateResponseAsync("Tạm dừng phát nhạc!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Resume(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                serverInstance.musicPlayer.isPaused = false;
+                serverInstance.musicPlayer.isStopped = false;
+                await ctx.CreateResponseAsync("Tiếp tục phát nhạc!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Skip(InteractionContext ctx, long count)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                serverInstance.musicPlayer.isPaused = false;
+                serverInstance.musicPlayer.isStopped = false;
+                serverInstance.musicPlayer.isSkipThisSong = true;
+                count = Math.Min(count, serverInstance.musicPlayer.musicQueue.Count);
+                if (count > 1)
+                {
+                    serverInstance.musicPlayer.isPreparingNextSong = false;
+                    if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                        serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                }
+                for (int i = 0; i < count - 1; i++)
+                    serverInstance.musicPlayer.musicQueue.Dequeue().Dispose();
+                await ctx.CreateResponseAsync($"Đã bỏ qua {(count > 1 ? (count.ToString() + " bài nhạc") : "bài nhạc hiện tại")}!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Remove(InteractionContext ctx,long startIndex, long count)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (startIndex >= serverInstance.musicPlayer.musicQueue.Count)
+                {
+                    await ctx.CreateResponseAsync($"Hàng đợi chỉ có {serverInstance.musicPlayer.musicQueue.Count} bài!");
+                    return;
+                }
+                List<IMusic> oldQueue = serverInstance.musicPlayer.musicQueue.ToList();
+                count = Math.Min(count, serverInstance.musicPlayer.musicQueue.Count - startIndex);
+                for (int i = 0; i < count; i++)
+                {
+                    oldQueue[(int)startIndex].Dispose();
+                    oldQueue.RemoveAt((int)startIndex);
+                }
+                serverInstance.musicPlayer.musicQueue = new Queue<IMusic>(oldQueue);
+                if (startIndex == 0)
+                {
+                    serverInstance.musicPlayer.isPreparingNextSong = false;
+                    if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                        serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                }
+                await ctx.CreateResponseAsync($"Đã xóa {count} bài nhạc khỏi hàng đợi!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Stop(InteractionContext ctx, string clearQueueStr)
+        {
+            try
+            {
+                if (!bool.TryParse(clearQueueStr, out bool clearQueue))
+                    return;
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                serverInstance.musicPlayer.isPaused = false;
+                serverInstance.musicPlayer.isStopped = true;
+                string response = "Dừng phát nhạc";
+                if (clearQueue)
+                {
+                    serverInstance.musicPlayer.isPreparingNextSong = false;
+                    if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                        serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                    for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+                        serverInstance.musicPlayer.musicQueue.ElementAt(i)?.Dispose();
+                    serverInstance.musicPlayer.musicQueue.Clear();
+                    serverInstance.musicPlayer.isPreparingNextSong = false;
+                    response += " và xóa hàng đợi";
+                }
+                await ctx.CreateResponseAsync(response + "!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Queue(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.musicQueue.Count == 0)
+                {
+                    await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
+                    return;
+                }
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+                {
+                    Title = $"{Math.Min(10, serverInstance.musicPlayer.musicQueue.Count)} bài hát tiếp theo trong hàng đợi (tổng số: {serverInstance.musicPlayer.musicQueue.Count})",
+                };
+                for (int i = 0; i < Math.Min(10, serverInstance.musicPlayer.musicQueue.Count); i++)
+                    embed.Description += $"{i + 1}. {serverInstance.musicPlayer.musicQueue.ElementAt(i).GetIcon()} {serverInstance.musicPlayer.musicQueue.ElementAt(i).Title} - {serverInstance.musicPlayer.musicQueue.ElementAt(i).Artists}{Environment.NewLine}";
+                embed.Build();
+                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task ShuffleQueue(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.musicQueue.Count == 0)
+                {
+                    await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
+                    return;
+                }
+                Queue<IMusic> newMusicQueue = new Queue<IMusic>();
+                List<IMusic> oldMusicQueue = serverInstance.musicPlayer.musicQueue.ToList();
+                Random random = new Random();
+                int count = oldMusicQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    int index = random.Next(0, oldMusicQueue.Count);
+                    newMusicQueue.Enqueue(oldMusicQueue.ElementAt(index));
+                    oldMusicQueue.RemoveAt(index);
+                }
+                serverInstance.musicPlayer.musicQueue = newMusicQueue;
+                serverInstance.musicPlayer.isPreparingNextSong = false;
+                if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                    serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+                {
+                    Title = $"{Math.Min(10, serverInstance.musicPlayer.musicQueue.Count)} bài hát tiếp theo trong hàng đợi (tổng số: {serverInstance.musicPlayer.musicQueue.Count})",
+                };
+                for (int i = 0; i < Math.Min(10, serverInstance.musicPlayer.musicQueue.Count); i++)
+                    embed.Description += $"{i + 1}. {serverInstance.musicPlayer.musicQueue.ElementAt(i).GetIcon()} {serverInstance.musicPlayer.musicQueue.ElementAt(i).Title} - {serverInstance.musicPlayer.musicQueue.ElementAt(i).Artists}{Environment.NewLine}";
+                embed.Build();
+                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã trộn danh sách nhạc trong hàng đợi!").AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task Lyric(InteractionContext ctx, string songName, string artistsName)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                await ctx.DeferAsync();
+                string jsonLyric = "";
+                LyricData lyricData = null;
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                if (string.IsNullOrWhiteSpace(songName))
+                {
+                    if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Không có bài nào đang phát!"));
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(serverInstance.musicPlayer.currentlyPlayingSong.Title))
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bài hát đang phát không có tiêu đề!"));
+                        return;
+                    }
+                    lyricData = serverInstance.musicPlayer.currentlyPlayingSong.GetLyric();
+                    if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(lyricData.NotFoundMessage));
+                        return;
+                    }
+                    embed = serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
+                    if (serverInstance.musicPlayer.currentlyPlayingSong is LocalMusic)
+                        embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");
+                }
+                else
+                {
+                    string apiEndpoint = Config.LyricAPI + songName;
+                    if (!string.IsNullOrWhiteSpace(artistsName))
+                        apiEndpoint += "/" + artistsName;
+                    jsonLyric = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(apiEndpoint));
+                    JObject jsonLyricData = JObject.Parse(jsonLyric);
+                    if (!jsonLyricData.ContainsKey("lyrics"))
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Không tìm thấy lời bài hát!"));
+                        return;
+                    }
+                    lyricData = new LyricData(jsonLyricData["title"].ToString(), jsonLyricData["artist"].ToString(), jsonLyricData["lyrics"].ToString(), jsonLyricData["image"].ToString());
+                    embed = embed.WithFooter("Powered by lyrist.vercel.app", "https://cdn.discordapp.com/emojis/1124407257787019276.webp?quality=lossless");
+                }
+                embed = embed.WithTitle($"Lời bài hát {lyricData.Title} - {lyricData.Artists}").WithDescription(lyricData.Lyric).WithThumbnail(lyricData.AlbumThumbnailLink);
+                embed.Build();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        async void MainPlay(CancellationToken token)
+        {
+            try
+            {
+                while (true)
+                {
+                    BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
+                    if (musicQueue.Count > 0)
+                    {
+                        isPlaying = true;
+                        sentOutOfTrack = false;
+                        isPreparingNextSong = false;
+                        try
+                        {
+                            currentlyPlayingSong?.Dispose();
+                            currentlyPlayingSong = null;
+                            currentlyPlayingSong = musicQueue.Dequeue();
+                            string musicDesc = currentlyPlayingSong.GetSongDesc();
+                            DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
+                            currentlyPlayingSong.AddFooter(embed);
+                            string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
+                            if (!string.IsNullOrEmpty(albumThumbnailLink))
+                            {
+                                DiscordMessage message = await lastChannel.SendMessageAsync(embed.WithThumbnail(albumThumbnailLink).Build());
+                                if (currentlyPlayingSong is LocalMusic localMusic)
+                                    await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
+                            }
+                            else
+                                await lastChannel.SendMessageAsync(embed.Build());
+                            currentlyPlayingSong.MusicPCMDataStream.Position = 0;
+                        }
+                        catch (WebException ex)
+                        {
+                            if (ex.Message.StartsWith("-1110") && currentlyPlayingSong.MusicType == MusicType.ZingMP3)
+                            {
+                                await lastChannel.SendMessageAsync($"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!");
+                                continue;
+                            }
+                            else if (currentlyPlayingSong.MusicType == MusicType.NhacCuaTui)
+                            {
+                                if (ex.Message == "not available") 
+                                {
+                                    await lastChannel.SendMessageAsync($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!");
+                                    continue;
+                                }
+                                else if (ex.Message == "not found")
+                                {
+                                    await lastChannel.SendMessageAsync($"Không tìm thấy bài này!");
+                                    continue;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Utils.LogException(ex);
+                            await lastChannel.SendMessageAsync($"Có lỗi xảy ra!");
+                            continue;
+                        }
+                        byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
+                        while (currentlyPlayingSong.MusicPCMDataStream.Read(buffer, 0, buffer.Length) != 0)
+                        {
+                            if (token.IsCancellationRequested)
+                                goto exit;
+                            if (isStopped || isSkipThisSong || serverInstance.currentVoiceNextConnection.isDisposed())
+                                break;
+                            if (!isPreparingNextSong && musicQueue.Count > 0 && currentlyPlayingSong.Duration.Ticks * (1 - currentlyPlayingSong.MusicPCMDataStream.Position / (float)currentlyPlayingSong.MusicPCMDataStream.Length) <= 100000000) //10s
+                            {
+                                isPreparingNextSong = true;
+                                prepareNextMusicStreamThread = new Thread(PrepareNextMusicStream) { IsBackground = true };
+                                prepareNextMusicStreamThread.Start();
+                            }
+                            while (isPaused)
+                                await Task.Delay(500);
+                            tryagain:;
+                            try
+                            {
+                                if (serverInstance.currentVoiceNextConnection.isDisposed())
+                                {
+                                    await Task.Delay(500);
+                                    continue;
+                                }
+                                await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                            }
+                            catch (Exception ex)
+                            {
+                                Utils.LogException(ex);
+                                goto tryagain;
+                            }
+                        }
+                        if (token.IsCancellationRequested)
+                            goto exit;
+                        if (isSkipThisSong)
+                        {
+                            isSkipThisSong = false;
+                            await Task.Delay(500);
+                        }
+                        if (isStopped)
+                            await Task.Delay(500);
+                        if (serverInstance.currentVoiceNextConnection.isDisposed())
+                            sentOutOfTrack = true;
+                    }
+                    else
+                    {
+                        isPlaying = false;
+                        currentlyPlayingSong?.Dispose();
+                        currentlyPlayingSong = null;
+                        if (!sentOutOfTrack)
+                        {
+                            if (token.IsCancellationRequested)
+                                goto exit;
+                            sentOutOfTrack = true;
+                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build());
+                        }
+                    }
+                    if (token.IsCancellationRequested)
+                        goto exit;
+                    await Task.Delay(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.LogException(ex);
+            }
+        exit:;
+            currentlyPlayingSong.Dispose();
+            isPlaying = false;
+            isThreadAlive = false;
+        }
+
+        void PrepareNextMusicStream()
+        {
+            if (musicQueue.Count == 0)
+                return;
+            try
+            {
+                musicQueue.Peek().MusicPCMDataStream.Position = 0;
+            }
+            catch (WebException ex)
+            {
+                if (ex.Message.StartsWith("-1110") && currentlyPlayingSong.MusicType == MusicType.ZingMP3 || currentlyPlayingSong.MusicType == MusicType.NhacCuaTui && (ex.Message == "not available" || ex.Message == "not found"))
+                    return;
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+            GC.Collect();
+        }
+
+        void InitMainPlay()
+        {
+            if (!isThreadAlive)
+            {
+                isThreadAlive = true;
+                new Thread(() => MainPlay(cts.Token)) { IsBackground = true }.Start();
+            }
+        }
+    }
+}

@@ -1,0 +1,186 @@
+﻿using DiscordBot.Admin;
+using DiscordBot.Emoji;
+using DiscordBot.Instance;
+using DiscordBot.Music;
+using DiscordBot.Voice;
+using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.VoiceNext;
+using HarmonyLib;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace DiscordBot
+{
+    internal class DiscordBotMain
+    {
+        internal static DiscordClient botClient = new DiscordClient(new DiscordConfiguration()
+        {
+            TokenType = TokenType.Bot,
+            Token = Config.BotToken,
+            Intents = DiscordIntents.All,
+            MinimumLogLevel = LogLevel.Information
+        });
+
+        internal static DiscordActivity activity;
+
+        static DiscordBotMain()
+        {
+            botClient.MessageCreated += BotClient_MessageCreated; 
+            botClient.GuildDownloadCompleted += BotClient_GuildDownloadCompleted;
+            botClient.VoiceStateUpdated += BotClient_VoiceStateUpdated;
+        }
+
+        internal static void Main()
+        {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            Console.OutputEncoding = Encoding.Unicode;
+            try
+            {
+                new Harmony("patchDeafen").PatchAll();
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+            new Thread(GCThread) { IsBackground = true, Name = "GCThread" }.Start();
+            new Thread(DeleteTempFile) { IsBackground = true, Name = "DeleteTempFile" }.Start();
+            new DiscordBotMain().MainAsync().GetAwaiter().GetResult();
+        }
+
+        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            Console.WriteLine(e.ExceptionObject);
+            Console.ReadLine();
+        }
+
+        static void GCThread()
+        {
+            while (true)
+            {
+                Thread.Sleep(15000);
+                GC.Collect();
+            }
+        }
+
+        static void DeleteTempFile()
+        {
+            while (true)
+            {
+                Thread.Sleep(15000);
+                List<string> allFilesInUse = Utils.GetAllFilesInUse();
+                DirectoryInfo temp = new DirectoryInfo(Environment.ExpandEnvironmentVariables("%temp%"));
+                foreach (FileInfo file in temp.GetFiles().Where(f => f.Name.StartsWith("tmp") && f.Extension == ".tmp"))
+                {
+                    try
+                    {
+                        if (!allFilesInUse.Contains(file.FullName))
+                            file.Delete();
+                    }
+                    catch (Exception) { }
+                }
+            }
+        }
+
+        public async Task MainAsync()
+        {
+            //DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
+            //{
+            //    TokenType = TokenType.Bot,
+            //    Token = Config.botToken,
+            //    Intents = DiscordIntents.All,
+            //    MinimumLogLevel = LogLevel.Information
+            //});
+            //await restClient.InitializeAsync();
+            //await restClient.DeleteGuildApplicationCommandAsync(1115634791321190420, 1123285178375217183);
+            //return;
+
+            CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
+            {
+                StringPrefixes = new string[] { Config.Prefix },
+            });
+            commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
+            SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
+            //slashCommand.RegisterCommands<OfflineMusicPlayer>();
+            //slashCommand.RegisterCommands<ZingMP3Player>();
+
+            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommand>();
+            slashCommand.RegisterCommands<EmojiReplySlashCommand>();
+            slashCommand.RegisterCommands<TTSSlashCommand>();
+            slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
+            slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
+
+            botClient.UseVoiceNext();
+            await botClient.ConnectAsync();
+            await Task.Delay(Timeout.Infinite);
+        }
+
+        private static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
+        {
+            await Task.Run(() =>
+            {
+                Config.mainServer = botClient.Guilds.First(g => g.Key == Config.MainServerID).Value;
+                Config.adminServer = botClient.Guilds.First(g => g.Key == Config.AdminServerID).Value;
+                Config.cacheImageChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.CacheImageChannelID);
+                Config.exceptionReportChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.ExceptionReportChannelID);
+            });
+            new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();
+        }
+
+        private static async Task ChangeStatus()
+        {
+            int count = 0;
+            while (true)
+            {
+                if (activity == null)
+                {
+                    DiscordActivity discordActivity = new DiscordActivity();
+                    if (count == 0)
+                        discordActivity = new DiscordActivity("Zing MP3", ActivityType.ListeningTo);
+                    else if (count == 1)
+                        discordActivity = new DiscordActivity("NhacCuaTui", ActivityType.ListeningTo);
+                    else if (count == 2)
+                    {
+                        discordActivity = new DiscordActivity("YouTube", ActivityType.Watching);
+                        count = -1;
+                    }
+                    count++;
+                    await botClient.UpdateStatusAsync(discordActivity, UserStatus.Online);
+                    for (int i = 0; i < 30; i++)
+                    {
+                        if (activity != null)
+                            break;
+                        await Task.Delay(1000);
+                    }
+                }
+                if (activity != null)
+                {
+                    await botClient.UpdateStatusAsync(activity, UserStatus.Online);
+                    for (int i = 0; i < 30; i++)
+                    {
+                        if (activity == null)
+                            break;
+                        await Task.Delay(1000);
+                    }
+                }
+            }
+        }
+
+        private static async Task BotClient_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
+        {
+            if (args.Message.Author.Id == botClient.CurrentUser.Id)
+                return;
+            await EmojiReplyCore.onMessageReceived(args.Message);
+        }
+
+        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.onVoiceStateUpdated(args);
+    }
+}
