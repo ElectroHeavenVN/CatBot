@@ -113,8 +113,8 @@ namespace DiscordBot
         internal static string LyricAPI => GetConfigValue<string>("LyricAPI") ?? "https://lyrist.vercel.app/api/";
 
         internal static string LocalMusicIcon => GetConfigValue<string>("LocalMusicIcon");
-        internal static string NCTIcon => GetConfigValue<string>("NCTMusicIcon");
-        internal static string ZingMP3Icon => GetConfigValue<string>("ZingMP3MusicIcon");
+        internal static string NCTIcon => GetConfigValue<string>("NCTIcon");
+        internal static string ZingMP3Icon => GetConfigValue<string>("ZingMP3Icon");
         internal static string YouTubeIcon => GetConfigValue<string>("YouTubeIcon");
         internal static string YouTubeMusicIcon => GetConfigValue<string>("YouTubeMusicIcon");
 
