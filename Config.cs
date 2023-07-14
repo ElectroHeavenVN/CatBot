@@ -90,6 +90,23 @@ namespace DiscordBot
         internal static string GoogleAPIKey => GetConfigValue<string>("GoogleAPIKey");
         #endregion
 
+        #region Zalo AI
+        /// <summary>
+        /// Cookie Zalo AI
+        /// </summary>
+        internal static string ZaloAICookie => GetConfigValue<string>("ZaloAICookie");
+        #endregion
+
+        /// <summary>
+        /// User agent
+        /// </summary>
+        internal static string UserAgent => GetConfigValue<string>("UserAgent");
+
+        /// <summary>
+        /// Sec-Ch-Ua header
+        /// </summary>
+        internal static string SecChUaHeader => GetConfigValue<string>("Sec-Ch-Ua");
+
         /// <summary>
         /// API tìm lời bài hát
         /// </summary>

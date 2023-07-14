@@ -137,19 +137,19 @@ namespace DiscordBot.Music
                 CheckZingMP3Version();
                 httpRequestWithCookie = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
                 SetCookie(httpRequestWithCookie, string.Format(Config.ZingMP3Cookie, ZingMP3Music.zingMP3Version.Replace(".", "")));
-                httpRequestWithCookie.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.67";
+                httpRequestWithCookie.UserAgent = Config.UserAgent;
                 httpRequestWithCookie.AcceptEncoding = "gzip, deflate, br";
                 httpRequestWithCookie.Referer = ZingMP3Music.zingMP3Link;
                 httpRequestWithCookie.AddHeader(HttpHeader.Accept, "*/*");
                 httpRequestWithCookie.AddHeader(HttpHeader.AcceptLanguage, "vi");
                 httpRequestWithCookie.AddHeader("Host", "zingmp3.vn");
-                httpRequestWithCookie.AddHeader("Sec-Ch-Ua", "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Microsoft Edge\";v=\"114\"");
+                httpRequestWithCookie.AddHeader("Sec-Ch-Ua", Config.SecChUaHeader);
                 httpRequestWithCookie.AddHeader("Sec-Ch-Ua-Mobile", "?0");
                 httpRequestWithCookie.AddHeader("Sec-Ch-Ua-Platform", "\"Windows\"");
                 httpRequestWithCookie.AddHeader("Sec-Fetch-Dest", "empty");
                 httpRequestWithCookie.AddHeader("Sec-Fetch-Mode", "cors");
                 httpRequestWithCookie.AddHeader("Sec-Fetch-Site", "same-origin");
-                httpRequestWithCookie.Get(ZingMP3Music.zingMP3Link, null);    //WEBPAGE MUST BE LOADED BEFORE CALLING ANY API!
+                httpRequestWithCookie.Get(ZingMP3Music.zingMP3Link, null);    
             }
             return httpRequestWithCookie;
         }
@@ -159,13 +159,13 @@ namespace DiscordBot.Music
             if ((DateTime.Now - lastTimeCheckZingMP3Version).TotalHours > 12)
             {
                 HttpRequest http = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                http.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.67";
+                http.UserAgent = Config.UserAgent;
                 http.AcceptEncoding = "gzip, deflate, br";
                 http.Referer = ZingMP3Music.zingMP3Link;
                 http.AddHeader(HttpHeader.Accept, "*/*");
                 http.AddHeader(HttpHeader.AcceptLanguage, "vi");
                 http.AddHeader("Host", "zingmp3.vn");
-                http.AddHeader("Sec-Ch-Ua", "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Microsoft Edge\";v=\"114\"");
+                http.AddHeader("Sec-Ch-Ua", Config.SecChUaHeader);
                 http.AddHeader("Sec-Ch-Ua-Mobile", "?0");
                 http.AddHeader("Sec-Ch-Ua-Platform", "\"Windows\"");
                 http.AddHeader("Sec-Fetch-Dest", "empty");
@@ -178,34 +178,48 @@ namespace DiscordBot.Music
             }
         }
 
-        internal static void SetCookie(HttpRequest httpRequest, string cookie, bool RemoveOldCookie = true)
+        internal static void SetCookie(HttpRequest httpRequest, string cookies, bool RemoveOldCookie = true)
         {
-            cookie = cookie.Replace("Cookie: ", "");
-            string[] array = cookie.Split(new char[] { ';' });
+            cookies = cookies.Replace("Cookie: ", "");
+            string[] array = cookies.Split(';');
             if (RemoveOldCookie)
-            {
-                httpRequest.Cookies = new Leaf.xNet.CookieStorage(false);
-            }
+                httpRequest.Cookies = new CookieStorage(false);
             for (int i = 0; i < array.Length; i++)
             {
-                bool flag = array[i].Contains("=");
-                if (flag)
+                if (!array[i].Contains("="))
+                    continue;
+                string[] cookie = array[i].Split('=');
+                string value = "";
+                for (int j = 1; j < cookie.Length; j++)
+                    value += cookie[j].Trim() + "=";
+                value = value.Remove(value.Length - 1);
+                try
                 {
-                    string[] array2 = array[i].Split(new char[] { '=' });
-                    string text = array2[0].Trim();
-                    string text2 = "";
-                    for (int j = 1; j < array2.Length; j++)
-                    {
-                        text2 = text2 + array2[j].Trim() + "=";
-                    }
-                    text2 = text2.Remove(text2.Length - 1);
-                    try
-                    {
-                        httpRequest.Cookies.Add(new Cookie(text, text2));
-                    }
-                    catch
-                    {
-                    }
+                    httpRequest.Cookies.Add(new Cookie(cookie[0].Trim(), value));
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        internal static void SetCookie(this HttpWebRequest httpRequest, string cookies, string path, string domain, bool RemoveOldCookie = true)
+        {
+            cookies = cookies.Replace("Cookie: ", "");
+            string[] array = cookies.Split(';');
+            if (RemoveOldCookie)
+                httpRequest.CookieContainer = new CookieContainer();
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (!array[i].Contains("="))
+                    continue;
+                string[] cookie = array[i].Split('=');
+                try
+                {
+                    httpRequest.CookieContainer.Add(new Cookie(cookie[0].Trim(), cookie[1].Trim(), path, domain));
+                }
+                catch
+                {
                 }
             }
         }
