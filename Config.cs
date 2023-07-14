@@ -133,11 +133,13 @@ namespace DiscordBot
                 if (!logValue.ContainsKey(configName))
                 {
                     logValue.Add(configName, value);
-                    Console.WriteLine("Loaded config \"" + configName + "\": " + value);
+                    if (!configName.StartsWith("BotToken"))
+                        Console.WriteLine("Loaded config \"" + configName + "\": " + value);
                 }
                 else if (logValue[configName] != value)
                 {
-                    Console.WriteLine("Config \"" + configName + "\" changed: " + logValue[configName] + " => " + value);
+                    if (!configName.StartsWith("BotToken"))
+                        Console.WriteLine("Config \"" + configName + "\" changed: " + logValue[configName] + " => " + value);
                     logValue[configName] = value;
                 }
                 return (T)Convert.ChangeType(value, typeof(T));
