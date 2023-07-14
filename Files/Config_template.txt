@@ -1,0 +1,24 @@
+MainServerID=0
+AdminServerID=0
+CacheImageChannelID=0
+ExceptionReportChannelID=0
+BotAuthorsID=0,1
+SFXFolder=SFX
+SFXFolderSpecial=SFX\Special
+ZingMP3SecretKey=--------------------------------
+ZingMP3APIKey=--------------------------------
+ZingMP3Cookie=zmp3_rqid=----------------------------------------------------------; _zabst=-----------------------------------------------------------------------------------------------------------------------------------; atmpv=-
+GoogleAPIKey=---------------------------------------
+ZaloAICookie=zai_did=----------------------------------------; _zlang=vn
+UserAgent=---------------------------------------------------------------------------------------------------------------------------------
+Sec-Ch-Ua=-----------------------------------------------------------------
+LyricAPI=https://lyrist.vercel.app/api/
+LocalMusicIcon=<:Local:0000000000000000000>
+NCTIcon=<:NhacCuaTui:0000000000000000000>
+ZingMP3Icon=<:ZingMP3:0000000000000000000>
+YouTubeIcon=<:YouTube:0000000000000000000>
+YouTubeMusicIcon=<:YouTubeMusic:0000000000000000000>
+BotTokenDebug=--------------------------.------.--------------------------------------
+BotToken=--------------------------.------.--------------------------------------
+PrefixDebug=,
+Prefix=.

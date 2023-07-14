@@ -224,6 +224,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Files\Config_template.txt" />
     <Content Include="Files\ffmpeg.exe" />
     <Content Include="Files\libopus.dll" />
     <Content Include="Files\libsodium.dll" />

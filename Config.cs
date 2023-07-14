@@ -138,7 +138,6 @@ namespace DiscordBot
                 GetConfigValue<string>("Prefix"); 
 #endif
 
-
         static T GetConfigValue<T>(string configName)
         {
             string configFile = "Config\\Config.txt";
