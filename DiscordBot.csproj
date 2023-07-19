@@ -187,6 +187,7 @@
     <Compile Include="HelpFormatter.cs" />
     <Compile Include="Instance\BotServerInstance.cs" />
     <Compile Include="Music\IMusic.cs" />
+    <Compile Include="Music\MusicQueue.cs" />
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiSearch.cs" />
     <Compile Include="Music\SearchResult.cs" />
     <Compile Include="Music\Local\LocalMusic.cs" />

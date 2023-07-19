@@ -12,7 +12,10 @@ namespace DiscordBot.Admin
     public class AdminBaseCommand : BaseCommandModule
     {
         [Command("addsfx"), Description("(Lệnh chỉ dành cho tác giả của bot) Thêm SFX vào danh sách SFX")]
-        public async Task AddSFX(CommandContext ctx, [Description("SFX có phải SFX đặc biệt không?")] string isSpecial = "", [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx.Message, isSpecial, sfxName);
+        public async Task AddSFX(CommandContext ctx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx.Message, sfxName, false);
+        
+        [Command("addsfxspecial"), Description("(Lệnh chỉ dành cho tác giả của bot) Thêm SFX vào danh sách SFX đặc biệt")]
+        public async Task AddSFXSpecial(CommandContext ctx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx.Message, sfxName, true);
 
         [Command("deletesfx"), Aliases("delsfx"), Description("(Lệnh chỉ dành cho tác giả của bot) Xóa SFX khỏi danh sách SFX")]
         public async Task DeleteSFX(CommandContext ctx, [Description("Tên SFX")] string sfxName, [Description("SFX có phải SFX đặc biệt không?")] string isSpecial = "") => await AdminCommandsCore.DeleteSFX(ctx.Message, sfxName, isSpecial);

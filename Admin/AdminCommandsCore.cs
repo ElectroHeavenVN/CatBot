@@ -70,7 +70,7 @@ namespace DiscordBot.Admin
             serverInstance.supressOnVoiceStateUpdatedEvent = false;
         }
 
-        internal static async Task AddSFX(DiscordMessage message, string isSpecialStr, string sfxName)
+        internal static async Task AddSFX(DiscordMessage message, string sfxName, bool isSpecial)
         {
             if (!Config.BotAuthorsID.Contains(message.Author.Id))
             {
@@ -91,7 +91,7 @@ namespace DiscordBot.Admin
             string path = Config.SFXFolder;
             if (string.IsNullOrWhiteSpace(sfxName))
                 sfxName = message.Attachments[0].FileName;
-            if (isSpecialStr.Equals("special", StringComparison.InvariantCultureIgnoreCase))
+            if (isSpecial)
                 path = Config.SFXFolderSpecial;
             try
             {
