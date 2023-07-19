@@ -18,12 +18,18 @@ namespace DiscordBot.Music
 {
     public class MusicPlayerSlashCommands : ApplicationCommandModule
     {
-        [SlashCommand("play", "Thêm nhạc vào hàng đợi")]
-        public async Task Play(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui)
+        [SlashCommand("play", "Bắt đầu phát nhạc")]
+        public async Task Play(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input = "", [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui)
         {
             await MusicPlayerCore.Play(ctx, input, musicType);
-        } 
-        
+        }
+
+        [SlashCommand("enqueue", "Thêm nhạc vào hàng đợi")]
+        public async Task Enqueue(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui)
+        {
+            await MusicPlayerCore.Play(ctx, input, musicType);
+        }
+
         [SlashCommand("playlocal", "Thêm nhạc local vào hàng đợi")]
         public async Task PlayLocalMusic(InteractionContext ctx, [Option("name", "Tên bài hát"), Autocomplete(typeof(LocalMusicChoiceProvider))] string name)
         {
@@ -79,9 +85,9 @@ namespace DiscordBot.Music
         }
 
         [SlashCommand("playrandom", "Thêm ngẫu nhiên 1 bài nhạc local vào hàng đợi")]
-        public async Task PlayRandomLocalMusic(InteractionContext ctx)
+        public async Task PlayRandomLocalMusic(InteractionContext ctx, [Option("count", "Số lượng bài nhạc"), Minimum(1), Maximum(int.MaxValue)] long count = 1)
         {
-            await MusicPlayerCore.PlayRandomLocalMusic(ctx);
+            await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);
         }
 
         [SlashCommand("playall", "Thêm toàn bộ nhạc local vào hàng đợi")]
@@ -142,6 +148,12 @@ namespace DiscordBot.Music
         public async Task Queue(InteractionContext ctx)
         {
             await MusicPlayerCore.Queue(ctx);
+        }
+
+        [SlashCommand("mode", "Thay đổi chế độ phát nhạc")]
+        public async Task SetPlayMode(InteractionContext ctx, [Option("playMode", "Chế độ phát nhạc")] PlayModeChoice playMode)
+        {
+            await MusicPlayerCore.SetPlayMode(ctx, playMode);
         }
 
         [SlashCommand("shuffle", "Trộn danh sách nhạc trong hàng đợi")]

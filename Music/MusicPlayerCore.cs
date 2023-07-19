@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace DiscordBot.Music
     {
         DiscordChannel m_lastChannel;
         internal CancellationTokenSource cts = new CancellationTokenSource();
-        internal Queue<IMusic> musicQueue = new Queue<IMusic>();
+        internal MusicQueue musicQueue = new MusicQueue();
         internal bool isPaused;
         internal bool isStopped;
         internal bool isSkipThisSong;
@@ -49,6 +50,15 @@ namespace DiscordBot.Music
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 await ctx.DeferAsync();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    serverInstance.musicPlayer.isStopped = false;
+                    serverInstance.isDisconnect = false;
+                    serverInstance.musicPlayer.isPaused = false;
+                    serverInstance.musicPlayer.InitMainPlay();
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bắt đầu phát nhạc!"));
+                    return;
+                }
                 IMusic music = null;
                 try
                 {
@@ -86,7 +96,7 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        internal static async Task PlayNextUp(InteractionContext ctx, string input, MusicType musicType)
+        internal static async Task Enqueue(InteractionContext ctx, string input, MusicType musicType)
         {
             try
             {
@@ -96,7 +106,6 @@ namespace DiscordBot.Music
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 await ctx.DeferAsync();
-                List<IMusic> oldQueue = serverInstance.musicPlayer.musicQueue.ToList();
                 IMusic music = null;
                 try
                 {
@@ -122,9 +131,52 @@ namespace DiscordBot.Music
                     }
                     throw;
                 }
-                oldQueue.Insert(0, music);
+                serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào hàng đợi!");
+                music.AddFooter(embed);
+                embed.Build();
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task PlayNextUp(InteractionContext ctx, string input, MusicType musicType)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+
+                await ctx.DeferAsync();
+                IMusic music = null;
+                try
+                {
+                    if (!MusicUtils.TryCreateMusicInstance(input, out music))
+                        music = MusicUtils.CreateMusicInstance(input, musicType);
+                }
+                catch (WebException ex)
+                {
+                    if (ex.Message == "songs not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
+                        return;
+                    }
+                    else if (ex.Message == "not found")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
+                        return;
+                    }
+                    else if (ex.Message == "not available")
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
+                        return;
+                    }
+                    throw;
+                }
                 serverInstance.musicPlayer.musicQueue.Peek().DeletePCMFile();
-                serverInstance.musicPlayer.musicQueue = new Queue<IMusic>(oldQueue);
+                serverInstance.musicPlayer.musicQueue.Insert(0, music);
                 serverInstance.musicPlayer.isPreparingNextSong = false;
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.isDisconnect = false;
@@ -137,7 +189,7 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        internal static async Task PlayRandomLocalMusic(InteractionContext ctx)
+        internal static async Task PlayRandomLocalMusic(InteractionContext ctx, long count)
         {
             try
             {
@@ -146,14 +198,23 @@ namespace DiscordBot.Music
                     return;
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
+                await ctx.DeferAsync();
+                Random random = new Random();
                 FileInfo[] musicFiles = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToArray();
-                string musicFileName = Path.GetFileNameWithoutExtension(musicFiles[new Random().Next(0, musicFiles.Length)].Name);
-                    IMusic music = MusicUtils.CreateMusicInstance(musicFileName, MusicType.Local);
-                serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                IMusic music = null;
+                for (int i = 0; i < count; i++)
+                {
+                    string musicFileName = Path.GetFileNameWithoutExtension(musicFiles[random.Next(0, musicFiles.Length)].Name);
+                        music = MusicUtils.CreateMusicInstance(musicFileName, MusicType.Local);
+                    serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                }
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.isDisconnect = false;
                 serverInstance.musicPlayer.InitMainPlay();
-                await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào hàng đợi!").Build());
+                if (count == 1)
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào hàng đợi!").Build()));
+                else 
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm {count} bài vào hàng đợi!").Build()));
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
@@ -229,7 +290,8 @@ namespace DiscordBot.Music
                     bytesPerSeconds -= bytesPerSeconds % 2;
                     int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
-                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, (int)seconds).toVietnameseString()}!");
+                    long ticks = (long)Math.Abs(Math.Ceiling((double)bytesToSeek * serverInstance.musicPlayer.currentlyPlayingSong.Duration.Ticks / serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length));
+                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(ticks).toVietnameseString()}!");
                 }
                 catch (WebException ex)
                 {
@@ -272,8 +334,14 @@ namespace DiscordBot.Music
                     return;
                 }
                 for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
-                    serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
+                {
+                    IMusic music = serverInstance.musicPlayer.musicQueue.ElementAt(i);
+                    if (serverInstance.musicPlayer.currentlyPlayingSong != music)
+                        music.Dispose();
+                }
                 serverInstance.musicPlayer.musicQueue.Clear();
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue) || serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
+                    serverInstance.musicPlayer.musicQueue.Add(serverInstance.musicPlayer.currentlyPlayingSong);
                 serverInstance.musicPlayer.isPreparingNextSong = false;
                 if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
                     serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
@@ -321,7 +389,7 @@ namespace DiscordBot.Music
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
-
+ 
         internal static async Task Skip(InteractionContext ctx, long count)
         {
             try
@@ -335,18 +403,34 @@ namespace DiscordBot.Music
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
                     return;
                 }
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Random) && count > 1)
+                {
+                    await ctx.CreateResponseAsync($"Không thể bỏ qua {count} bài nhạc khi đang phát ngẫu nhiên!");
+                    return;
+                }
                 serverInstance.musicPlayer.isPaused = false;
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.musicPlayer.isSkipThisSong = true;
-                count = Math.Min(count, serverInstance.musicPlayer.musicQueue.Count);
+                count = Math.Min(count, serverInstance.musicPlayer.musicQueue.Count - serverInstance.musicPlayer.musicQueue.CurrentIndex);
                 if (count > 1)
                 {
                     serverInstance.musicPlayer.isPreparingNextSong = false;
                     if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
                         serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
                 }
+                serverInstance.musicPlayer.musicQueue.CurrentIndex += (int)count - 1;
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
+                {
+                    serverInstance.musicPlayer.musicQueue.CurrentIndex++;
+                    if (serverInstance.musicPlayer.musicQueue.CurrentIndex >= serverInstance.musicPlayer.musicQueue.Count)
+                        serverInstance.musicPlayer.musicQueue.CurrentIndex = 0;
+                }
                 for (int i = 0; i < count - 1; i++)
-                    serverInstance.musicPlayer.musicQueue.Dequeue().Dispose();
+                {
+                    IMusic music = serverInstance.musicPlayer.musicQueue.ElementAt(serverInstance.musicPlayer.musicQueue.CurrentIndex + i);
+                    if (music != serverInstance.musicPlayer.currentlyPlayingSong)
+                        music.Dispose();
+                }
                 await ctx.CreateResponseAsync($"Đã bỏ qua {(count > 1 ? (count.ToString() + " bài nhạc") : "bài nhạc hiện tại")}!");
             }
             catch (Exception ex) { Utils.LogException(ex); }
@@ -365,21 +449,34 @@ namespace DiscordBot.Music
                     await ctx.CreateResponseAsync($"Hàng đợi chỉ có {serverInstance.musicPlayer.musicQueue.Count} bài!");
                     return;
                 }
-                List<IMusic> oldQueue = serverInstance.musicPlayer.musicQueue.ToList();
                 count = Math.Min(count, serverInstance.musicPlayer.musicQueue.Count - startIndex);
+                int countRemoved = 0;
+                bool hasCurrentSong = false;
                 for (int i = 0; i < count; i++)
                 {
-                    oldQueue[(int)startIndex].Dispose();
-                    oldQueue.RemoveAt((int)startIndex);
+                    int index = (int)startIndex + (hasCurrentSong ? 1 : 0);
+                    if (index >= serverInstance.musicPlayer.musicQueue.Count)
+                        break;
+                    IMusic music = serverInstance.musicPlayer.musicQueue[index];
+                    if (music != serverInstance.musicPlayer.currentlyPlayingSong)
+                    {
+                        music.Dispose();
+                        serverInstance.musicPlayer.musicQueue.RemoveAt(index);
+                        countRemoved++;
+                    }
+                    else
+                    {
+                        hasCurrentSong = true;
+                        count++;
+                    }
                 }
-                serverInstance.musicPlayer.musicQueue = new Queue<IMusic>(oldQueue);
-                if (startIndex == 0)
+                if (startIndex == serverInstance.musicPlayer.musicQueue.CurrentIndex + 1 || hasCurrentSong)
                 {
                     serverInstance.musicPlayer.isPreparingNextSong = false;
                     if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
                         serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
                 }
-                await ctx.CreateResponseAsync($"Đã xóa {count} bài nhạc khỏi hàng đợi!");
+                await ctx.CreateResponseAsync($"Đã xóa {countRemoved} bài nhạc khỏi hàng đợi!");
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
@@ -401,6 +498,7 @@ namespace DiscordBot.Music
                 }
                 serverInstance.musicPlayer.isPaused = false;
                 serverInstance.musicPlayer.isStopped = true;
+                await Task.Delay(500);
                 string response = "Dừng phát nhạc";
                 if (clearQueue)
                 {
@@ -443,6 +541,54 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
+        internal static async Task SetPlayMode(InteractionContext ctx, PlayModeChoice playMode)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                switch(playMode)
+                {
+                    case PlayModeChoice.Queue:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Queue))
+                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.Queue;
+                        break;
+                    case PlayModeChoice.LoopQueue:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue))
+                        {
+                            if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
+                                serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
+                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.LoopQueue;
+                        }
+                        break;
+                    case PlayModeChoice.Incremental:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Incremental))
+                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.Incremental;
+                        break;
+                    case PlayModeChoice.Random:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Random))
+                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.Random;
+                        break;
+                    case PlayModeChoice.DontLoopSong:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.DontLoopSong))
+                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.DontLoopSong;
+                        break;
+                    case PlayModeChoice.LoopASong:
+                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
+                        {
+                            if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
+                                serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
+                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.LoopASong;
+                        }
+                        break;
+                }
+                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Thay đổi chế độ phát thành: " + playMode.GetName()));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
         internal static async Task ShuffleQueue(InteractionContext ctx)
         {
             try
@@ -456,7 +602,7 @@ namespace DiscordBot.Music
                     await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
                     return;
                 }
-                Queue<IMusic> newMusicQueue = new Queue<IMusic>();
+                MusicQueue newMusicQueue = new MusicQueue();
                 List<IMusic> oldMusicQueue = serverInstance.musicPlayer.musicQueue.ToList();
                 Random random = new Random();
                 int count = oldMusicQueue.Count;
@@ -552,8 +698,11 @@ namespace DiscordBot.Music
                         isPreparingNextSong = false;
                         try
                         {
-                            currentlyPlayingSong?.Dispose();
-                            currentlyPlayingSong = null;
+                            if (!musicQueue.PlayMode.HasFlag(PlayMode.LoopASong) && !musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue) && !musicQueue.Contains(currentlyPlayingSong))
+                            {
+                                currentlyPlayingSong?.Dispose();
+                                currentlyPlayingSong = null;
+                            }
                             currentlyPlayingSong = musicQueue.Dequeue();
                             string musicDesc = currentlyPlayingSong.GetSongDesc();
                             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
