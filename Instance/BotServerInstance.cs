@@ -6,6 +6,7 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.VoiceNext;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,9 +20,9 @@ namespace DiscordBot.Instance
     internal class BotServerInstance
     {
         DiscordChannel m_lastChannel;
+        DateTime lastTimeCheckVoiceChannel = DateTime.Now;
+        Thread checkVoiceChannelThread;
         internal static List<BotServerInstance> serverInstances = new List<BotServerInstance>();
-        //internal OfflineMusicPlayer offlineMusicPlayer = new OfflineMusicPlayer();
-        //internal ZingMP3Player zingMP3Player = new ZingMP3Player();
         internal MusicPlayerCore musicPlayer = new MusicPlayerCore();
         internal DiscordGuild server;
         internal VoiceNextConnection currentVoiceNextConnection;
@@ -38,8 +39,40 @@ namespace DiscordBot.Instance
         internal long lastTimeSetLastChannel;
         internal VoiceChannelSFXCore voiceChannelSFX = new VoiceChannelSFXCore();
         internal TTSCore textToSpeech = new TTSCore();
-        internal bool supressOnVoiceStateUpdatedEvent;
+        internal bool suppressOnVoiceStateUpdatedEvent;
         internal bool isVoicePlaying;
+
+        internal BotServerInstance() 
+        {
+            checkVoiceChannelThread = new Thread(() => CheckVoiceChannel(this));
+        }
+
+        static void CheckVoiceChannel(BotServerInstance self)
+        {
+            while(true)
+            {
+                if (self.currentVoiceNextConnection != null && !self.currentVoiceNextConnection.isDisposed())
+                {
+                    if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot))
+                        self.lastTimeCheckVoiceChannel = DateTime.Now;
+                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
+                    {
+                        self.suppressOnVoiceStateUpdatedEvent = true;
+                        self.GetLastChannel().SendMessageAsync("Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!");
+                        if (self.musicPlayer.isPlaying)
+                        {
+                            self.musicPlayer.isPaused = false;
+                            self.musicPlayer.isStopped = true;
+                        }
+                        self.currentVoiceNextConnection.Disconnect();
+                        self.lastTimeCheckVoiceChannel = DateTime.Now;
+                        Thread.Sleep(3000);
+                        self.suppressOnVoiceStateUpdatedEvent = false;
+                    }
+                }
+                Thread.Sleep(10000);
+            }
+        }
 
         internal async Task<bool> InitializeVoiceNext(SnowflakeObject obj)
         {
@@ -48,6 +81,16 @@ namespace DiscordBot.Instance
                 return false;
             currentVoiceNextConnection = connection;
             return true;
+        }
+
+        internal DiscordChannel GetLastChannel()
+        {
+            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && m_lastChannel != null)
+                return lastChannel;
+            else if (musicPlayer.lastChannel != null)
+                return musicPlayer.lastChannel;
+            else
+                return null;
         }
 
         static async Task<VoiceNextConnection> GetVoiceConnection(SnowflakeObject obj)
@@ -100,6 +143,7 @@ namespace DiscordBot.Instance
                     voiceNextConnection = await member.VoiceState.Channel.ConnectAsync();
                     voiceNextConnection.SetVolume(volume);
                     serverInstance.currentVoiceNextConnection = voiceNextConnection;
+                    serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                 }
                 return voiceNextConnection;
             }
@@ -110,19 +154,10 @@ namespace DiscordBot.Instance
                 voiceNextConnection = await channel.ConnectAsync();
                 voiceNextConnection.SetVolume(volume);
                 serverInstance.currentVoiceNextConnection = voiceNextConnection;
+                serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                 return voiceNextConnection;
             }
             return null;
-        }
-
-        internal DiscordChannel GetLastChannel()
-        {
-            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && m_lastChannel != null)
-                return lastChannel;
-            else if (musicPlayer.lastChannel != null)
-                return musicPlayer.lastChannel;
-            else
-                return null;
         }
 
         internal static BotServerInstance GetBotServerInstance(DiscordGuild server)
@@ -130,6 +165,7 @@ namespace DiscordBot.Instance
             if (serverInstances.Any(s => s.server != null && s.server.Id == server.Id))
                 return serverInstances.First(s => s.server.Id == server.Id);
             serverInstances.Add(new BotServerInstance() { server = server });
+            serverInstances.Last().checkVoiceChannelThread.Start();
             return serverInstances.Last();
         }
 
@@ -156,8 +192,9 @@ namespace DiscordBot.Instance
                 {
                     if (!serverInstances[i].currentVoiceNextConnection.isDisposed())
                     {
-                        serverInstances[i].supressOnVoiceStateUpdatedEvent = true;
+                        serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
                         serverInstances[i].currentVoiceNextConnection.Disconnect();
+                        serverInstances[i].checkVoiceChannelThread.Abort();
                         await Task.Delay(1000);
                     }
                     serverInstances[i] = null;
@@ -206,6 +243,7 @@ namespace DiscordBot.Instance
                             if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
                             {
                                 serverInstance.currentVoiceNextConnection.Disconnect();
+                                serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                                 await Task.Delay(300);
                                 break;
                             }
@@ -214,6 +252,7 @@ namespace DiscordBot.Instance
                         {
                             voiceNextConnection = await channel.ConnectAsync();
                             GetBotServerInstance(channel.Guild).currentVoiceNextConnection = voiceNextConnection;
+                            GetBotServerInstance(channel.Guild).lastTimeCheckVoiceChannel = DateTime.Now;
                         }
                         return new KeyValuePair<DiscordChannel, VoiceNextConnection>(channel, voiceNextConnection);
                     }
@@ -229,6 +268,7 @@ namespace DiscordBot.Instance
                 {
                     channel = serverInstance.currentVoiceNextConnection.TargetChannel;
                     serverInstance.currentVoiceNextConnection.Disconnect();
+                    serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                     await Task.Delay(200);
                     return new KeyValuePair<DiscordChannel, bool>(channel, true);
                 }
@@ -241,7 +281,7 @@ namespace DiscordBot.Instance
             if (args.User.Id == DiscordBotMain.botClient.CurrentUser.Id)
             {
                 BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
-                if (serverInstance.supressOnVoiceStateUpdatedEvent)
+                if (serverInstance.suppressOnVoiceStateUpdatedEvent)
                     return;
                 try
                 {
@@ -294,7 +334,7 @@ namespace DiscordBot.Instance
                     else if (args.Before.Channel.Id != args.After.Channel.Id)
                     {
                         //move
-                        serverInstance.supressOnVoiceStateUpdatedEvent = true;
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = true;
                         try
                         {
                             serverInstance.isDisconnect = false;
@@ -304,15 +344,16 @@ namespace DiscordBot.Instance
                             VoiceNextConnection connection = serverInstance.currentVoiceNextConnection ?? await GetVoiceConnection(args.After.Channel);
                             connection.Disconnect();
                             serverInstance.currentVoiceNextConnection = await GetVoiceConnection(args.After.Channel);
+                            serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                             serverInstance.musicPlayer.isPaused = isPaused;
                         }
                         catch (Exception ex) { Utils.LogException(ex); }
-                        serverInstance.supressOnVoiceStateUpdatedEvent = false;
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    serverInstance.supressOnVoiceStateUpdatedEvent = false;
+                    serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     Utils.LogException(ex);
                 }
             }

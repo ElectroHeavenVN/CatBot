@@ -262,7 +262,7 @@ namespace DiscordBot.Voice
             catch (Exception ex) { Utils.LogException(ex); }
             if (!await serverInstance.InitializeVoiceNext(messageToReact))
                 return;
-            serverInstance.supressOnVoiceStateUpdatedEvent = true;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             isStop = true;
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
             serverInstance.currentVoiceNextConnection.Disconnect();
@@ -271,7 +271,7 @@ namespace DiscordBot.Voice
             else if (messageToReact is DiscordInteraction interaction)
                 await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
             await Task.Delay(1000);
-            serverInstance.supressOnVoiceStateUpdatedEvent = false;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
         }
 
         async Task InternalStopSpeaking(SnowflakeObject messageToReact)
@@ -290,7 +290,7 @@ namespace DiscordBot.Voice
             if (!await serverInstance.InitializeVoiceNext(messageToReact))
                 return;
             isStop = true;
-            serverInstance.supressOnVoiceStateUpdatedEvent = true;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             bool isPaused = serverInstance.musicPlayer.isPaused;
             serverInstance.musicPlayer.isPaused = true;
             await Task.Delay(600);
@@ -299,7 +299,7 @@ namespace DiscordBot.Voice
             if (!await serverInstance.InitializeVoiceNext(messageToReact))
                 return;
             serverInstance.musicPlayer.isPaused = isPaused;
-            serverInstance.supressOnVoiceStateUpdatedEvent = false;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
 
             isStop = false;
             if (messageToReact is DiscordMessage message)

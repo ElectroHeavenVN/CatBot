@@ -61,13 +61,13 @@ namespace DiscordBot.Admin
                 return;
             }
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
-            serverInstance.supressOnVoiceStateUpdatedEvent = true;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             KeyValuePair<DiscordChannel, bool> result = BotServerInstance.LeaveVoiceChannel(serverID).Result;
             if (!result.Value)
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không thể ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
             else 
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Đã ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
-            serverInstance.supressOnVoiceStateUpdatedEvent = false;
+            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
         }
 
         internal static async Task AddSFX(DiscordMessage message, string sfxName, bool isSpecial)
