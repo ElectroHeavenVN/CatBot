@@ -7,14 +7,11 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Music
 {
-    public enum PlayMode
+    public class PlayMode
     {
-        Queue = 0b0,          
-        LoopQueue = 0b1,      
-        Incremental = 0b00,
-        Random = 0b10,   
-        DontLoopSong = 0b000,
-        LoopASong = 0b100, 
+        public bool isLoopQueue;    
+        public bool isRandom;    
+        public bool isLoopASong;    
     }
 
     public enum PlayModeChoice

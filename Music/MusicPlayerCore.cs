@@ -287,11 +287,10 @@ namespace DiscordBot.Music
                 try
                 {
                     int bytesPerSeconds = (int)(serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length / serverInstance.musicPlayer.currentlyPlayingSong.Duration.TotalSeconds);
-                    bytesPerSeconds -= bytesPerSeconds % 2;
                     int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                    bytesToSeek -= bytesToSeek % 2;
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
-                    long ticks = (long)Math.Abs(Math.Ceiling((double)bytesToSeek * serverInstance.musicPlayer.currentlyPlayingSong.Duration.Ticks / serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length));
-                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(ticks).toVietnameseString()}!");
+                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 }
                 catch (WebException ex)
                 {
@@ -340,7 +339,7 @@ namespace DiscordBot.Music
                         music.Dispose();
                 }
                 serverInstance.musicPlayer.musicQueue.Clear();
-                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue) || serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.isLoopQueue || serverInstance.musicPlayer.musicQueue.PlayMode.isLoopASong)
                     serverInstance.musicPlayer.musicQueue.Add(serverInstance.musicPlayer.currentlyPlayingSong);
                 serverInstance.musicPlayer.isPreparingNextSong = false;
                 if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
@@ -403,7 +402,7 @@ namespace DiscordBot.Music
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
                     return;
                 }
-                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Random) && count > 1)
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.isRandom && count > 1)
                 {
                     await ctx.CreateResponseAsync($"Không thể bỏ qua {count} bài nhạc khi đang phát ngẫu nhiên!");
                     return;
@@ -418,18 +417,32 @@ namespace DiscordBot.Music
                     if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
                         serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
                 }
-                serverInstance.musicPlayer.musicQueue.CurrentIndex += (int)count - 1;
-                if (serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
+                if (serverInstance.musicPlayer.musicQueue.PlayMode.isRandom)
+                    serverInstance.musicPlayer.musicQueue.RandomIndex();
+                else if (serverInstance.musicPlayer.musicQueue.PlayMode.isLoopQueue)
                 {
-                    serverInstance.musicPlayer.musicQueue.CurrentIndex++;
-                    if (serverInstance.musicPlayer.musicQueue.CurrentIndex >= serverInstance.musicPlayer.musicQueue.Count)
-                        serverInstance.musicPlayer.musicQueue.CurrentIndex = 0;
+                    serverInstance.musicPlayer.musicQueue.CurrentIndex += (int)count - 1;
+                    if (serverInstance.musicPlayer.musicQueue.PlayMode.isLoopASong)
+                    {
+                        serverInstance.musicPlayer.musicQueue.CurrentIndex++;
+                        if (serverInstance.musicPlayer.musicQueue.CurrentIndex >= serverInstance.musicPlayer.musicQueue.Count)
+                            serverInstance.musicPlayer.musicQueue.CurrentIndex = 0;
+                    }
                 }
-                for (int i = 0; i < count - 1; i++)
+                else 
                 {
-                    IMusic music = serverInstance.musicPlayer.musicQueue.ElementAt(serverInstance.musicPlayer.musicQueue.CurrentIndex + i);
-                    if (music != serverInstance.musicPlayer.currentlyPlayingSong)
-                        music.Dispose();
+                    for (int i = 0; i < count - 1; i++)
+                    {
+                        int index = serverInstance.musicPlayer.musicQueue.CurrentIndex;
+                        if (index >= serverInstance.musicPlayer.musicQueue.Count)
+                        {
+                            serverInstance.musicPlayer.musicQueue.CurrentIndex = 0;
+                            break;
+                        }
+                        IMusic music = serverInstance.musicPlayer.musicQueue.DequeueAt(index);
+                        if (music != serverInstance.musicPlayer.currentlyPlayingSong)
+                            music.Dispose();
+                    }
                 }
                 await ctx.CreateResponseAsync($"Đã bỏ qua {(count > 1 ? (count.ToString() + " bài nhạc") : "bài nhạc hiện tại")}!");
             }
@@ -552,36 +565,26 @@ namespace DiscordBot.Music
                 switch(playMode)
                 {
                     case PlayModeChoice.Queue:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Queue))
-                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.Queue;
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isLoopQueue = false;
                         break;
                     case PlayModeChoice.LoopQueue:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue))
-                        {
-                            if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
-                                serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
-                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.LoopQueue;
-                        }
+                        if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
+                            serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isLoopQueue = true;
                         break;
                     case PlayModeChoice.Incremental:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Incremental))
-                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.Incremental;
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isRandom = false;
                         break;
                     case PlayModeChoice.Random:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.Random))
-                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.Random;
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isRandom = true;
                         break;
                     case PlayModeChoice.DontLoopSong:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.DontLoopSong))
-                            serverInstance.musicPlayer.musicQueue.PlayMode &= PlayMode.DontLoopSong;
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isLoopASong = false;
                         break;
                     case PlayModeChoice.LoopASong:
-                        if (!serverInstance.musicPlayer.musicQueue.PlayMode.HasFlag(PlayMode.LoopASong))
-                        {
-                            if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
-                                serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
-                            serverInstance.musicPlayer.musicQueue.PlayMode |= PlayMode.LoopASong;
-                        }
+                        if (serverInstance.musicPlayer.currentlyPlayingSong != null && !serverInstance.musicPlayer.musicQueue.Contains(serverInstance.musicPlayer.currentlyPlayingSong))
+                            serverInstance.musicPlayer.musicQueue.Insert(0, serverInstance.musicPlayer.currentlyPlayingSong);
+                        serverInstance.musicPlayer.musicQueue.PlayMode.isLoopASong = true;
                         break;
                 }
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Thay đổi chế độ phát thành: " + playMode.GetName()));
@@ -698,7 +701,7 @@ namespace DiscordBot.Music
                         isPreparingNextSong = false;
                         try
                         {
-                            if (!musicQueue.PlayMode.HasFlag(PlayMode.LoopASong) && !musicQueue.PlayMode.HasFlag(PlayMode.LoopQueue) && !musicQueue.Contains(currentlyPlayingSong))
+                            if (!musicQueue.PlayMode.isLoopASong && !musicQueue.PlayMode.isLoopQueue && !musicQueue.Contains(currentlyPlayingSong))
                             {
                                 currentlyPlayingSong?.Dispose();
                                 currentlyPlayingSong = null;
@@ -820,9 +823,16 @@ namespace DiscordBot.Music
         {
             if (musicQueue.Count == 0)
                 return;
+            if (musicQueue.PlayMode.isLoopASong)
+                return;
+            if (musicQueue.Count <= 1 && musicQueue.PlayMode.isLoopQueue)
+                return;
             try
             {
-                musicQueue.Peek().MusicPCMDataStream.Position = 0;
+                int index = musicQueue.CurrentIndex + 1;
+                if (index >= musicQueue.Count)
+                    index = 0;
+                musicQueue.ElementAt(index).MusicPCMDataStream.Position = 0;
             }
             catch (WebException ex)
             {

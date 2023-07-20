@@ -250,6 +250,8 @@ namespace DiscordBot.Voice
             {
                 if (!await serverInstance.InitializeVoiceNext(messageToReact))
                     return;
+                serverInstance.musicPlayer.isStopped = true;
+                await Task.Delay(500);
                 for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                     serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
                 serverInstance.musicPlayer.musicQueue.Clear();
@@ -258,6 +260,7 @@ namespace DiscordBot.Voice
                 serverInstance.musicPlayer.sentOutOfTrack = true;
                 serverInstance.musicPlayer.cts.Cancel();
                 serverInstance.musicPlayer.cts = new CancellationTokenSource();
+                serverInstance.musicPlayer.isStopped = false;
             }
             catch (Exception ex) { Utils.LogException(ex); }
             if (!await serverInstance.InitializeVoiceNext(messageToReact))

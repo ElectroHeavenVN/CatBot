@@ -53,7 +53,7 @@ namespace DiscordBot.Music
                 _version++;
             }
         }
-        public PlayMode PlayMode { get; set; }
+        public PlayMode PlayMode { get; set; } = new PlayMode();
 
         object IList.this[int index]
         {
@@ -130,11 +130,11 @@ namespace DiscordBot.Music
             if (_size == 0)
                 throw new InvalidOperationException();
             int index = 0;
-            if (PlayMode.HasFlag(PlayMode.LoopASong))
+            if (PlayMode.isLoopASong)
                 index = _index;
-            else if (PlayMode.HasFlag(PlayMode.Random))
+            else if (PlayMode.isRandom)
                 index = _index = random.Next(0, _size);
-            else if (!_isFirstTimeDequeue)
+            else if (PlayMode.isLoopQueue && !_isFirstTimeDequeue)
             {
                 _index++;
                 if (_index >= _size)
@@ -142,11 +142,22 @@ namespace DiscordBot.Music
                 index = _index;
             }
             IMusic result = _items[index];
-            if (!PlayMode.HasFlag(PlayMode.LoopQueue))
+            if (!PlayMode.isLoopQueue && !PlayMode.isLoopASong)
                 RemoveAt(index);
             _isFirstTimeDequeue = false;
             return result;
         }
+
+        public IMusic DequeueAt(int index)
+        {
+            if (_size == 0)
+                throw new InvalidOperationException();
+            IMusic result = _items[index];
+            RemoveAt(index);
+            return result;
+        }
+
+        public void RandomIndex() => _index = random.Next(0, _size);
 
         public IMusic Peek()
         {

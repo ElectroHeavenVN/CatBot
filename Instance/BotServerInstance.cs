@@ -290,6 +290,8 @@ namespace DiscordBot.Instance
                         //leave
                         if (!serverInstance.isDisconnect)
                         {
+                            serverInstance.musicPlayer.isStopped = true;
+                            await Task.Delay(500);
                             for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                                 serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
                             serverInstance.musicPlayer.musicQueue.Clear();
@@ -324,6 +326,7 @@ namespace DiscordBot.Instance
                                 await Task.Delay(3000);
                                 await discordMessage?.DeleteAsync();
                             }
+                            serverInstance.musicPlayer.isStopped = false;
                         }
                     }
                     else if (args.Before == null || args.Before.Channel == null)
