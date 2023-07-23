@@ -146,6 +146,7 @@ namespace DiscordBot.Music.YouTube
         void DownloadWEBM(string link, ref string tempFile)
         {
             tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{Utils.RandomString(10)}.webm");
+            Thread.Sleep(100);
             Process yt_dlp_x86 = new Process() 
             { 
                 StartInfo = new ProcessStartInfo
