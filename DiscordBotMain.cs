@@ -13,6 +13,7 @@ using HarmonyLib;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -51,9 +52,33 @@ namespace DiscordBot
                 new Harmony("patchDeafen").PatchAll();
             }
             catch (Exception ex) { Utils.LogException(ex); }
-            new Thread(GCThread) { IsBackground = true, Name = "GCThread" }.Start();
-            new Thread(DeleteTempFile) { IsBackground = true, Name = "DeleteTempFile" }.Start();
+            new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
+            new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
+            new Thread(UpdateYTdlp) { IsBackground = true, Name = nameof(UpdateYTdlp) }.Start();
             new DiscordBotMain().MainAsync().GetAwaiter().GetResult();
+        }
+
+        private static void UpdateYTdlp()
+        {
+            while (true)
+            {
+                Process yt_dlp_x86 = new Process()
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "yt-dlp\\yt-dlp_x86",
+                        Arguments = "-U",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        UseShellExecute = false,
+                    },
+                    EnableRaisingEvents = true,
+                };
+                Console.WriteLine("--------------yt-dlp Console output--------------");
+                yt_dlp_x86.Start();
+                yt_dlp_x86.WaitForExit();
+                Console.WriteLine("--------------End of yt-dlp Console output--------------");
+                Thread.Sleep(1000 * 60 * 60 * 24);
+            }
         }
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -78,7 +103,7 @@ namespace DiscordBot
                 Thread.Sleep(15000);
                 List<string> allFilesInUse = Utils.GetAllFilesInUse();
                 DirectoryInfo temp = new DirectoryInfo(Environment.ExpandEnvironmentVariables("%temp%"));
-                foreach (FileInfo file in temp.GetFiles().Where(f => f.Name.StartsWith("tmp") && f.Extension == ".tmp"))
+                foreach (FileInfo file in temp.GetFiles().Where(f => f.Name.StartsWith("tmp") && (f.Extension == ".tmp" || f.Extension == ".webm")))
                 {
                     try
                     {

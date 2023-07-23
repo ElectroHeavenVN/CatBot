@@ -62,25 +62,19 @@ namespace DiscordBot.Music
         internal static string GetPCMFile(string filePath, ref string tempFile)
         {
             tempFile = Path.GetTempFileName();
-            Console.WriteLine("--------------FFMpeg Console output--------------");
             Process ffmpeg = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg",
+                    FileName = "ffmpeg\\ffmpeg",
                     Arguments = "-hide_banner -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 -y -threads 1 \"" + tempFile + "\"",
-                    CreateNoWindow = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
                     WindowStyle = ProcessWindowStyle.Hidden,
-                    StandardErrorEncoding = Encoding.UTF8,
                     UseShellExecute = false,
                 },
                 EnableRaisingEvents = true,
             };
-            ffmpeg.ErrorDataReceived += (_, e) => Console.WriteLine(e.Data);
+            Console.WriteLine("--------------FFMpeg Console output--------------");
             ffmpeg.Start();
-            ffmpeg.BeginErrorReadLine();
             ffmpeg.WaitForExit();
             Console.WriteLine("--------------End of FFMpeg Console output--------------");
 

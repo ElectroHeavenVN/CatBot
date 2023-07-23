@@ -130,6 +130,11 @@ namespace DiscordBot.Music.NhacCuaTui
             }
         }
 
+        public SponsorBlockOptions SponsorBlockOptions
+        {
+            get => null;
+            set { }
+        }
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by NhacCuaTui", nhacCuaTuiIconLink);
 
         public LyricData GetLyric()

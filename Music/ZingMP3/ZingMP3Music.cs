@@ -125,6 +125,11 @@ namespace DiscordBot.Music.ZingMP3
             }
         }
 
+        public SponsorBlockOptions SponsorBlockOptions
+        {
+            get => null;
+            set { }
+        }
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by Zing MP3", zingMP3IconLink);
 
         public LyricData GetLyric()

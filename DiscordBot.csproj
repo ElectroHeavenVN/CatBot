@@ -203,6 +203,7 @@
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiMusicChoiceProvider.cs" />
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiMusic.cs" />
     <Compile Include="Music\NhacCuaTui\PUtils.cs" />
+    <Compile Include="Music\SponsorBlockOptions.cs" />
     <Compile Include="Music\YouTube\YouTubeMusic.cs" />
     <Compile Include="Music\YouTube\YouTubeMusicChoiceProvider.cs" />
     <Compile Include="Music\YouTube\YouTubeSearch.cs" />
@@ -253,6 +254,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(ProjectDir)Files\* $(TargetDir) | echo</PostBuildEvent>
+    <PostBuildEvent>xcopy $(ProjectDir)Files\* $(TargetDir) /y /s | echo</PostBuildEvent>
   </PropertyGroup>
 </Project>

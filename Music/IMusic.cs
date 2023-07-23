@@ -17,6 +17,7 @@ namespace DiscordBot.Music
         string Artists { get; }
         string Album { get; }
         string AlbumThumbnailLink { get; }
+        SponsorBlockOptions SponsorBlockOptions { get; set; }
         LyricData GetLyric();
         Stream MusicPCMDataStream { get; }
         DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed);

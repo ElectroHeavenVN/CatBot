@@ -38,6 +38,7 @@ namespace DiscordBot.Music
         internal IMusic currentlyPlayingSong;
         internal bool isPreparingNextSong;
         internal bool isPlaying;
+        internal SponsorBlockOptions sponsorBlockOptions = new SponsorBlockOptions();
         Thread prepareNextMusicStreamThread;
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
@@ -52,6 +53,11 @@ namespace DiscordBot.Music
                 await ctx.DeferAsync();
                 if (string.IsNullOrWhiteSpace(input))
                 {
+                    if (serverInstance.musicPlayer.musicQueue.Count == 0)
+                    {
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Không có nhạc trong hàng đợi! Hãy thêm 1 bài vào hàng đợi bằng lệnh /play, /playlocal, /nhaccuatui, /youtube hoặc /zingmp3!"));
+                        return;
+                    }
                     serverInstance.musicPlayer.isStopped = false;
                     serverInstance.isDisconnect = false;
                     serverInstance.musicPlayer.isPaused = false;
@@ -84,6 +90,7 @@ namespace DiscordBot.Music
                     }
                     throw;
                 }
+                music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.isDisconnect = false;
@@ -131,6 +138,7 @@ namespace DiscordBot.Music
                     }
                     throw;
                 }
+                music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
                 DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào hàng đợi!");
                 music.AddFooter(embed);
@@ -175,6 +183,7 @@ namespace DiscordBot.Music
                     }
                     throw;
                 }
+                music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Peek().DeletePCMFile();
                 serverInstance.musicPlayer.musicQueue.Insert(0, music);
                 serverInstance.musicPlayer.isPreparingNextSong = false;
@@ -683,6 +692,41 @@ namespace DiscordBot.Music
                 embed = embed.WithTitle($"Lời bài hát {lyricData.Title} - {lyricData.Artists}").WithDescription(lyricData.Lyric).WithThumbnail(lyricData.AlbumThumbnailLink);
                 embed.Build();
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
+        internal static async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, SponsorBlockSectionType type)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                string str = "";
+                if (type == 0)
+                {
+                    if (!serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
+                        str = "Chức năng bỏ qua phân đoạn SponsorBlock đang bị tắt!";
+                    else 
+                        str = "Các phân đoạn thuộc loại sau sẽ bị bỏ qua: " + serverInstance.musicPlayer.sponsorBlockOptions.GetName();
+                }
+                else 
+                {
+                    if (type == SponsorBlockSectionType.All)
+                    {
+                        if (serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
+                            serverInstance.musicPlayer.sponsorBlockOptions.SetOptions(type);
+                        else 
+                            serverInstance.musicPlayer.sponsorBlockOptions.SetOptions(0);
+                    }
+                    serverInstance.musicPlayer.sponsorBlockOptions.AddOrRemoveOptions(type);
+                    str = $"Đã {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "thêm" : "xóa")} {(type == SponsorBlockSectionType.All ? "tất cả loại phân đoạn" : $"loại phân đoạn \"{type.GetName()}\"")} {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "vào" : "khỏi")} danh sách bỏ qua!";
+                    if (!serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) && !serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
+                        str += Environment.NewLine + $"Không có loại phân đoạn nào để bỏ qua, tắt chức năng bỏ qua phân đoạn SponsorBlock!";
+                }
+                await ctx.CreateResponseAsync(str);
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }

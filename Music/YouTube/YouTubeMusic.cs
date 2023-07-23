@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DiscordBot.Instance;
+using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,7 @@ namespace DiscordBot.Music.YouTube
         bool canGetStream;
         bool _disposed;
         bool isYouTubeMusicVideo;
+        SponsorBlockOptions sponsorBlockOptions;
 
         public YouTubeMusic() { }
 
@@ -102,6 +104,12 @@ namespace DiscordBot.Music.YouTube
             }
         }
 
+        public SponsorBlockOptions SponsorBlockOptions
+        {
+            get => sponsorBlockOptions;
+            set => sponsorBlockOptions = value;
+        }
+
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
 
         public void DeletePCMFile()
@@ -135,31 +143,23 @@ namespace DiscordBot.Music.YouTube
 
         public string GetIcon() => isYouTubeMusicVideo ? Config.YouTubeMusicIcon : Config.YouTubeIcon;
 
-        static void DownloadWEBM(string link, ref string tempFile)
+        void DownloadWEBM(string link, ref string tempFile)
         {
-            tempFile = Path.GetTempFileName();
-            Console.WriteLine("--------------yt-dlp Console output--------------");
+            tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{Utils.RandomString(10)}.webm");
             Process yt_dlp_x86 = new Process() 
             { 
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "yt-dlp_x86",
-                    Arguments = $"-f \"bestaudio\" --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true,
-                    StandardOutputEncoding = Encoding.UTF8,
+                    FileName = "yt-dlp\\yt-dlp_x86",
+                    Arguments = $"-f bestaudio --ffmpeg-location ../ffmpeg{sponsorBlockOptions.GetArgument()} --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
+                    WorkingDirectory = "yt-dlp",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
                 },
                 EnableRaisingEvents = true,
             };
-            yt_dlp_x86.OutputDataReceived += (_, e) => Console.WriteLine(e.Data);
-            yt_dlp_x86.ErrorDataReceived += (_, e) => Console.WriteLine(e.Data);
+            Console.WriteLine("--------------yt-dlp Console output--------------");
             yt_dlp_x86.Start();
-            yt_dlp_x86.BeginErrorReadLine();
-            yt_dlp_x86.BeginOutputReadLine();
             yt_dlp_x86.WaitForExit();
             Console.WriteLine("--------------End of yt-dlp Console output--------------");
         }

@@ -21,6 +21,8 @@ namespace DiscordBot
 {
     public static class Utils
     {
+        static Random random = new Random();
+
         public static bool isDisposed(this VoiceNextConnection connection) => (bool)typeof(VoiceNextConnection).GetProperty("IsDisposed", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(connection);
 
         public static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
@@ -123,7 +125,7 @@ namespace DiscordBot
         {
             Process ffmpeg = Process.Start(new ProcessStartInfo
             {
-                FileName = "ffmpeg",
+                FileName = "ffmpeg\\ffmpeg",
                 Arguments = "-hide_banner -loglevel panic -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 pipe:1",
                 RedirectStandardOutput = true,
                 UseShellExecute = false
@@ -156,6 +158,15 @@ namespace DiscordBot
                     result.AddRange(serverInstance.musicPlayer.currentlyPlayingSong.GetFilesInUse());
             }
             return result.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+        }
+
+        internal static string RandomString(int length)
+        {
+            string str = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+            string result = "";
+            for (int i = 0; i < length; i++)
+                result += str[random.Next(0, str.Length)];
+            return result;
         }
     }
 }

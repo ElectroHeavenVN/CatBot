@@ -361,38 +361,5 @@ namespace DiscordBot.Instance
                 }
             }
         }
-
-        //internal static BotServerInstance GetBotServerInstance(OfflineMusicPlayer musicPlayer)
-        //{
-        //    if (musicPlayer == null)
-        //        return null;
-        //    if (serverInstances.Any(s => s.offlineMusicPlayer == musicPlayer))
-        //        return serverInstances.First(s => s.offlineMusicPlayer == musicPlayer);
-        //    return null;
-        //}
-
-        //internal static OfflineMusicPlayer GetOfflineMusicPlayer(DiscordGuild server)
-        //{
-        //    if (serverInstances.Any(s => s.server == server))
-        //        return serverInstances.First(s => s.server == server).offlineMusicPlayer;
-        //    serverInstances.Add(new BotServerInstance());
-        //    return serverInstances.Last().offlineMusicPlayer;
-        //}
-
-        //internal static ZingMP3Player GetZingMP3Player(DiscordGuild server)
-        //{
-        //    if (serverInstances.Any(s => s.server == server))
-        //        return serverInstances.First(s => s.server == server).zingMP3Player;
-        //    serverInstances.Add(new BotServerInstance());
-        //    return serverInstances.Last().zingMP3Player;
-        //}
-
-        //internal static BotServerInstance GetBotServerInstance(ZingMP3Player zingMP3Player)
-        //{
-        //    if (serverInstances.Any(s => s.server != null && s.zingMP3Player == zingMP3Player))
-        //        return serverInstances.First(s => s.zingMP3Player == zingMP3Player);
-        //    serverInstances.Add(new BotServerInstance());
-        //    return serverInstances.Last();
-        //}
     }
 }

@@ -81,6 +81,11 @@ namespace DiscordBot.Music.Local
             }
         }
 
+        public SponsorBlockOptions SponsorBlockOptions
+        {
+            get => null;
+            set { }
+        }
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed;
 
         public LyricData GetLyric()
