@@ -3,6 +3,7 @@ using DiscordBot.Music.Local;
 using DiscordBot.Music.NhacCuaTui;
 using DiscordBot.Music.YouTube;
 using DiscordBot.Music.ZingMP3;
+using DiscordBot.Music.SoundCloud;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
@@ -35,6 +36,9 @@ namespace DiscordBot.Music
 
         [SlashCommand("zingmp3", "Thêm nhạc từ ZingMP3 vào hàng đợi")]
         public async Task PlayZingMP3Music(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(ZingMP3MusicChoiceProvider))] string input) => await MusicPlayerCore.Play(ctx, input, MusicType.ZingMP3);
+        
+        [SlashCommand("soundcloud", "Thêm nhạc từ SoundCloud vào hàng đợi")]
+        public async Task PlaySoundCloudMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(SoundCloudMusicChoiceProvider))] string input) => await MusicPlayerCore.Play(ctx, input, MusicType.SoundCloud);
 
         [SlashCommand("nextup", "Thêm nhạc vào đầu hàng đợi")]
         public async Task PlayNextUp(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui) => await MusicPlayerCore.PlayNextUp(ctx, input, musicType);
@@ -50,6 +54,9 @@ namespace DiscordBot.Music
 
         [SlashCommand("nextupzing", "Thêm nhạc từ ZingMP3 vào đầu hàng đợi")]
         public async Task PlayNextUpZingMP3Music(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(ZingMP3MusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.ZingMP3);
+        
+        [SlashCommand("nextupsc", "Thêm nhạc từ SoundCloud vào đầu hàng đợi")]
+        public async Task PlayNextUpSoundCloudMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(SoundCloudMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.SoundCloud);
 
         [SlashCommand("playrandom", "Thêm ngẫu nhiên 1 bài nhạc local vào hàng đợi")]
         public async Task PlayRandomLocalMusic(InteractionContext ctx, [Option("count", "Số lượng bài nhạc"), Minimum(1), Maximum(int.MaxValue)] long count = 1) => await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);

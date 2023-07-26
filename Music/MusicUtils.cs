@@ -1,5 +1,6 @@
 ﻿using DiscordBot.Music.Local;
 using DiscordBot.Music.NhacCuaTui;
+using DiscordBot.Music.SoundCloud;
 using DiscordBot.Music.YouTube;
 using DiscordBot.Music.ZingMP3;
 using Leaf.xNet;
@@ -35,6 +36,8 @@ namespace DiscordBot.Music
                 return new NhacCuaTuiMusic(linkOrKeywordOrPath);
             else if (musicType == MusicType.YouTube)
                 return new YouTubeMusic(linkOrKeywordOrPath);
+            else if (musicType == MusicType.SoundCloud)
+                return new SoundCloudMusic(linkOrKeywordOrPath);
             throw new ArgumentOutOfRangeException();
         }
 
@@ -54,6 +57,11 @@ namespace DiscordBot.Music
             else if (YouTubeMusic.regexMatchYTLink.IsMatch(link))
             {
                 music = new YouTubeMusic(link);
+                return true;
+            }
+            else if (link.StartsWith(SoundCloudMusic.soundCloudLink))
+            {
+                music = new SoundCloudMusic(link);
                 return true;
             }
             return false;

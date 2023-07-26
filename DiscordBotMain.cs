@@ -55,7 +55,7 @@ namespace DiscordBot
             new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
             new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
             new Thread(UpdateYTdlp) { IsBackground = true, Name = nameof(UpdateYTdlp) }.Start();
-            new DiscordBotMain().MainAsync().GetAwaiter().GetResult();
+            MainAsync().GetAwaiter().GetResult();
         }
 
         private static void UpdateYTdlp()
@@ -115,7 +115,7 @@ namespace DiscordBot
             }
         }
 
-        public async Task MainAsync()
+        public static async Task MainAsync()
         {
             //DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
             //{
@@ -175,6 +175,10 @@ namespace DiscordBot
                     else if (count == 1)
                         discordActivity = new DiscordActivity("NhacCuaTui", ActivityType.ListeningTo);
                     else if (count == 2)
+                        discordActivity = new DiscordActivity("YouTube Music", ActivityType.ListeningTo);
+                    else if (count == 3)
+                        discordActivity = new DiscordActivity("SoundCloud", ActivityType.ListeningTo);
+                    else if (count == 4)
                     {
                         discordActivity = new DiscordActivity("YouTube", ActivityType.Watching);
                         count = -1;

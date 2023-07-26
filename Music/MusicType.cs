@@ -15,8 +15,12 @@ namespace DiscordBot.Music
         ZingMP3 = 2,
         [ChoiceName("Nhạc từ NhacCuaTui")]
         NhacCuaTui = 3,
-        [ChoiceName("Video YouTube")]
-        YouTube = 4
+        [ChoiceName("Video YouTube hoặc nhạc từ YouTube Music")]
+        YouTube = 4,
+        [ChoiceName("Nhạc từ SoundCloud")]
+        SoundCloud = 5,
+        //[ChoiceName("Nhạc từ Spotify")]
+        //Spotify = 6
         //...
     }
 }

@@ -117,6 +117,7 @@ namespace DiscordBot
         internal static string ZingMP3Icon => GetConfigValue<string>("ZingMP3Icon");
         internal static string YouTubeIcon => GetConfigValue<string>("YouTubeIcon");
         internal static string YouTubeMusicIcon => GetConfigValue<string>("YouTubeMusicIcon");
+        internal static string SoundCloudIcon => GetConfigValue<string>("SoundCloudIcon");
 
         /// <summary>
         /// Token bot (để login vào Discord)
