@@ -7,6 +7,7 @@
 - Phát nhạc từ [YouTube](https://www.youtube.com/) và [YouTube Music](https://music.youtube.com/) (cung cấp bởi [yt-dlp](https://github.com/yt-dlp/yt-dlp))
 - Phát nhạc từ [NhacCuaTui](https://www.nhaccuatui.com/)
 - Phát nhạc từ [Zing MP3](https://zingmp3.vn/)
+- Phát nhạc từ [SoundCloud](https://soundcloud.com/) (cung cấp bởi [SoundCloudExplode](https://github.com/jerry08/SoundCloudExplode))
 - Phát nhạc lưu trong bộ nhớ
 - Tìm lời bài hát (cung cấp bởi [Lyrist](https://lyrist.vercel.app/))
 ## Setup
@@ -25,6 +26,7 @@
    + NCTIcon: Emoji dùng cho [NhacCuaTuiMusic](Music/NhacCuaTui/NhacCuaTuiMusic.cs) (tham khảo phần [Lấy raw string của emoji](#lay-raw-string-cua-emoji) để biết thêm chi tiết)
    + ZingMP3Icon: Emoji dùng cho [ZingMP3Music](Music/ZingMP3/ZingMP3Music.cs) (tham khảo phần [Lấy raw string của emoji](#lay-raw-string-cua-emoji) để biết thêm chi tiết)
    + YouTubeIcon, YouTubeMusicIcon: Emoji dùng cho [YouTubeMusic](Music/YouTube/YouTubeMusic.cs) (tham khảo phần [Lấy raw string của emoji](#lay-raw-string-cua-emoji) để biết thêm chi tiết)
+   + SoundCloudIcon: Emoji dùng cho [SoundCloudMusic](Music/YouTube/SoundCloudMusic.cs) (tham khảo phần [Lấy raw string của emoji](#lay-raw-string-cua-emoji) để biết thêm chi tiết)
    + ZingMP3SecretKey: Zing MP3 secret key (tham khảo phần [Lấy Zing MP3 API key, Secret key và Cookie](#lay-zing-mp3-api-key-secret-key-va-cookie
 ) để biết thêm chi tiết)
    + ZingMP3APIKey: Zing MP3 API key (tham khảo phần [Lấy Zing MP3 API key, Secret key và Cookie](#lay-zing-mp3-api-key-secret-key-va-cookie
