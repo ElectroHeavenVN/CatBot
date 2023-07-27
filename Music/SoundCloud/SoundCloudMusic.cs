@@ -124,7 +124,7 @@ namespace DiscordBot.Music.SoundCloud
             string musicDesc = $"Bài hát: {title}" + Environment.NewLine;
             musicDesc += $"Nghệ sĩ: {artists}" + Environment.NewLine;
             if (hasTimeStamp)
-                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + "/" + Duration.toString();
+                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;

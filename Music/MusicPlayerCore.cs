@@ -55,8 +55,16 @@ namespace DiscordBot.Music
                 {
                     if (serverInstance.musicPlayer.musicQueue.Count == 0)
                     {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Không có nhạc trong hàng đợi! Hãy thêm 1 bài vào hàng đợi bằng lệnh /play, /playlocal, /nhaccuatui, /youtube hoặc /zingmp3!"));
-                        return;
+                        if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Không có nhạc trong hàng đợi! Hãy thêm 1 bài vào hàng đợi bằng các lệnh phát nhạc!"));
+                            return;
+                        }
+                        if (!serverInstance.musicPlayer.isStopped || !serverInstance.musicPlayer.isPaused)
+                        {
+                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Hãy thêm 1 bài vào hàng đợi bằng các lệnh phát nhạc!"));
+                            return;
+                        }
                     }
                     serverInstance.musicPlayer.isStopped = false;
                     serverInstance.isDisconnect = false;

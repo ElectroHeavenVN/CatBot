@@ -112,7 +112,7 @@ namespace DiscordBot.Music.Local
             if (!string.IsNullOrWhiteSpace(Album))
                 musicDesc += "Album: " + Album + Environment.NewLine;
             if (hasTimeStamp)
-                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + "/" + Duration.toString();
+                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;

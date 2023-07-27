@@ -150,7 +150,7 @@ namespace DiscordBot.Music.ZingMP3
             if (!string.IsNullOrWhiteSpace(album))
                 musicDesc += $"Album: {album}" + Environment.NewLine;
             if (hasTimeStamp)
-                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + "/" + Duration.toString();
+                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;

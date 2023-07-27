@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace DiscordBot.Music.YouTube
 {
@@ -19,10 +20,12 @@ namespace DiscordBot.Music.YouTube
         private static readonly string youTubeIconLink = "https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png";
         private static readonly string youTubeMusicIconLink = "https://www.gstatic.com/youtube/media/ytm/images/applauncher/music_icon_144x144.png";
         private static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video";
+        private static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails";
         internal static Regex regexMatchYTLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         internal static Regex regexMatchYTMusicLink = new Regex("^((?:https?:)?\\/\\/)?((?:music)\\.)?((?:youtube\\.com|youtu.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         string link;
         TimeSpan duration;
+        TimeSpan durationBeforeSponsorBlock;
         string title = "";
         string artists = "";
         string album;
@@ -43,20 +46,24 @@ namespace DiscordBot.Music.YouTube
             {
                 isYouTubeMusicVideo = regexMatchYTMusicLink.IsMatch(linkOrKeyword);
                 string videoID = regexMatchYTLink.Match(linkOrKeyword).Groups[5].Value;
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(videoID)}");
-                JObject searchResult = JObject.Parse(json);
-                link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={searchResult["items"][0]["id"]["videoId"]}";
-                title = $"[{WebUtility.HtmlDecode(searchResult["items"][0]["snippet"]["title"].ToString())}]({link})";
-                artists = $"[{WebUtility.HtmlDecode(searchResult["items"][0]["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{searchResult["items"][0]["snippet"]["channelId"]})";
-                albumThumbnailLink = searchResult["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(videoID)}");
+                JToken videoResource = JObject.Parse(json)["items"][0];
+                link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
+                title = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}]({link})";
+                artists = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{videoResource["snippet"]["channelId"]})";
+                albumThumbnailLink = videoResource["snippet"]["thumbnails"]["high"]["url"].ToString();
+                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
             }
             else
             {
-                JObject searchResult = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"));
-                link = $"https://www.youtube.com/watch?v={searchResult["items"][0]["id"]["videoId"]}";
-                title = $"[{WebUtility.HtmlDecode(searchResult["items"][0]["snippet"]["title"].ToString())}]({link})";
-                artists = $"[{WebUtility.HtmlDecode(searchResult["items"][0]["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResult["items"][0]["snippet"]["channelId"]})";
-                albumThumbnailLink = searchResult["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
+                JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"))["items"][0];
+                link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
+                title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
+                artists = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]})";
+                albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(searchResource["id"]["videoId"].ToString())}");
+                JToken videoResource = JObject.Parse(json)["items"][0];
+                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
             }
             new Thread(GetDuration) { IsBackground = true }.Start();
         }
@@ -110,7 +117,7 @@ namespace DiscordBot.Music.YouTube
             set => sponsorBlockOptions = value;
         }
 
-        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
+        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : "") + (sponsorBlockOptions.Enabled && duration != null && duration.TotalMilliseconds > 0 && durationBeforeSponsorBlock > duration ? " x SponsorBlock" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
 
         public void DeletePCMFile()
         {
@@ -133,9 +140,11 @@ namespace DiscordBot.Music.YouTube
             string musicDesc = $"{(isYouTubeMusicVideo? "Bài hát" : "Video")}: {title}" + Environment.NewLine;
             musicDesc += $"Tải lên bởi: {artists}" + Environment.NewLine;
             if (hasTimeStamp)
-                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + "/" + Duration.toString();
+                musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
+            if (sponsorBlockOptions.Enabled && duration != null && duration.TotalMilliseconds > 0 && durationBeforeSponsorBlock > duration)
+                musicDesc += $" ({durationBeforeSponsorBlock.toString()})"; 
             return musicDesc;
         }
 
