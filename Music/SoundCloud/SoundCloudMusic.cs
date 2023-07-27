@@ -130,6 +130,8 @@ namespace DiscordBot.Music.SoundCloud
             return musicDesc;
         }
 
+        public bool isLinkMatch(string link) => link.StartsWith(soundCloudLink);
+
         public void DeletePCMFile()
         {
             try

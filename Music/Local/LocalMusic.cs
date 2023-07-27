@@ -118,6 +118,8 @@ namespace DiscordBot.Music.Local
             return musicDesc;
         }
 
+        public bool isLinkMatch(string link) => false;
+
         public void DeletePCMFile()
         {
             try

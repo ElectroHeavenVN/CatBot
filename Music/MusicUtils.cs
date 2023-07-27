@@ -28,41 +28,28 @@ namespace DiscordBot.Music
         {
             if (musicType == 0)
                 throw new NullReferenceException();
-            else if (musicType == MusicType.Local)
-                return new LocalMusic(linkOrKeywordOrPath);
-            else if (musicType == MusicType.ZingMP3)
-                return new ZingMP3Music(linkOrKeywordOrPath);
-            else if (musicType == MusicType.NhacCuaTui)
-                return new NhacCuaTuiMusic(linkOrKeywordOrPath);
-            else if (musicType == MusicType.YouTube)
-                return new YouTubeMusic(linkOrKeywordOrPath);
-            else if (musicType == MusicType.SoundCloud)
-                return new SoundCloudMusic(linkOrKeywordOrPath);
+            Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
+            foreach (Type type in musicTypes)
+            {
+                IMusic singletonInstance = (IMusic)Activator.CreateInstance(type, true);
+                if (singletonInstance.MusicType == musicType)
+                    return (IMusic)Activator.CreateInstance(type, linkOrKeywordOrPath);
+            }
             throw new ArgumentOutOfRangeException();
         }
 
         internal static bool TryCreateMusicInstance(string link, out IMusic music)
         {
             music = null;
-            if (link.StartsWith(ZingMP3Music.zingMP3Link))
+            Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
+            foreach (Type musicType in musicTypes)
             {
-                music = new ZingMP3Music(link);
-                return true;
-            }
-            else if (link.StartsWith(NhacCuaTuiMusic.nhacCuaTuiLink))
-            {
-                music = new NhacCuaTuiMusic(link);
-                return true;
-            }
-            else if (YouTubeMusic.regexMatchYTLink.IsMatch(link))
-            {
-                music = new YouTubeMusic(link);
-                return true;
-            }
-            else if (link.StartsWith(SoundCloudMusic.soundCloudLink))
-            {
-                music = new SoundCloudMusic(link);
-                return true;
+                IMusic singletonInstance = (IMusic)Activator.CreateInstance(musicType, true);
+                if (singletonInstance.isLinkMatch(link))
+                {
+                    music = (IMusic)Activator.CreateInstance(musicType, link);
+                    return true;
+                }
             }
             return false;
         }

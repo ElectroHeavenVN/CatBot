@@ -185,6 +185,8 @@ namespace DiscordBot.Music.NhacCuaTui
 
         public string GetIcon() => Config.NCTIcon;
 
+        public bool isLinkMatch(string link) => link.StartsWith(nhacCuaTuiLink);
+
         internal static XmlDocument GetXML(string link)
         {
             string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);

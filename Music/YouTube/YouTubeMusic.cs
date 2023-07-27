@@ -143,6 +143,8 @@ namespace DiscordBot.Music.YouTube
 
         public string GetIcon() => isYouTubeMusicVideo ? Config.YouTubeMusicIcon : Config.YouTubeIcon;
 
+        public bool isLinkMatch(string link) => regexMatchYTLink.IsMatch(link);
+
         void DownloadWEBM(string link, ref string tempFile)
         {
             tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{Utils.RandomString(10)}.webm");

@@ -25,5 +25,6 @@ namespace DiscordBot.Music
         void DeletePCMFile();
         string[] GetFilesInUse();
         string GetIcon();
+        bool isLinkMatch(string link);
     }
 }

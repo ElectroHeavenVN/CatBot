@@ -160,6 +160,8 @@ namespace DiscordBot.Music.ZingMP3
 
         public string GetIcon() => Config.ZingMP3Icon;
 
+        public bool isLinkMatch(string link) => link.StartsWith(zingMP3Link);
+
         internal static JToken GetSongInfo(string linkOrID)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/page/get/song", $"id={GetSongID(linkOrID)}");
