@@ -21,6 +21,7 @@ namespace DiscordBot.Music.YouTube
         private static readonly string youTubeMusicIconLink = "https://www.gstatic.com/youtube/media/ytm/images/applauncher/music_icon_144x144.png";
         private static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video";
         private static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails";
+        private static readonly string sponsorBlockSegmentsAPI = "https://sponsor.ajay.app/api/skipSegments";
         internal static Regex regexMatchYTLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         internal static Regex regexMatchYTMusicLink = new Regex("^((?:https?:)?\\/\\/)?((?:music)\\.)?((?:youtube\\.com|youtu.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         string link;
@@ -37,6 +38,8 @@ namespace DiscordBot.Music.YouTube
         bool _disposed;
         bool isYouTubeMusicVideo;
         SponsorBlockOptions sponsorBlockOptions;
+        bool hasSponsorBlockSegment;
+        string videoID;
 
         public YouTubeMusic() { }
 
@@ -45,9 +48,10 @@ namespace DiscordBot.Music.YouTube
             if (regexMatchYTLink.IsMatch(linkOrKeyword))
             {
                 isYouTubeMusicVideo = regexMatchYTMusicLink.IsMatch(linkOrKeyword);
-                string videoID = regexMatchYTLink.Match(linkOrKeyword).Groups[5].Value;
+                videoID = regexMatchYTLink.Match(linkOrKeyword).Groups[5].Value;
                 string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(videoID)}");
                 JToken videoResource = JObject.Parse(json)["items"][0];
+                videoID = videoResource["id"].ToString();
                 link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
                 title = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}]({link})";
                 artists = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{videoResource["snippet"]["channelId"]})";
@@ -57,6 +61,7 @@ namespace DiscordBot.Music.YouTube
             else
             {
                 JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"))["items"][0];
+                videoID = searchResource["id"]["videoId"].ToString();
                 link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
                 title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
                 artists = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]})";
@@ -74,6 +79,13 @@ namespace DiscordBot.Music.YouTube
             TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
             duration = webmFile.Properties.Duration;
             webmFile.Dispose();
+            while (sponsorBlockOptions == null)
+                Thread.Sleep(100);
+            try
+            {
+                hasSponsorBlockSegment = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}") != "Not Found";
+            }
+            catch (WebException) { }
             canGetStream = true;
         }
 
@@ -117,7 +129,7 @@ namespace DiscordBot.Music.YouTube
             set => sponsorBlockOptions = value;
         }
 
-        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : "") + (sponsorBlockOptions.Enabled && duration != null && duration.TotalMilliseconds > 0 && durationBeforeSponsorBlock > duration ? " x SponsorBlock" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
+        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : "") + (sponsorBlockOptions.Enabled && hasSponsorBlockSegment ? " x SponsorBlock" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
 
         public void DeletePCMFile()
         {
@@ -143,7 +155,7 @@ namespace DiscordBot.Music.YouTube
                 musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
-            if (sponsorBlockOptions.Enabled && duration != null && duration.TotalMilliseconds > 0 && durationBeforeSponsorBlock > duration)
+            if (sponsorBlockOptions.Enabled && hasSponsorBlockSegment)
                 musicDesc += $" ({durationBeforeSponsorBlock.toString()})"; 
             return musicDesc;
         }

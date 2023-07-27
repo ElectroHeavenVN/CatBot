@@ -86,6 +86,28 @@ namespace DiscordBot.Music
             }
             return result.Trim(',');
         }
+
+        internal string[] GetCategory()
+        {
+            List<string> result = new List<string>();
+            if (options.HasFlag(SponsorBlockSectionType.Sponsor))
+                result.Add("sponsor");
+            if (options.HasFlag(SponsorBlockSectionType.Intro))
+                result.Add("intro");
+            if (options.HasFlag(SponsorBlockSectionType.Outro))
+                result.Add("outro");
+            if (options.HasFlag(SponsorBlockSectionType.SelfPromo))
+                result.Add("selfpromo");
+            if (options.HasFlag(SponsorBlockSectionType.Preview))
+                result.Add("preview");
+            if (options.HasFlag(SponsorBlockSectionType.Filler))
+                result.Add("filler");
+            if (options.HasFlag(SponsorBlockSectionType.Interaction))
+                result.Add("interaction");
+            if (options.HasFlag(SponsorBlockSectionType.MusicOfftopic))
+                result.Add("music_offtopic");
+            return result.ToArray();
+        }
     }
     public enum SponsorBlockSectionType
     {
