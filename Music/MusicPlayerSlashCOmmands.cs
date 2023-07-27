@@ -20,10 +20,10 @@ namespace DiscordBot.Music
     public class MusicPlayerSlashCommands : ApplicationCommandModule
     {
         [SlashCommand("play", "Bắt đầu phát nhạc")]
-        public async Task Play(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input = "", [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui) => await MusicPlayerCore.Play(ctx, input, musicType);
+        public async Task Play(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input = "", [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ SoundCloud nếu dữ liệu nhập vào không phải là link)")] MusicType musicType = MusicType.SoundCloud) => await MusicPlayerCore.Play(ctx, input, musicType);
 
         [SlashCommand("enqueue", "Thêm nhạc vào hàng đợi")]
-        public async Task Enqueue(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui) => await MusicPlayerCore.Play(ctx, input, musicType);
+        public async Task Enqueue(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ SoundCloud nếu dữ liệu nhập vào không phải là link)")] MusicType musicType = MusicType.SoundCloud) => await MusicPlayerCore.Play(ctx, input, musicType);
 
         [SlashCommand("playlocal", "Thêm nhạc local vào hàng đợi")]
         public async Task PlayLocalMusic(InteractionContext ctx, [Option("name", "Tên bài hát"), Autocomplete(typeof(LocalMusicChoiceProvider))] string name) => await MusicPlayerCore.Play(ctx, name, MusicType.Local);
@@ -41,7 +41,7 @@ namespace DiscordBot.Music
         public async Task PlaySoundCloudMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(SoundCloudMusicChoiceProvider))] string input) => await MusicPlayerCore.Play(ctx, input, MusicType.SoundCloud);
 
         [SlashCommand("nextup", "Thêm nhạc vào đầu hàng đợi")]
-        public async Task PlayNextUp(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ NhacCuaTui nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.NhacCuaTui) => await MusicPlayerCore.PlayNextUp(ctx, input, musicType);
+        public async Task PlayNextUp(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ SoundCloud nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.SoundCloud) => await MusicPlayerCore.PlayNextUp(ctx, input, musicType);
 
         [SlashCommand("nextuplocal", "Thêm nhạc vào đầu hàng đợi")]
         public async Task PlayNextUpLocalMusic(InteractionContext ctx, [Option("name", "Tên bài hát"), Autocomplete(typeof(LocalMusicChoiceProvider))] string name) => await MusicPlayerCore.PlayNextUp(ctx, name, MusicType.Local);
