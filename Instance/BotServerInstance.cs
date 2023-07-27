@@ -65,6 +65,7 @@ namespace DiscordBot.Instance
                             self.musicPlayer.isStopped = true;
                         }
                         self.currentVoiceNextConnection.Disconnect();
+                        self.musicPlayer.musicQueue.PlayMode = new PlayMode();
                         self.lastTimeCheckVoiceChannel = DateTime.Now;
                         Thread.Sleep(3000);
                         self.suppressOnVoiceStateUpdatedEvent = false;
@@ -194,6 +195,7 @@ namespace DiscordBot.Instance
                     {
                         serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
                         serverInstances[i].currentVoiceNextConnection.Disconnect();
+                        serverInstances[i].musicPlayer.musicQueue.PlayMode = new PlayMode();
                         serverInstances[i].checkVoiceChannelThread.Abort();
                         await Task.Delay(1000);
                     }
@@ -243,6 +245,7 @@ namespace DiscordBot.Instance
                             if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
                             {
                                 serverInstance.currentVoiceNextConnection.Disconnect();
+                                serverInstance.musicPlayer.musicQueue.PlayMode = new PlayMode();
                                 serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                                 await Task.Delay(300);
                                 break;
@@ -268,6 +271,7 @@ namespace DiscordBot.Instance
                 {
                     channel = serverInstance.currentVoiceNextConnection.TargetChannel;
                     serverInstance.currentVoiceNextConnection.Disconnect();
+                    serverInstance.musicPlayer.musicQueue.PlayMode = new PlayMode();
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                     await Task.Delay(200);
                     return new KeyValuePair<DiscordChannel, bool>(channel, true);
