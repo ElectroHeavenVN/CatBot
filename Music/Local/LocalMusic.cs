@@ -25,9 +25,9 @@ namespace DiscordBot.Music.Local
         FileStream musicPCMDataStream;
         bool _disposed;
 
-        internal LocalMusic() { }
+        public LocalMusic() { }
 
-        internal LocalMusic(string path)
+        public LocalMusic(string path)
         {
             path = Path.Combine(Config.MusicFolder, path.EndsWith(".mp3") ? path : (path + ".mp3"));
             this.path = path;
