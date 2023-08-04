@@ -66,6 +66,9 @@ namespace DiscordBot.Instance
                         }
                         self.currentVoiceNextConnection.Disconnect();
                         self.musicPlayer.musicQueue.PlayMode = new PlayMode();
+                        for (int i = self.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+                            self.musicPlayer.musicQueue.ElementAt(i).Dispose();
+                        self.musicPlayer.musicQueue.Clear();
                         self.lastTimeCheckVoiceChannel = DateTime.Now;
                         Thread.Sleep(3000);
                         self.suppressOnVoiceStateUpdatedEvent = false;
