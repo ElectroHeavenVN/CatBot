@@ -14,16 +14,20 @@ namespace DiscordBot.Music.SoundCloud
     {
         internal static List<SearchResult> Search(string linkOrKeyword, int count = 25)
         {
-            if (linkOrKeyword.StartsWith(SoundCloudMusic.soundCloudLink))
+            if (SoundCloudMusic.regexMatchSoundCloudLink.IsMatch(linkOrKeyword))
             {
-                List<TrackSearchResult> result = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword).GetAwaiter().GetResult();
-                if (result.Count == 0)
-                    return new List<SearchResult>();
-                linkOrKeyword = result[0].PermalinkUrl.AbsoluteUri;
-                TrackInformation track = SoundCloudMusic.scClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                TrackInformation track;
+                try
+                {
+                    track = SoundCloudMusic.scClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                }
+                catch 
+                {
+                    return new List<SearchResult>(); 
+                }
                 return new List<SearchResult>()
                 {
-                    new SearchResult(linkOrKeyword, track.Title, track.User.Username, track.User.PermalinkUrl.AbsoluteUri, track.ArtworkUrl.AbsoluteUri) 
+                    new SearchResult(track.PermalinkUrl.AbsoluteUri, track.Title, track.User.Username, track.User.PermalinkUrl.AbsoluteUri, track.ArtworkUrl.AbsoluteUri) 
                 };
             }
             List<TrackSearchResult> searchResult = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword, 0, count).GetAwaiter().GetResult();

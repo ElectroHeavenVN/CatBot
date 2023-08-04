@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,8 +16,8 @@ namespace DiscordBot.Music.SoundCloud
 {
     internal class SoundCloudMusic : IMusic
     {
-        internal static readonly string soundCloudLink = "https://soundcloud.com/";
-        private readonly string soundCloudIconLink = "https://w.soundcloud.com/icon/assets/images/orange_white_32-94fc761.png";
+        internal static readonly Regex regexMatchSoundCloudLink = new Regex("https?://((m|on)\\.)?soundcloud.com/", RegexOptions.Compiled);
+        private readonly string soundCloudIconLink = "https://cdn.discordapp.com/emojis/1137041961669378241.webp?quality=lossless";
         string link;
         TimeSpan duration;
         string title = "";
@@ -34,7 +35,7 @@ namespace DiscordBot.Music.SoundCloud
         public SoundCloudMusic() { }
         public SoundCloudMusic(string linkOrKeyword)
         {
-            if (!linkOrKeyword.StartsWith(soundCloudLink))
+            if (!regexMatchSoundCloudLink.IsMatch(linkOrKeyword))
             {
                 List<TrackSearchResult> result = scClient.Search.GetTracksAsync(linkOrKeyword).GetAwaiter().GetResult();
                 if (result.Count == 0)
@@ -130,7 +131,7 @@ namespace DiscordBot.Music.SoundCloud
             return musicDesc;
         }
 
-        public bool isLinkMatch(string link) => link.StartsWith(soundCloudLink);
+        public bool isLinkMatch(string link) => regexMatchSoundCloudLink.IsMatch(link);
 
         public void DeletePCMFile()
         {
