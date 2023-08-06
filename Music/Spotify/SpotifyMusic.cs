@@ -43,7 +43,7 @@ namespace DiscordBot.Music.Spotify
         {
             if (!regexMatchSpotifyLink.IsMatch(linkOrKeyword))
             {
-                List<TrackSearchResult> result = spClient.Search.GetTracksAsync(linkOrKeyword).GetAwaiter().GetResult();
+                List<TrackSearchResult> result = spClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
                 if (result.Count == 0)
                     throw new WebException("songs not found");
                 linkOrKeyword = result[0].Url;
@@ -52,7 +52,7 @@ namespace DiscordBot.Music.Spotify
             track = spClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
             title = $"[{track.Title}]({track.Url})";
             foreach (Artist artist in track.Artists)
-                artists = $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id}), ";
+                artists += $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id}), ";
             artists = artists.TrimEnd(", ".ToCharArray());
             album = $"[{track.Album.Name}](https://open.spotify.com/album/{track.Album.Id})";
             if (track.Album.Images.Count != 0)
