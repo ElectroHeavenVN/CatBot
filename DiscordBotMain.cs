@@ -179,6 +179,8 @@ namespace DiscordBot
                     else if (count == 3)
                         discordActivity = new DiscordActivity("SoundCloud", ActivityType.ListeningTo);
                     else if (count == 4)
+                        discordActivity = new DiscordActivity("Spotify", ActivityType.ListeningTo);
+                    else if (count == 5)
                     {
                         discordActivity = new DiscordActivity("YouTube", ActivityType.Watching);
                         count = -1;
