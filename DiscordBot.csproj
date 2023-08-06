@@ -92,6 +92,9 @@
     <Reference Include="SoundCloudExplode, Version=1.4.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\SoundCloudExplode.1.4.2\lib\net461\SoundCloudExplode.dll</HintPath>
     </Reference>
+    <Reference Include="SpotifyExplode, Version=1.0.7.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SpotifyExplode.1.0.7\lib\net461\SpotifyExplode.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
@@ -222,6 +225,9 @@
     <Compile Include="Music\SoundCloud\SoundCloudMusicChoiceProvider.cs" />
     <Compile Include="Music\SoundCloud\SoundCloudSearch.cs" />
     <Compile Include="Music\SponsorBlockOptions.cs" />
+    <Compile Include="Music\Spotify\SpotifyMusic.cs" />
+    <Compile Include="Music\Spotify\SpotifyMusicChoiceProvider.cs" />
+    <Compile Include="Music\Spotify\SpotifySearch.cs" />
     <Compile Include="Music\YouTube\YouTubeMusic.cs" />
     <Compile Include="Music\YouTube\YouTubeMusicChoiceProvider.cs" />
     <Compile Include="Music\YouTube\YouTubeSearch.cs" />

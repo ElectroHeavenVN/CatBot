@@ -19,8 +19,8 @@ namespace DiscordBot.Music
         YouTube = 4,
         [ChoiceName("Nhạc từ SoundCloud")]
         SoundCloud = 5,
-        //[ChoiceName("Nhạc từ Spotify")]
-        //Spotify = 6
+        [ChoiceName("Nhạc từ Spotify")]
+        Spotify = 6
         //...
     }
 }

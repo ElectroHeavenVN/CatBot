@@ -97,6 +97,10 @@ namespace DiscordBot
         internal static string ZaloAICookie => GetConfigValue<string>("ZaloAICookie");
         #endregion
 
+        #region Spotify
+        internal static string SpotifyCookie => GetConfigValue<string>("SpotifyCookie");
+        #endregion
+
         /// <summary>
         /// User agent
         /// </summary>
@@ -118,6 +122,7 @@ namespace DiscordBot
         internal static string YouTubeIcon => GetConfigValue<string>("YouTubeIcon");
         internal static string YouTubeMusicIcon => GetConfigValue<string>("YouTubeMusicIcon");
         internal static string SoundCloudIcon => GetConfigValue<string>("SoundCloudIcon");
+        internal static string SpotifyIcon => GetConfigValue<string>("SpotifyIcon");
 
         /// <summary>
         /// Token bot (để login vào Discord)
