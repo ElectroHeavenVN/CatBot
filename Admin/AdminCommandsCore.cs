@@ -82,36 +82,37 @@ namespace DiscordBot.Admin
                 await message.RespondAsync("Bạn chưa đính kèm file!");
                 return;
             }
-            if (message.Attachments.Count > 1)
+            if (message.Attachments.Count > 1 && !string.IsNullOrWhiteSpace(sfxName))
             {
                 await message.RespondAsync("Chỉ được đính kèm 1 file!");
                 return;
             }
-            string sfxUrl = message.Attachments[0].Url;
-            string path = Config.SFXFolder;
-            if (string.IsNullOrWhiteSpace(sfxName))
-                sfxName = message.Attachments[0].FileName;
-            if (isSpecial)
-                path = Config.SFXFolderSpecial;
-            try
+            foreach (DiscordAttachment attachment in message.Attachments)
             {
-                string tempPath = Path.GetTempFileName();
-                new WebClient().DownloadFile(sfxUrl, tempPath);
-                MemoryStream pcmStream = new MemoryStream();
-                Utils.GetPCMStream(tempPath).CopyTo(pcmStream);
-                pcmStream.Position = 0;
-                byte[] buffer = new byte[pcmStream.Length];
-                pcmStream.Read(buffer, 0, buffer.Length);
-                pcmStream.Close();
-                File.WriteAllBytes(Path.Combine(path, sfxName + ".pcm"), buffer);
-                File.Delete(tempPath);
-                await message.RespondAsync("Đã thêm SFX thành công!");
+                string sfxUrl = attachment.Url;
+                string path = Config.SFXFolder;
+                if (isSpecial)
+                    path = Config.SFXFolderSpecial;
+                try
+                {
+                    string tempPath = Path.GetTempFileName();
+                    new WebClient().DownloadFile(sfxUrl, tempPath);
+                    MemoryStream pcmStream = new MemoryStream();
+                    Utils.GetPCMStream(tempPath).CopyTo(pcmStream);
+                    pcmStream.Position = 0;
+                    byte[] buffer = new byte[pcmStream.Length];
+                    pcmStream.Read(buffer, 0, buffer.Length);
+                    pcmStream.Close();
+                    File.WriteAllBytes(Path.Combine(path, (string.IsNullOrWhiteSpace(sfxName) ? Path.GetFileNameWithoutExtension(attachment.FileName) : sfxName) + ".pcm"), buffer);
+                    File.Delete(tempPath);
+                }
+                catch (Exception ex)
+                {
+                    await message.RespondAsync($"Có lỗi xảy ra khi thêm SFX {Path.GetFileNameWithoutExtension(attachment.FileName)}!");
+                    Utils.LogException(ex);
+                }
             }
-            catch (Exception ex)
-            {
-                await message.RespondAsync("Có lỗi xảy ra!");
-                Utils.LogException(ex);
-            }
+            await message.RespondAsync($"Đã thêm {message.Attachments.Count} SFX thành công!");
         }
 
         internal static async Task DeleteSFX(DiscordMessage message, string sfxName, string isSpecialStr)
