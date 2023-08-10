@@ -28,8 +28,11 @@ namespace DiscordBot.Voice
         [SlashCommand("delay", "Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
         public async Task Delay(InteractionContext ctx, [Option("delay", "Thời gian nghỉ (mili giây)"), Minimum(0), Maximum(5000)] long delay = 250) => await VoiceChannelSFXCore.Delay(ctx.Interaction, (int)delay);
 
-        [SlashCommand("volume", "Chỉnh âm lượng bot (mặc định: 100)")]
-        public async Task SetVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
+        [SlashCommand("volume", "Chỉnh âm lượng tổng của bot (mặc định: 100)")]
+        public async Task SetVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
+
+        [SlashCommand("sfxvolume", "Chỉnh âm lượng SFX của bot (mặc định: 100)")]
+        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await VoiceChannelSFXCore.SetVolume(ctx, volume);
     }
 
     internal class VoiceSFXChoiceProvider : IAutocompleteProvider

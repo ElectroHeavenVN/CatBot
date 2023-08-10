@@ -1,21 +1,22 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Music;
-using DSharpPlus.Entities;
-using DSharpPlus.VoiceNext;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DiscordBot.Instance;
+using DiscordBot.Music;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.VoiceNext;
+using Newtonsoft.Json.Linq;
 
 namespace DiscordBot.Voice
 {
     internal class TTSCore
     {
+        internal double volume = 1;
+
         internal static async Task SpeakTTS(SnowflakeObject message, string tts, string voiceIDStr = "NamBac")
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(message.TryGetChannel().Guild);
@@ -53,11 +54,30 @@ namespace DiscordBot.Voice
             {
                 MemoryStream ttsStream = await GetTTSPCMStream(tts, voiceId);
                 ttsStream.Position = 0;
-                while (ttsStream.Read(buffer, 0, buffer.Length) != 0)
+                if (musicPlayer.isPlaying)
                 {
-                    if (serverInstance.voiceChannelSFX.isStop)
-                        break;
-                    await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                    byte[] data = new byte[ttsStream.Length];
+                    ttsStream.Read(data, 0, data.Length);
+                    for (int i = 0; i < data.Length; i += 2)
+                    {
+                        if (i + 1 >= buffer.Length)
+                            break;
+                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(data, i) * volume)), 0, data, i, sizeof(short));
+                    }
+                    musicPlayer.sfxData.AddRange(data);
+                    while (musicPlayer.sfxData.Count != 0)
+                        await Task.Delay(100);
+                }
+                else
+                {
+                    while (ttsStream.Read(buffer, 0, buffer.Length) != 0)
+                    {
+                        if (serverInstance.voiceChannelSFX.isStop)
+                            break;
+                        for (int i = 0; i < buffer.Length; i += 2)
+                            Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                        await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                    }
                 }
                 if (serverInstance.voiceChannelSFX.isStop)
                     serverInstance.voiceChannelSFX.isStop = false;
@@ -74,6 +94,25 @@ namespace DiscordBot.Voice
             }
             musicPlayer.isPaused = isPaused;
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
+        }
+
+        internal static async Task SetVolume(InteractionContext ctx, long volume)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (volume < 0 || volume > 250)
+                {
+                    await ctx.CreateResponseAsync("Âm lượng không hợp lệ!");
+                    return;
+                }
+                serverInstance.textToSpeech.volume = volume / 100d;
+                await ctx.CreateResponseAsync("Điều chỉnh âm lượng TTS thành: " + volume + "%!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
         }
 
         static async Task<MemoryStream> GetTTSPCMStream(string strToSpeak, VoiceID voiceId)

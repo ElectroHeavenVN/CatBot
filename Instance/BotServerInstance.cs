@@ -283,6 +283,20 @@ namespace DiscordBot.Instance
             return new KeyValuePair<DiscordChannel, bool>(channel, false);
         }
 
+        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        {
+            BotServerInstance serverInstance = GetBotServerInstance(obj.TryGetChannel().Guild);
+            if (!await serverInstance.InitializeVoiceNext(obj))
+                return;
+            if (volume < 0 || volume > 250)
+            {
+                await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                return;
+            }
+            serverInstance.currentVoiceNextConnection.SetVolume(volume / 100d);
+            await obj.TryRespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
+        }
+
         internal static async Task onVoiceStateUpdated(VoiceStateUpdateEventArgs args)
         {
             if (args.User.Id == DiscordBotMain.botClient.CurrentUser.Id)

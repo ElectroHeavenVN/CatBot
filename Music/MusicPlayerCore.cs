@@ -5,6 +5,7 @@ using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -39,7 +40,9 @@ namespace DiscordBot.Music
         internal bool isPreparingNextSong;
         internal bool isPlaying;
         internal SponsorBlockOptions sponsorBlockOptions = new SponsorBlockOptions();
+        internal List<byte> sfxData = new List<byte>();
         Thread prepareNextMusicStreamThread;
+        internal double volume = 1;
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
         {
@@ -546,6 +549,25 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
+        internal static async Task SetVolume(InteractionContext ctx, long volume)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (volume < 0 || volume > 250)
+                {
+                    await ctx.CreateResponseAsync("Âm lượng không hợp lệ!");
+                    return;
+                }
+                serverInstance.musicPlayer.volume = volume / 100d;
+                await ctx.CreateResponseAsync("Điều chỉnh âm lượng nhạc thành: " + volume + "%!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
         internal static async Task Queue(InteractionContext ctx)
         {
             try
@@ -822,6 +844,33 @@ namespace DiscordBot.Music
                                 {
                                     await Task.Delay(500);
                                     continue;
+                                }
+                                for (int j = 0; j < buffer.Length; j += 2)
+                                {
+                                    if (j + 1 >= buffer.Length)
+                                        break;
+                                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
+                                }
+                                if (sfxData.Count > 0)
+                                {
+                                    byte[] data = sfxData.ToArray();
+                                    for (int i = 0; i < buffer.Length; i += 2)
+                                    {
+                                        if (i + 1 >= data.Length)
+                                            break;
+                                        int a = (int)(BitConverter.ToInt16(buffer, i)) + 32768;
+                                        int b = BitConverter.ToInt16(data, i) + 32768;
+                                        int m = 0;
+                                        if (a < 32768 || b < 32768)
+                                            m = a * b / 32768;
+                                        else
+                                            m = 2 * (a + b) - a * b / 32768 - 65536;
+                                        if (m == 65536) 
+                                            m = 65535;
+                                        m -= 32768;
+                                        Array.Copy(BitConverter.GetBytes((short)m), 0, buffer, i, sizeof(short));
+                                    }
+                                    sfxData.RemoveRange(0, Math.Min(buffer.Length, data.Length));
                                 }
                                 await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
                             }

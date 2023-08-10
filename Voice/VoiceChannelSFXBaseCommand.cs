@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DiscordBot.Instance;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands;
 using System;
@@ -29,7 +30,7 @@ namespace DiscordBot.Voice
         [Command("delay"), Description("Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
         public async Task Delay(CommandContext ctx, [Description("Thời gian nghỉ (mili giây)")] long delay) => await VoiceChannelSFXCore.Delay(ctx.Message, (int)delay);
 
-        [Command("volume"), Aliases("vol", "v"), Description("Chỉnh âm lượng bot")]
-        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume) => await VoiceChannelSFXCore.SetVolume(ctx.Message, volume);
+        [Command("volume"), Aliases("vol", "v"), Description("Chỉnh âm lượng tổng của bot")]
+        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume) => await BotServerInstance.SetVolume(ctx.Message, volume);
     }
 }

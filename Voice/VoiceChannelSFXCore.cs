@@ -23,6 +23,7 @@ namespace DiscordBot.Voice
     {
         internal bool isStop;
         internal int delay = 500;
+        internal double volume = 1;
 
         internal static async Task Speak(SnowflakeObject message, params string[] fileNames)
         {
@@ -128,20 +129,25 @@ namespace DiscordBot.Voice
             await serverInstance.voiceChannelSFX.InternalDelay(messageToReact, delayValue);
         }
 
-        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        internal static async Task SetVolume(InteractionContext ctx, long volume)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
-            if (!await serverInstance.InitializeVoiceNext(obj))
-                return;
-            if (volume < 0 || volume > 250)
+            try
             {
-                await obj.TryRespondAsync("Âm lượng không hợp lệ!");
-                return;
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (volume < 0 || volume > 250)
+                {
+                    await ctx.CreateResponseAsync("Âm lượng không hợp lệ!");
+                    return;
+                }
+                serverInstance.voiceChannelSFX.volume = volume / 100d;
+                await ctx.CreateResponseAsync("Điều chỉnh âm lượng SFX thành: " + volume + "%!");
             }
-            serverInstance.currentVoiceNextConnection.SetVolume(volume / 100d);
-            await obj.TryRespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
+            catch (Exception ex) { Utils.LogException(ex); }
         }
-      
+
         async Task InternalSpeak(SnowflakeObject message, string[] fileNames)
         {
             if (BotServerInstance.GetBotServerInstance(this).isVoicePlaying)
@@ -155,13 +161,9 @@ namespace DiscordBot.Voice
             if (!await serverInstance.InitializeVoiceNext(message))
                 return;
             MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(message.TryGetChannel().Guild);
-            bool isPaused = musicPlayer.isPaused;
-            musicPlayer.isPaused = true;
             VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             string filesNotFound = "";
-            string permissions = "";
-            byte[] buffer = new byte[transmitSink.SampleLength];
             string previousFileName = "";
             for (int i = 0; i < fileNames.Length; i++)
             {
@@ -173,64 +175,68 @@ namespace DiscordBot.Voice
                     previousFileName = fileName;
                 if (repeatTimes == 0)
                     repeatTimes = 2;
-                for (int j = 0; j < repeatTimes - 1; j++)
+                if (repeatTimes > 100)
+                    repeatTimes = 100;
+                FileStream file;
+                try
                 {
-                    try
+                    file = File.OpenRead(Path.Combine(Config.SFXFolder, fileName.TrimEnd(',') + ".pcm"));
+                }
+                catch (FileNotFoundException ex)
+                {
+                    if (message.TryGetUser() is DiscordMember member && member.isInAdminServer())
                     {
-                        FileStream file = File.OpenRead(Path.Combine(Config.SFXFolder, fileName.TrimEnd(',') + ".pcm"));
-                        while (file.Read(buffer, 0, buffer.Length) != 0)
+                        try
                         {
-                            if (isStop)
-                                break;
-                            await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                            file = File.OpenRead(Path.Combine(Config.SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm"));
                         }
-                        file.Close();
+                        catch (FileNotFoundException ex2)
+                        {
+                            filesNotFound += Path.GetFileNameWithoutExtension(ex2.FileName) + ", ";
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        filesNotFound += Path.GetFileNameWithoutExtension(ex.FileName) + ", ";
+                        continue;
+                    }
+                }
+                if (musicPlayer.isPlaying)
+                {
+                    byte[] buffer = new byte[file.Length * repeatTimes - 1];
+                    for (int j = 0; j < repeatTimes - 1; j++)
+                        file.Read(buffer, (int)(j * file.Length), (int)file.Length);
+                    for (int j = 0; j < buffer.Length; j += 2)
+                    {
+                        if (j + 1 >= buffer.Length)
+                            break;
+                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
+                    }
+                    musicPlayer.sfxData.AddRange(buffer);
+                    while (musicPlayer.sfxData.Count != 0)
+                        await Task.Delay(100);
+                }
+                else 
+                {
+                    for (int j = 0; j < repeatTimes - 1; j++)
+                    {
+                        await TransmitData(file, transmitSink);
                         if (isStop)
                             break;
+                        await Task.Delay(delay);
                     }
-                    catch (FileNotFoundException ex)
+                    if (isStop)
                     {
-                        if (message.TryGetUser() is DiscordMember member && member.isInAdminServer())
-                        {
-                            try
-                            {
-                                FileStream file = File.OpenRead(Path.Combine(Config.SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm"));
-                                while (file.Read(buffer, 0, buffer.Length) != 0)
-                                {
-                                    if (isStop)
-                                        break;
-                                    await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
-                                }
-                                file.Close();
-                                if (isStop)
-                                    break;
-                            }
-                            catch (FileNotFoundException ex2)
-                            {
-                                filesNotFound += Path.GetFileNameWithoutExtension(ex2.FileName) + ", ";
-                            }
-                        }
-                        else if (File.Exists(Path.Combine(Config.SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm")))
-                            permissions += fileName.TrimEnd(',') + ", ";
-                        else
-                            filesNotFound += Path.GetFileNameWithoutExtension(ex.FileName) + ", ";
+                        isStop = false;
+                        break;
                     }
-                    await Task.Delay(delay);
-                }
-                if (isStop)
-                {
-                    isStop = false;
-                    break;
                 }
             }
-            musicPlayer.isPaused = isPaused;
             filesNotFound = filesNotFound.TrimEnd(',', ' ');
-            permissions = permissions.TrimEnd(',', ' ');
             string response = "";
             if (!string.IsNullOrWhiteSpace(filesNotFound))
                 response += "Không tìm thấy file " + filesNotFound + "!";
-            if (!string.IsNullOrWhiteSpace(permissions))
-                response += Environment.NewLine + "Bạn không có quyền sử dụng file " + permissions + "!";
             if (!string.IsNullOrEmpty(response))
             {
                 if (message is DiscordInteraction interaction2)
@@ -321,6 +327,20 @@ namespace DiscordBot.Voice
                 delay = delayValue;
                 await messageToReact.TryRespondAsync($"Đã thay đổi delay thành {delay} mili giây!");
             }
+        }
+
+        async Task TransmitData(FileStream file, VoiceTransmitSink transmitSink)
+        {
+            byte[] buffer = new byte[transmitSink.SampleLength];
+            while (file.Read(buffer, 0, buffer.Length) != 0)
+            {
+                if (isStop)
+                    break;
+                for (int i = 0; i < buffer.Length; i += 2)
+                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+            }
+            file.Close();
         }
     }
 }
