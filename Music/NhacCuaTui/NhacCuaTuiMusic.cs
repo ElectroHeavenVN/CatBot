@@ -33,9 +33,9 @@ namespace DiscordBot.Music.NhacCuaTui
         bool _disposed;
         WebException exception;
 
-        internal NhacCuaTuiMusic() { }
+        public NhacCuaTuiMusic() { }
 
-        internal NhacCuaTuiMusic(string linkOrKeyword)
+        public NhacCuaTuiMusic(string linkOrKeyword)
         {
             if (linkOrKeyword.StartsWith(nhacCuaTuiLink))
                 link = linkOrKeyword;

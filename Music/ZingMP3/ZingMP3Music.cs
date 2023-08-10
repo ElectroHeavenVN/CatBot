@@ -37,9 +37,9 @@ namespace DiscordBot.Music.ZingMP3
         bool _disposed;
         WebException exception;
 
-        internal ZingMP3Music() { }
+        public ZingMP3Music() { }
 
-        internal ZingMP3Music(string linkOrKeyword)
+        public ZingMP3Music(string linkOrKeyword)
         {
             JToken songDesc;
             if (linkOrKeyword.StartsWith(zingMP3Link))
