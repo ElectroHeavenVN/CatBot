@@ -8,10 +8,11 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>DiscordBot</RootNamespace>
     <AssemblyName>DiscordBot</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -42,10 +43,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.2.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Lib.Harmony.2.2.2\lib\net472\0Harmony.dll</HintPath>
+      <HintPath>packages\Lib.Harmony.2.2.2\lib\net45\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="AngleSharp, Version=1.0.4.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>packages\AngleSharp.1.0.4\lib\net472\AngleSharp.dll</HintPath>
+      <HintPath>packages\AngleSharp.1.0.4\lib\net461\AngleSharp.dll</HintPath>
     </Reference>
     <Reference Include="ConcurrentCollections, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\ConcurrentHashSet.1.3.0\lib\net461\ConcurrentCollections.dll</HintPath>

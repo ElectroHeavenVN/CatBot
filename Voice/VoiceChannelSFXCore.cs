@@ -165,6 +165,7 @@ namespace DiscordBot.Voice
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             string filesNotFound = "";
             string previousFileName = "";
+            List<byte> sfxData = new List<byte>();
             for (int i = 0; i < fileNames.Length; i++)
             {
                 string fileName = fileNames[i];
@@ -204,18 +205,12 @@ namespace DiscordBot.Voice
                 }
                 if (musicPlayer.isPlaying)
                 {
-                    byte[] buffer = new byte[file.Length * repeatTimes - 1];
-                    for (int j = 0; j < repeatTimes - 1; j++)
-                        file.Read(buffer, (int)(j * file.Length), (int)file.Length);
+                    byte[] buffer = new byte[file.Length + file.Length % 2];
+                    file.Read(buffer, 0, (int)file.Length);
                     for (int j = 0; j < buffer.Length; j += 2)
-                    {
-                        if (j + 1 >= buffer.Length)
-                            break;
                         Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
-                    }
-                    musicPlayer.sfxData.AddRange(buffer);
-                    while (musicPlayer.sfxData.Count != 0)
-                        await Task.Delay(100);
+                    for (int j = 0; j < repeatTimes - 1; j++)
+                        sfxData.AddRange(buffer);
                 }
                 else 
                 {
@@ -233,6 +228,9 @@ namespace DiscordBot.Voice
                     }
                 }
             }
+            musicPlayer.sfxData.AddRange(sfxData);
+            while (musicPlayer.sfxData.Count != 0)
+                await Task.Delay(100);
             filesNotFound = filesNotFound.TrimEnd(',', ' ');
             string response = "";
             if (!string.IsNullOrWhiteSpace(filesNotFound))

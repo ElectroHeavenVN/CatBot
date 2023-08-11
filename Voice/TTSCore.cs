@@ -45,8 +45,6 @@ namespace DiscordBot.Voice
             if (message is DiscordInteraction interaction)
                 await interaction.DeferAsync();
             MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(message.TryGetChannel().Guild);
-            bool isPaused = musicPlayer.isPaused;
-            musicPlayer.isPaused = true;
             VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             byte[] buffer = new byte[transmitSink.SampleLength];
@@ -56,14 +54,10 @@ namespace DiscordBot.Voice
                 ttsStream.Position = 0;
                 if (musicPlayer.isPlaying)
                 {
-                    byte[] data = new byte[ttsStream.Length];
-                    ttsStream.Read(data, 0, data.Length);
+                    byte[] data = new byte[ttsStream.Length + ttsStream.Length % 2];
+                    ttsStream.Read(data, 0, (int)ttsStream.Length);
                     for (int i = 0; i < data.Length; i += 2)
-                    {
-                        if (i + 1 >= buffer.Length)
-                            break;
                         Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(data, i) * volume)), 0, data, i, sizeof(short));
-                    }
                     musicPlayer.sfxData.AddRange(data);
                     while (musicPlayer.sfxData.Count != 0)
                         await Task.Delay(100);
@@ -92,7 +86,6 @@ namespace DiscordBot.Voice
                 else 
                     await message.TryRespondAsync("```" + Environment.NewLine + ex + Environment.NewLine + "```");
             }
-            musicPlayer.isPaused = isPaused;
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
         }
 

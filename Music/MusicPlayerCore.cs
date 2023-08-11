@@ -761,7 +761,7 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        async void MainPlay(CancellationToken token)
+        async Task MainPlay(CancellationToken token)
         {
             try
             {
@@ -845,20 +845,13 @@ namespace DiscordBot.Music
                                     await Task.Delay(500);
                                     continue;
                                 }
-                                for (int j = 0; j < buffer.Length; j += 2)
-                                {
-                                    if (j + 1 >= buffer.Length)
-                                        break;
-                                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
-                                }
+                                int i = 0;
                                 if (sfxData.Count > 0)
                                 {
                                     byte[] data = sfxData.ToArray();
-                                    for (int i = 0; i < buffer.Length; i += 2)
+                                    for (; i < buffer.Length && i < data.Length; i += 2)
                                     {
-                                        if (i + 1 >= data.Length)
-                                            break;
-                                        int a = (int)(BitConverter.ToInt16(buffer, i)) + 32768;
+                                        int a = (int)(BitConverter.ToInt16(buffer, i) * volume) + 32768;
                                         int b = BitConverter.ToInt16(data, i) + 32768;
                                         int m = 0;
                                         if (a < 32768 || b < 32768)
@@ -872,6 +865,8 @@ namespace DiscordBot.Music
                                     }
                                     sfxData.RemoveRange(0, Math.Min(buffer.Length, data.Length));
                                 }
+                                for (; i < buffer.Length; i += 2)
+                                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
                                 await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
                             }
                             catch (Exception ex)
@@ -949,7 +944,7 @@ namespace DiscordBot.Music
             if (!isThreadAlive)
             {
                 isThreadAlive = true;
-                new Thread(() => MainPlay(cts.Token)) { IsBackground = true }.Start();
+                new Thread(async() => await MainPlay(cts.Token)) { IsBackground = true }.Start();
             }
         }
     }
