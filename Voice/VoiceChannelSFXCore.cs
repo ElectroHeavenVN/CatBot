@@ -213,6 +213,7 @@ namespace DiscordBot.Voice
                         Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
                     for (int j = 0; j < repeatTimes - 1; j++)
                         sfxData.AddRange(buffer);
+                    sfxData.AddRange(new byte[2 * 16 * 48000 / 8 / 1000 * delay]);
                 }
                 else 
                 {

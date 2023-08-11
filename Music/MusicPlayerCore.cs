@@ -306,7 +306,7 @@ namespace DiscordBot.Music
                 }
                 try
                 {
-                    int bytesPerSeconds = (int)(serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length / serverInstance.musicPlayer.currentlyPlayingSong.Duration.TotalSeconds);
+                    int bytesPerSeconds = 2 * 16 * 48000 / 8;
                     int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
                     bytesToSeek -= bytesToSeek % 2;
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
