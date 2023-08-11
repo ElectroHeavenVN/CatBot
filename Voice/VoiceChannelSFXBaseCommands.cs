@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Voice
 {
-    public class VoiceChannelSFXBaseCommand : BaseCommandModule
+    public class VoiceChannelSFXBaseCommands : BaseCommandModule
     {
         [Command("s"), Description("Chọn file SFX để nói")]
         public async Task Speak(CommandContext ctx, [Description("Tên file (cách nhau bằng dấu cách) hoặc \"x\" + số lần lặp lại file SFX trước đó")] params string[] fileNames) => await VoiceChannelSFXCore.Speak(ctx.Message, fileNames);
@@ -30,7 +30,7 @@ namespace DiscordBot.Voice
         [Command("delay"), Description("Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
         public async Task Delay(CommandContext ctx, [Description("Thời gian nghỉ (mili giây)")] long delay) => await VoiceChannelSFXCore.Delay(ctx.Message, (int)delay);
 
-        [Command("volume"), Aliases("vol", "v"), Description("Chỉnh âm lượng tổng của bot")]
-        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume) => await BotServerInstance.SetVolume(ctx.Message, volume);
+        [Command("sfxvolume"), Aliases("sfxvol"), Description("Xem hoặc chỉnh âm lượng SFX của bot")]
+        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Message, volume);
     }
 }

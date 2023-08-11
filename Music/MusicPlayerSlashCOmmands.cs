@@ -111,7 +111,7 @@ namespace DiscordBot.Music
         [SlashCommand("sponsorblock", "Thêm vào hoặc xóa loại phân đoạn SponsorBlock khỏi danh sách phân đoạn bỏ qua")]
         public async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, [Option("type", "Loại phân đoạn")] SponsorBlockSectionType type = 0) => await MusicPlayerCore.AddOrRemoveSponsorBlockOption(ctx, type);
 
-        [SlashCommand("musicvolume", "Chỉnh âm lượng nhạc của bot (mặc định: 100)")]
-        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await MusicPlayerCore.SetVolume(ctx, volume);
+        [SlashCommand("musicvolume", "Xem hoặc chỉnh âm lượng nhạc của bot")]
+        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
     }
 }

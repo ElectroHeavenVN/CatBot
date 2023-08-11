@@ -136,13 +136,12 @@ namespace DiscordBot
             commandNext.SetHelpFormatter<HelpFormatter>();
 
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
-            //slashCommand.RegisterCommands<OfflineMusicPlayer>();
-            //slashCommand.RegisterCommands<ZingMP3Player>();
 
-            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommand>();
-            slashCommand.RegisterCommands<EmojiReplySlashCommand>();
-            slashCommand.RegisterCommands<TTSSlashCommand>();
+            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
+            slashCommand.RegisterCommands<EmojiReplySlashCommands>();
+            slashCommand.RegisterCommands<TTSSlashCommands>();
             slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
+            slashCommand.RegisterCommands<GlobalSlashCommands>();
             slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
 
             botClient.UseVoiceNext();

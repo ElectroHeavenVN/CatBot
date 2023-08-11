@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Voice
 {
-    public class VoiceChannelSFXSlashCommand : ApplicationCommandModule
+    public class VoiceChannelSFXSlashCommands : ApplicationCommandModule
     {
         [SlashCommand("speakfile", "Chọn file SFX để nói")]
         public async Task Speak(InteractionContext ctx, [Option("file", "Tên file (cách nhau bằng dấu cách) hoặc \"x\" + số lần lặp lại file SFX trước đó"), Autocomplete(typeof(VoiceSFXChoiceProvider))] string fileNames) => await VoiceChannelSFXCore.Speak(ctx.Interaction, fileNames.Split(' '));
@@ -28,11 +28,8 @@ namespace DiscordBot.Voice
         [SlashCommand("delay", "Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
         public async Task Delay(InteractionContext ctx, [Option("delay", "Thời gian nghỉ (mili giây)"), Minimum(0), Maximum(5000)] long delay = 250) => await VoiceChannelSFXCore.Delay(ctx.Interaction, (int)delay);
 
-        [SlashCommand("volume", "Chỉnh âm lượng tổng của bot (mặc định: 100)")]
-        public async Task SetVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
-
-        [SlashCommand("sfxvolume", "Chỉnh âm lượng SFX của bot (mặc định: 100)")]
-        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = 100) => await VoiceChannelSFXCore.SetVolume(ctx, volume);
+        [SlashCommand("sfxvolume", "Xem hoặc chỉnh âm lượng SFX của bot")]
+        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
     }
 
     internal class VoiceSFXChoiceProvider : IAutocompleteProvider

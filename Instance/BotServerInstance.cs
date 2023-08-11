@@ -288,6 +288,14 @@ namespace DiscordBot.Instance
             BotServerInstance serverInstance = GetBotServerInstance(obj.TryGetChannel().Guild);
             if (!await serverInstance.InitializeVoiceNext(obj))
                 return;
+            if (volume == -1)
+            {
+                await obj.TryRespondAsync("Âm lượng hiện tại: " + (int)(serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier * 100) + Environment.NewLine + 
+                    "Âm lượng TTS hiện tại: " + (int)(serverInstance.textToSpeech.volume * 100) + Environment.NewLine + 
+                    "Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100) + Environment.NewLine +
+                    "Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
+                return;
+            }
             if (volume < 0 || volume > 250)
             {
                 await obj.TryRespondAsync("Âm lượng không hợp lệ!");

@@ -549,21 +549,23 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        internal static async Task SetVolume(InteractionContext ctx, long volume)
+        internal static async Task SetVolume(SnowflakeObject obj, long volume)
         {
             try
             {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
-                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
+                if (volume == -1)
+                {
+                    await obj.TryRespondAsync("Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                }
                 if (volume < 0 || volume > 250)
                 {
-                    await ctx.CreateResponseAsync("Âm lượng không hợp lệ!");
+                    await obj.TryRespondAsync("Âm lượng không hợp lệ!");
                     return;
                 }
                 serverInstance.musicPlayer.volume = volume / 100d;
-                await ctx.CreateResponseAsync("Điều chỉnh âm lượng nhạc thành: " + volume + "%!");
+                await obj.TryRespondAsync("Điều chỉnh âm lượng nhạc thành: " + volume + "%!");
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }

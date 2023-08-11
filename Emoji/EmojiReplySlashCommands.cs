@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Emoji
 {
-    public class EmojiReplySlashCommand : ApplicationCommandModule
+    public class EmojiReplySlashCommands : ApplicationCommandModule
     {
         [SlashCommand("emoji", "chèn emoji từ các server có bot")]
         public async Task ReplyWithEmoji(InteractionContext ctx, [Option("emojiName", "Tên emoji (cách nhau bằng dấu cách)")] string emojiNames) => await EmojiReplyCore.ReplyWithEmoji(ctx.Interaction, emojiNames.Split(' '));

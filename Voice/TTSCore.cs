@@ -37,6 +37,27 @@ namespace DiscordBot.Voice
                 await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Giọng nói không hợp lệ!").WithColor(DiscordColor.Red).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  //You may need to change this
         }
 
+        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
+                if (volume == -1)
+                {
+                    await obj.TryRespondAsync("Âm lượng TTS hiện tại: " + (int)(serverInstance.textToSpeech.volume * 100));
+                    return;
+                }
+                if (volume < 0 || volume > 250)
+                {
+                    await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                    return;
+                }
+                serverInstance.textToSpeech.volume = volume / 100d;
+                await obj.TryRespondAsync("Điều chỉnh âm lượng TTS thành: " + volume + "%!");
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
         async Task InternalSpeakTTS(SnowflakeObject message, string tts, VoiceID voiceId)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
@@ -87,25 +108,6 @@ namespace DiscordBot.Voice
                     await message.TryRespondAsync("```" + Environment.NewLine + ex + Environment.NewLine + "```");
             }
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
-        }
-
-        internal static async Task SetVolume(InteractionContext ctx, long volume)
-        {
-            try
-            {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
-                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
-                    return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
-                if (volume < 0 || volume > 250)
-                {
-                    await ctx.CreateResponseAsync("Âm lượng không hợp lệ!");
-                    return;
-                }
-                serverInstance.textToSpeech.volume = volume / 100d;
-                await ctx.CreateResponseAsync("Điều chỉnh âm lượng TTS thành: " + volume + "%!");
-            }
-            catch (Exception ex) { Utils.LogException(ex); }
         }
 
         static async Task<MemoryStream> GetTTSPCMStream(string strToSpeak, VoiceID voiceId)

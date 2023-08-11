@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Voice
 {
-    public class TTSBaseCommand : BaseCommandModule
+    public class TTSBaseCommands : BaseCommandModule
     {
         [Command("tts"), Description("Sử dụng bot để nói")]
         public async Task SpeakTTS(CommandContext ctx, [RemainingText, Description("Nội dung bạn muốn bot nói")] string tts)
@@ -22,5 +22,8 @@ namespace DiscordBot.Voice
             else 
                 await TTSCore.SpeakTTS(ctx.Message, tts);
         }
+
+        [Command("ttsvolume"), Aliases("ttsvol"), Description("Xem hoặc chỉnh âm lượng TTS của bot")]
+        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await TTSCore.SetVolume(ctx.Message, volume);
     }
 }
