@@ -1,4 +1,5 @@
-﻿using DiscordBot.Voice;
+﻿using DiscordBot.SoundCloudExplodeExtension;
+using DiscordBot.Voice;
 using SoundCloudExplode;
 using System;
 using System.Collections.Generic;

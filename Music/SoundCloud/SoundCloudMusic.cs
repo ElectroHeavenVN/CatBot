@@ -1,7 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using SoundCloudExplode;
 using SoundCloudExplode.Search;
-using SoundCloudExplode.Track;
+using SoundCloudExplode.Tracks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,8 +16,8 @@ namespace DiscordBot.Music.SoundCloud
 {
     internal class SoundCloudMusic : IMusic
     {
-        internal static readonly Regex regexMatchSoundCloudLink = new Regex("https?://((m|on)\\.)?soundcloud.com/", RegexOptions.Compiled);
-        private readonly string soundCloudIconLink = "https://cdn.discordapp.com/emojis/1137041961669378241.webp?quality=lossless";
+        internal static readonly Regex regexMatchSoundCloudLink = new Regex("^(?:https?:\\/\\/)?((?:(?:(?:m|on)\\.)?soundcloud\\.com)|(?:snd\\.sc))\\/([\\w-]*)\\/?([\\w-]*)\\??.*$", RegexOptions.Compiled);
+        internal static readonly string soundCloudIconLink = "https://cdn.discordapp.com/emojis/1137041961669378241.webp?quality=lossless";
         string link;
         TimeSpan duration;
         string title = "";
@@ -26,7 +26,7 @@ namespace DiscordBot.Music.SoundCloud
         internal static SoundCloudClient scClient = new SoundCloudClient();
         Stream musicPCMDataStream;
         string mp3FilePath;
-        TrackInformation track;
+        Track track;
         private bool canGetStream;
         bool _disposed;
         private string pcmFile;

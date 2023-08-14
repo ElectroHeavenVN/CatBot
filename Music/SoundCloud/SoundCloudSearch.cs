@@ -1,12 +1,7 @@
-﻿using SoundCloudExplode.Search;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using SoundCloudExplode.Track;
+using SoundCloudExplode.Search;
+using SoundCloudExplode.Tracks;
 
 namespace DiscordBot.Music.SoundCloud
 {
@@ -16,7 +11,7 @@ namespace DiscordBot.Music.SoundCloud
         {
             if (SoundCloudMusic.regexMatchSoundCloudLink.IsMatch(linkOrKeyword))
             {
-                TrackInformation track;
+                Track track;
                 try
                 {
                     track = SoundCloudMusic.scClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
