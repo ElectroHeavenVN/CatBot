@@ -8,6 +8,7 @@
 - Phát nhạc từ [NhacCuaTui](https://www.nhaccuatui.com/)
 - Phát nhạc từ [Zing MP3](https://zingmp3.vn/)
 - Phát nhạc từ [SoundCloud](https://soundcloud.com/) (cung cấp bởi [SoundCloudExplode](https://github.com/jerry08/SoundCloudExplode))
+- Phát nhạc từ [Spotify](https://spotify.com/) (cung cấp bởi [SpotifyExplode](https://github.com/jerry08/SpotifyExplode) và [SpotifyDown](https://spotifydown.com/))
 - Phát nhạc lưu trong bộ nhớ
 - Tìm lời bài hát (cung cấp bởi [Lyrist](https://lyrist.vercel.app/))
 ## Setup
