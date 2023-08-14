@@ -180,8 +180,8 @@ namespace DiscordBot.Music.NhacCuaTui
             if (string.IsNullOrWhiteSpace(linkContainInfo))
             {
                 if (html.Contains("Sorry, this content is currently not available in your country"))
-                    throw new WebException("not available");
-                throw new WebException("not found");
+                    throw new WebException("NCT: not available");
+                throw new WebException("Ex: not found");
             }
             string xml = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(linkContainInfo);
             XmlDocument xmlDoc = new XmlDocument();
@@ -193,9 +193,9 @@ namespace DiscordBot.Music.NhacCuaTui
         {
             JObject obj = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeUriString(keyword)));
             if (obj["error_code"].ToString() != "0")
-                throw new WebException("songs not found");
+                throw new WebException("Ex: songs not found");
             if (obj["data"]["song"].Count() == 0)
-                throw new WebException("songs not found");
+                throw new WebException("Ex: songs not found");
             return obj["data"]["song"][0];
         }
 

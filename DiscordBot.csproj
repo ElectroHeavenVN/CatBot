@@ -209,9 +209,11 @@
     <Compile Include="Instance\GlobalBaseCommands.cs" />
     <Compile Include="Instance\GlobalSlashCommands.cs" />
     <Compile Include="Music\IMusic.cs" />
+    <Compile Include="Music\IPlaylist.cs" />
     <Compile Include="Music\MusicPlayerBaseCommands.cs" />
     <Compile Include="Music\MusicQueue.cs" />
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiSearch.cs" />
+    <Compile Include="Music\NotAPlaylistException.cs" />
     <Compile Include="Music\PlayMode.cs" />
     <Compile Include="Music\SearchResult.cs" />
     <Compile Include="Music\Local\LocalMusic.cs" />
@@ -234,6 +236,7 @@
     <Compile Include="Music\Spotify\SpotifySearch.cs" />
     <Compile Include="Music\YouTube\YouTubeMusic.cs" />
     <Compile Include="Music\YouTube\YouTubeMusicChoiceProvider.cs" />
+    <Compile Include="Music\YouTube\YouTubePlaylist.cs" />
     <Compile Include="Music\YouTube\YouTubeSearch.cs" />
     <Compile Include="Music\ZingMP3\ZingMP3Music.cs" />
     <Compile Include="Music\ZingMP3\ZingMP3MusicChoiceProvider.cs" />

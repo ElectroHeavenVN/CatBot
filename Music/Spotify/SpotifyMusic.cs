@@ -44,7 +44,7 @@ namespace DiscordBot.Music.Spotify
             {
                 List<TrackSearchResult> result = spClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
                 if (result.Count == 0)
-                    throw new WebException("songs not found");
+                    throw new WebException("Ex: songs not found");
                 linkOrKeyword = result[0].Url;
             }
             link = linkOrKeyword;

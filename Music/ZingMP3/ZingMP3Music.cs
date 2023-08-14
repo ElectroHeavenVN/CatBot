@@ -174,7 +174,7 @@ namespace DiscordBot.Music.ZingMP3
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/search", $"q={Uri.EscapeUriString(name)}", "type=song", "page=1", $"count=1");
             if (obj["err"].ToString() != "0")
-                throw new WebException("songs not found");
+                throw new WebException("Ex: songs not found");
             return obj["data"]["items"][0]["encodeId"].ToString();
         }
 

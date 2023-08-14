@@ -38,7 +38,7 @@ namespace DiscordBot.Music.SoundCloud
             {
                 List<TrackSearchResult> result = scClient.Search.GetTracksAsync(linkOrKeyword).GetAwaiter().GetResult();
                 if (result.Count == 0)
-                    throw new WebException("songs not found");
+                    throw new WebException("Ex: songs not found");
                 linkOrKeyword = result[0].PermalinkUrl.AbsoluteUri;
             }
             link = linkOrKeyword;

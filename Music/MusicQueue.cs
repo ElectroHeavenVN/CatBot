@@ -84,6 +84,7 @@ namespace DiscordBot.Music
 
         public void Insert(int index, IMusic item) => _items.Insert(index, item);
         public void Insert(int index, object value) => Insert(index, (IMusic)value);
+        public void InsertRange(int index, IEnumerable<IMusic> collection) => _items.InsertRange(index, collection);
 
         public IMusic Peek() => _items[0];
 

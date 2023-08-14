@@ -81,6 +81,20 @@ namespace DiscordBot.Music
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bắt đầu phát nhạc!"));
                     return;
                 }
+                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                {
+                    foreach (IMusic track in playlist.Tracks)
+                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                    serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
+                    serverInstance.musicPlayer.isStopped = false;
+                    serverInstance.isDisconnect = false;
+                    serverInstance.musicPlayer.InitMainPlay();
+                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                    playlist.AddFooter(embed2);                    
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    return;
+                }
                 IMusic music = null;
                 try
                 {
@@ -89,21 +103,7 @@ namespace DiscordBot.Music
                 }
                 catch (WebException ex)
                 {
-                    if (ex.Message == "songs not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
-                        return;
-                    }
-                    else if (ex.Message == "not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
-                        return;
-                    }
-                    else if (ex.Message == "not available")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
-                        return;
-                    }
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     throw;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -130,6 +130,17 @@ namespace DiscordBot.Music
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
+                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                {
+                    foreach (IMusic track in playlist.Tracks)
+                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                    serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
+                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                    playlist.AddFooter(embed2);
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    return;
+                }
                 IMusic music = null;
                 try
                 {
@@ -138,21 +149,7 @@ namespace DiscordBot.Music
                 }
                 catch (WebException ex)
                 {
-                    if (ex.Message == "songs not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
-                        return;
-                    }
-                    else if (ex.Message == "not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
-                        return;
-                    }
-                    else if (ex.Message == "not available")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
-                        return;
-                    }
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     throw;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -176,6 +173,20 @@ namespace DiscordBot.Music
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
+                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                {
+                    foreach (IMusic track in playlist.Tracks)
+                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                    serverInstance.musicPlayer.musicQueue.InsertRange(0, playlist.Tracks);
+                    serverInstance.musicPlayer.isStopped = false;
+                    serverInstance.isDisconnect = false;
+                    serverInstance.musicPlayer.InitMainPlay();
+                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                    playlist.AddFooter(embed2);
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    return;
+                }
                 IMusic music = null;
                 try
                 {
@@ -184,21 +195,7 @@ namespace DiscordBot.Music
                 }
                 catch (WebException ex)
                 {
-                    if (ex.Message == "songs not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài \"{input}\"!"));
-                        return;
-                    }
-                    else if (ex.Message == "not found")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
-                        return;
-                    }
-                    else if (ex.Message == "not available")
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
-                        return;
-                    }
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     throw;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -321,25 +318,7 @@ namespace DiscordBot.Music
                 }
                 catch (WebException ex)
                 {
-                    if (ex.Message.StartsWith("-1110") && serverInstance.musicPlayer.currentlyPlayingSong.MusicType == MusicType.ZingMP3)
-                    {
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!"));
-                        return;
-                    }
-                    else if (serverInstance.musicPlayer.currentlyPlayingSong.MusicType == MusicType.NhacCuaTui)
-                    {
-                        if (ex.Message == "not available") 
-                        {
-                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!"));
-                            return;
-                        }
-                        else if (ex.Message == "not found") 
-                        {
-                            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy bài này!"));
-                            return;
-                        }
-                    }
-
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
                     throw;
                 }
             }
@@ -801,24 +780,8 @@ namespace DiscordBot.Music
                         }
                         catch (WebException ex)
                         {
-                            if (ex.Message.StartsWith("-1110") && currentlyPlayingSong.MusicType == MusicType.ZingMP3)
-                            {
-                                await lastChannel.SendMessageAsync($"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!");
-                                continue;
-                            }
-                            else if (currentlyPlayingSong.MusicType == MusicType.NhacCuaTui)
-                            {
-                                if (ex.Message == "not available") 
-                                {
-                                    await lastChannel.SendMessageAsync($"Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!");
-                                    continue;
-                                }
-                                else if (ex.Message == "not found")
-                                {
-                                    await lastChannel.SendMessageAsync($"Không tìm thấy bài này!");
-                                    continue;
-                                }
-                            }
+                            await lastChannel.SendMessageAsync(GetErrorMessage(ex));
+                            continue;
                         }
                         catch (Exception ex)
                         {
@@ -938,8 +901,9 @@ namespace DiscordBot.Music
             }
             catch (WebException ex)
             {
-                if (ex.Message.StartsWith("-1110") && currentlyPlayingSong.MusicType == MusicType.ZingMP3 || currentlyPlayingSong.MusicType == MusicType.NhacCuaTui && (ex.Message == "not available" || ex.Message == "not found"))
+                if (!string.IsNullOrEmpty(GetErrorMessage(ex)))
                     return;
+                Utils.LogException(ex);
             }
             catch (Exception ex) { Utils.LogException(ex); }
             isDownloading = false;
@@ -953,6 +917,20 @@ namespace DiscordBot.Music
                 isThreadAlive = true;
                 new Thread(async() => await MainPlay(cts.Token)) { IsBackground = true }.Start();
             }
+        }
+
+        static string GetErrorMessage(WebException ex)
+        {
+            string content = "";
+            if (ex.Message.StartsWith("-1110"))
+                content = $"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!";
+            if (ex.Message == "Ex: songs not found")
+                content = "Không tìm thấy bài \"{0}\"!";
+            else if (ex.Message == "Ex: not found")
+                content = "Không tìm thấy bài này!";
+            else if (ex.Message == "NCT: not available")
+                content = "Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!";
+            return content;
         }
 
         void RandomIndex() => currentIndex = random.Next(0, musicQueue.Count);
@@ -985,6 +963,8 @@ namespace DiscordBot.Music
             else if (playMode.isLoopASong)
                 nextIndex = currentIndex;
             if (nextIndex >= musicQueue.Count)
+                nextIndex = 0;
+            if (nextIndex < 0)
                 nextIndex = 0;
             return musicQueue[nextIndex];
         }

@@ -54,6 +54,29 @@ namespace DiscordBot.Music
             return false;
         }
 
+        internal static bool TryCreateMusicPlaylistInstance(string link, out IPlaylist playlist)
+        {
+            playlist = null;
+            Type[] musicPlaylistTypes = typeof(IPlaylist).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPlaylist))).ToArray();
+            foreach (Type musicPlaylistType in musicPlaylistTypes)
+            {
+                IPlaylist singletonInstance = (IPlaylist)Activator.CreateInstance(musicPlaylistType, true);
+                if (singletonInstance.isLinkMatch(link))
+                {
+                    try
+                    {
+                        playlist = (IPlaylist)Activator.CreateInstance(musicPlaylistType, link);
+                    }
+                    catch (NotAPlaylistException) 
+                    {
+                        continue; 
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
         internal static string GetPCMFile(string filePath, ref string tempFile)
         {
             tempFile = Path.GetTempFileName();
