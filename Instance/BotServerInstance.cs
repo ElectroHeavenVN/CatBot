@@ -65,7 +65,7 @@ namespace DiscordBot.Instance
                             self.musicPlayer.isStopped = true;
                         }
                         self.currentVoiceNextConnection.Disconnect();
-                        self.musicPlayer.musicQueue.PlayMode = new PlayMode();
+                        self.musicPlayer.playMode = new PlayMode();
                         for (int i = self.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                             self.musicPlayer.musicQueue.ElementAt(i).Dispose();
                         self.musicPlayer.musicQueue.Clear();
@@ -198,7 +198,7 @@ namespace DiscordBot.Instance
                     {
                         serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
                         serverInstances[i].currentVoiceNextConnection.Disconnect();
-                        serverInstances[i].musicPlayer.musicQueue.PlayMode = new PlayMode();
+                        serverInstances[i].musicPlayer.playMode = new PlayMode();
                         serverInstances[i].checkVoiceChannelThread.Abort();
                         await Task.Delay(1000);
                     }
@@ -248,7 +248,7 @@ namespace DiscordBot.Instance
                             if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
                             {
                                 serverInstance.currentVoiceNextConnection.Disconnect();
-                                serverInstance.musicPlayer.musicQueue.PlayMode = new PlayMode();
+                                serverInstance.musicPlayer.playMode = new PlayMode();
                                 serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                                 await Task.Delay(300);
                                 break;
@@ -274,7 +274,7 @@ namespace DiscordBot.Instance
                 {
                     channel = serverInstance.currentVoiceNextConnection.TargetChannel;
                     serverInstance.currentVoiceNextConnection.Disconnect();
-                    serverInstance.musicPlayer.musicQueue.PlayMode = new PlayMode();
+                    serverInstance.musicPlayer.playMode = new PlayMode();
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                     await Task.Delay(200);
                     return new KeyValuePair<DiscordChannel, bool>(channel, true);

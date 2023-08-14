@@ -276,7 +276,7 @@ namespace DiscordBot.Voice
             isStop = true;
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
             serverInstance.currentVoiceNextConnection.Disconnect();
-            serverInstance.musicPlayer.musicQueue.PlayMode = new PlayMode();
+            serverInstance.musicPlayer.playMode = new PlayMode();
             if (messageToReact is DiscordMessage message)
                 await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
             else if (messageToReact is DiscordInteraction interaction)

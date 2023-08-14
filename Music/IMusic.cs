@@ -26,5 +26,6 @@ namespace DiscordBot.Music
         string[] GetFilesInUse();
         string GetIcon();
         bool isLinkMatch(string link);
+        void Download();
     }
 }

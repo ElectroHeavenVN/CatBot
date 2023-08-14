@@ -149,7 +149,7 @@ namespace DiscordBot
             List<string> result = new List<string>();
             foreach (BotServerInstance serverInstance in BotServerInstance.serverInstances)
             {
-                foreach (var music in serverInstance.musicPlayer.musicQueue)     
+                foreach (IMusic music in serverInstance.musicPlayer.musicQueue)     
                 {
                     if (music != null)
                         result.AddRange(music.GetFilesInUse());
