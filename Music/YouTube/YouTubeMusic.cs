@@ -19,10 +19,10 @@ namespace DiscordBot.Music.YouTube
     {
         internal static readonly string youTubeIconLink = "https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png";
         internal static readonly string youTubeMusicIconLink = "https://www.gstatic.com/youtube/media/ytm/images/applauncher/music_icon_144x144.png";
-        internal static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video";
-        internal static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails";
+        internal static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&key={0}&q={1}";
+        internal static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&key={0}&id={1}";
         internal static readonly string sponsorBlockSegmentsAPI = "https://sponsor.ajay.app/api/skipSegments";
-        internal static Regex regexMatchYTLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
+        internal static Regex regexMatchYTVideoLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu\\.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/|shorts\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         internal static Regex regexMatchYTMusicLink = new Regex("^((?:https?:)?\\/\\/)?((?:music\\.youtube\\.com))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         string link;
         TimeSpan duration;
@@ -45,11 +45,11 @@ namespace DiscordBot.Music.YouTube
 
         public YouTubeMusic(string linkOrKeyword)
         {
-            if (regexMatchYTLink.IsMatch(linkOrKeyword))
+            if (regexMatchYTVideoLink.IsMatch(linkOrKeyword))
             {
                 isYouTubeMusicVideo = regexMatchYTMusicLink.IsMatch(linkOrKeyword);
-                videoID = regexMatchYTLink.Match(linkOrKeyword).Groups[5].Value;
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(videoID)}");
+                videoID = regexMatchYTVideoLink.Match(linkOrKeyword).Groups[5].Value;
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(videoID)));
                 JToken videoResource = JObject.Parse(json)["items"][0];
                 videoID = videoResource["id"].ToString();
                 link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
@@ -60,33 +60,39 @@ namespace DiscordBot.Music.YouTube
             }
             else
             {
-                JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"))["items"][0];
+                JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(searchVideoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(linkOrKeyword))))["items"][0];
                 videoID = searchResource["id"]["videoId"].ToString();
                 link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
                 title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
                 artists = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]})";
                 albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(searchResource["id"]["videoId"].ToString())}");
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(searchResource["id"]["videoId"].ToString())));
                 JToken videoResource = JObject.Parse(json)["items"][0];
                 durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
             }
-            new Thread(GetDuration) { IsBackground = true }.Start();
         }
 
-        void GetDuration()
+        public void Download()
         {
-            DownloadWEBM(link, ref webmFilePath);
-            TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
-            duration = webmFile.Properties.Duration;
-            webmFile.Dispose();
-            while (sponsorBlockOptions == null)
-                Thread.Sleep(100);
             try
             {
-                hasSponsorBlockSegment = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}") != "Not Found";
+                while (sponsorBlockOptions == null)
+                    Thread.Sleep(100);
+                DownloadWEBM(link, ref webmFilePath);
+                TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
+                duration = webmFile.Properties.Duration;
+                webmFile.Dispose();
+                try
+                {
+                    hasSponsorBlockSegment = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}") != "Not Found";
+                }
+                catch (WebException) { }
+                canGetStream = true;
+                musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
+                File.Delete(webmFilePath);
+                webmFilePath = null;
             }
-            catch (WebException) { }
-            canGetStream = true;
+            catch (Exception ex) { Utils.LogException(ex); }
         }
 
         ~YouTubeMusic() => Dispose(false);
@@ -111,14 +117,6 @@ namespace DiscordBot.Music.YouTube
             {
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(MusicPCMDataStream));
-                if (musicPCMDataStream == null)
-                {
-                    while (!canGetStream)
-                        Thread.Sleep(500);
-                    musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
-                    File.Delete(webmFilePath);
-                    webmFilePath = null;
-                }
                 return musicPCMDataStream;
             }
         }
@@ -164,7 +162,7 @@ namespace DiscordBot.Music.YouTube
 
         public string GetIcon() => isYouTubeMusicVideo ? Config.YouTubeMusicIcon : Config.YouTubeIcon;
 
-        public bool isLinkMatch(string link) => regexMatchYTLink.IsMatch(link);
+        public bool isLinkMatch(string link) => regexMatchYTVideoLink.IsMatch(link);
 
         void DownloadWEBM(string link, ref string tempFile)
         {

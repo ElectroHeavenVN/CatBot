@@ -30,7 +30,6 @@ namespace DiscordBot.Music.Spotify
         string mp3FilePath;
         Track track;
         private bool canGetStream;
-        private Exception exception;
         bool _disposed;
         string pcmFile;
         string lyric;
@@ -58,42 +57,36 @@ namespace DiscordBot.Music.Spotify
             if (track.Album.Images.Count != 0)
                 albumThumbnailLink = track.Album.Images[0].Url;
             trackID = regexMatchSpotifyLink.Match(link).Groups[1].Value;
-            new Thread(GetDuration) { IsBackground = true }.Start();
         }
 
         ~SpotifyMusic() => Dispose(false);
 
-        async void GetDuration()
+        public void Download()
         {
-            try
-            {
-                string url = $"https://api.spotifydown.com/download/{trackID}";
-                HttpClient httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
-                httpClient.DefaultRequestHeaders.Add("sec-ch-ua", Config.SecChUaHeader);
-                httpClient.DefaultRequestHeaders.Add("accept-language", "en-US,en;q=0.9");
-                httpClient.DefaultRequestHeaders.Add("sec-ch-ua-mobile", "?0");
-                httpClient.DefaultRequestHeaders.Add("sec-ch-ua-platform", "\"Windows\"");
-                httpClient.DefaultRequestHeaders.Add("sec-fetch-dest", "empty");
-                httpClient.DefaultRequestHeaders.Add("sec-fetch-mode", "cors");
-                httpClient.DefaultRequestHeaders.Add("sec-fetch-site", "same-site");
-                httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
-                httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com");
-                HttpResponseMessage response = await httpClient.GetAsync(url);
-                JObject responseData = JObject.Parse(await response.Content.ReadAsStringAsync());
-                string downloadUrl = responseData["link"].ToString();
-
-                mp3FilePath = Path.GetTempFileName();
-                new WebClient().DownloadFile(downloadUrl, mp3FilePath);
-                TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
-                duration = mp3File.Properties.Duration;
-                mp3File.Dispose();
-            }
-            catch (WebException ex)
-            {
-                exception = ex;
-            }
+            string url = $"https://api.spotifydown.com/download/{trackID}";
+            HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+            httpClient.DefaultRequestHeaders.Add("sec-ch-ua", Config.SecChUaHeader);
+            httpClient.DefaultRequestHeaders.Add("accept-language", "en-US,en;q=0.9");
+            httpClient.DefaultRequestHeaders.Add("sec-ch-ua-mobile", "?0");
+            httpClient.DefaultRequestHeaders.Add("sec-ch-ua-platform", "\"Windows\"");
+            httpClient.DefaultRequestHeaders.Add("sec-fetch-dest", "empty");
+            httpClient.DefaultRequestHeaders.Add("sec-fetch-mode", "cors");
+            httpClient.DefaultRequestHeaders.Add("sec-fetch-site", "same-site");
+            httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
+            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com");
+            HttpResponseMessage response = httpClient.GetAsync(url).GetAwaiter().GetResult();
+            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+            string downloadUrl = responseData["link"].ToString();
+            mp3FilePath = Path.GetTempFileName();
+            new WebClient().DownloadFile(downloadUrl, mp3FilePath);
+            TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
+            duration = mp3File.Properties.Duration;
+            mp3File.Dispose();
             canGetStream = true;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
+            File.Delete(mp3FilePath);
+            mp3FilePath = null;
         }
 
         public MusicType MusicType => MusicType.Spotify;
@@ -122,16 +115,6 @@ namespace DiscordBot.Music.Spotify
             {
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(MusicPCMDataStream));
-                if (musicPCMDataStream == null)
-                {
-                    while (!canGetStream)
-                        Thread.Sleep(500);
-                    if (exception != null)
-                        throw exception;
-                    musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-                    File.Delete(mp3FilePath);
-                    mp3FilePath = null;
-                }
                 return musicPCMDataStream;
             }
         }

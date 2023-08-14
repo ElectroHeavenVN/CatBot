@@ -45,6 +45,8 @@ namespace DiscordBot.Music.Local
 
         ~LocalMusic() => Dispose(false);
 
+        public void Download() => musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(path, ref pcmFile));
+
         public MusicType MusicType => MusicType.Local;
 
         public string PathOrLink => path;
@@ -75,8 +77,6 @@ namespace DiscordBot.Music.Local
             {
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(MusicPCMDataStream));
-                if (musicPCMDataStream == null)
-                    musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(path, ref pcmFile));
                 return musicPCMDataStream;
             }
         }

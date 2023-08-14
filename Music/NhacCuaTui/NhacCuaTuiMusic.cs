@@ -31,7 +31,7 @@ namespace DiscordBot.Music.NhacCuaTui
         FileStream musicPCMDataStream;
         bool canGetStream;
         bool _disposed;
-        WebException exception;
+        string mp3Link;
 
         public NhacCuaTuiMusic() { }
 
@@ -70,28 +70,23 @@ namespace DiscordBot.Music.NhacCuaTui
                 artists = artists.TrimEnd(", ".ToCharArray());
             }
             albumThumbnailLink = xmlDoc.DocumentElement["track"].SelectSingleNode("avatar").InnerText;
-            string mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("location").InnerText;
+            mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("location").InnerText;
             string hasHQ = xmlDoc.DocumentElement["track"].SelectSingleNode("hasHQ").InnerText;
             if (!string.IsNullOrWhiteSpace(hasHQ) && bool.Parse(hasHQ))
                 mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("locationHQ").InnerText;
-            new Thread(() => GetDuration(mp3Link)) { IsBackground = true }.Start();
         }
 
-        void GetDuration(string mp3Link)
+        public void Download()
         {
-            try
-            {
-                mp3FilePath = Path.GetTempFileName();
-                new WebClient().DownloadFile(mp3Link, mp3FilePath);
-                TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
-                duration = mp3File.Properties.Duration;
-                mp3File.Dispose();
-            }
-            catch (WebException ex)
-            {
-                exception = ex;
-            }
+            mp3FilePath = Path.GetTempFileName();
+            new WebClient().DownloadFile(mp3Link, mp3FilePath);
+            TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
+            duration = mp3File.Properties.Duration;
+            mp3File.Dispose();
             canGetStream = true;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
+            File.Delete(mp3FilePath);
+            mp3FilePath = null;
         }
 
         ~NhacCuaTuiMusic() => Dispose(false);
@@ -116,16 +111,6 @@ namespace DiscordBot.Music.NhacCuaTui
             {
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(MusicPCMDataStream));
-                if (musicPCMDataStream == null)
-                {
-                    while (!canGetStream)
-                        Thread.Sleep(500);
-                    if (exception != null)
-                        throw exception;
-                    musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-                    File.Delete(mp3FilePath);
-                    mp3FilePath = null;
-                }
                 return musicPCMDataStream;
             }
         }

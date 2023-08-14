@@ -14,10 +14,10 @@ namespace DiscordBot.Music.YouTube
 
         internal static List<SearchResult> Search(string linkOrKeyword, int count = 25)
         {
-            if (YouTubeMusic.regexMatchYTLink.IsMatch(linkOrKeyword))
+            if (YouTubeMusic.regexMatchYTVideoLink.IsMatch(linkOrKeyword))
             {
-                string videoID = YouTubeMusic.regexMatchYTLink.Match(linkOrKeyword).Groups[5].Value;
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{YouTubeMusic.getVideoInfoAPI}&key={Config.GoogleAPIKey}&id={Uri.EscapeUriString(videoID)}");
+                string videoID = YouTubeMusic.regexMatchYTVideoLink.Match(linkOrKeyword).Groups[5].Value;
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(YouTubeMusic.getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(videoID)));
                 JToken videoResource = JObject.Parse(json)["items"][0];
                 return new List<SearchResult>()
                 {

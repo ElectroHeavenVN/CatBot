@@ -28,7 +28,6 @@ namespace DiscordBot.Music.SoundCloud
         string mp3FilePath;
         TrackInformation track;
         private bool canGetStream;
-        private Exception exception;
         bool _disposed;
         private string pcmFile;
 
@@ -48,26 +47,21 @@ namespace DiscordBot.Music.SoundCloud
             artists = $"[{track.User.Username}]({track.User.PermalinkUrl})";
             if (track.ArtworkUrl != null)
                 albumThumbnailLink = track.ArtworkUrl.AbsoluteUri;
-            new Thread(GetDuration) { IsBackground = true }.Start();
         }
         ~SoundCloudMusic() => Dispose(false);
 
-        async void GetDuration()
+        public void Download()
         {
-            string downloadUrl = await scClient.Tracks.GetDownloadUrlAsync(track);
-            try
-            {
-                mp3FilePath = Path.GetTempFileName();
-                new WebClient().DownloadFile(downloadUrl, mp3FilePath);
-                TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
-                duration = mp3File.Properties.Duration;
-                mp3File.Dispose();
-            }
-            catch (WebException ex)
-            {
-                exception = ex;
-            }
+            string downloadUrl = scClient.Tracks.GetDownloadUrlAsync(track).GetAwaiter().GetResult();
+            mp3FilePath = Path.GetTempFileName();
+            new WebClient().DownloadFile(downloadUrl, mp3FilePath);
+            TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
+            duration = mp3File.Properties.Duration;
+            mp3File.Dispose();
             canGetStream = true;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
+            File.Delete(mp3FilePath);
+            mp3FilePath = null;
         }
 
         public MusicType MusicType => MusicType.SoundCloud;
@@ -96,16 +90,6 @@ namespace DiscordBot.Music.SoundCloud
             {
                 if (_disposed)
                     throw new ObjectDisposedException(nameof(MusicPCMDataStream));
-                if (musicPCMDataStream == null)
-                {
-                    while (!canGetStream)
-                        Thread.Sleep(500);
-                    if (exception != null)
-                        throw exception;
-                    musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-                    File.Delete(mp3FilePath);
-                    mp3FilePath = null;
-                }
                 return musicPCMDataStream;
             }
         }

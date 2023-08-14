@@ -43,6 +43,7 @@ namespace DiscordBot.Music
         internal List<byte> sfxData = new List<byte>();
         Thread prepareNextMusicStreamThread;
         internal double volume = 1;
+        bool isDownloading;
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
         {
@@ -53,6 +54,7 @@ namespace DiscordBot.Music
                     return;
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
+                DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
                 if (string.IsNullOrWhiteSpace(input))
                 {
@@ -106,7 +108,7 @@ namespace DiscordBot.Music
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.isDisconnect = false;
                 serverInstance.musicPlayer.InitMainPlay();
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào hàng đợi!");
+                embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào hàng đợi!");
                 music.AddFooter(embed);
                 embed.Build();
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
@@ -123,6 +125,7 @@ namespace DiscordBot.Music
                     return;
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
+                DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
                 IMusic music = null;
                 try
@@ -151,7 +154,7 @@ namespace DiscordBot.Music
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào hàng đợi!");
+                embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào hàng đợi!");
                 music.AddFooter(embed);
                 embed.Build();
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
@@ -168,6 +171,7 @@ namespace DiscordBot.Music
                     return;
                 serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
+                DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
                 IMusic music = null;
                 try
@@ -201,7 +205,7 @@ namespace DiscordBot.Music
                 serverInstance.musicPlayer.isStopped = false;
                 serverInstance.isDisconnect = false;
                 serverInstance.musicPlayer.InitMainPlay();
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {(music.MusicType == MusicType.YouTube ? "video" : "bài")} {music.Title} - {music.Artists} vào đầu hàng đợi!");
+                embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.Title} - {music.Artists} vào đầu hàng đợi!");
                 music.AddFooter(embed);
                 embed.Build();
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed));
@@ -783,6 +787,10 @@ namespace DiscordBot.Music
                                 currentlyPlayingSong = null;
                             }
                             currentlyPlayingSong = musicQueue.Dequeue();
+                            if (currentlyPlayingSong.MusicPCMDataStream == null && !isDownloading)
+                                currentlyPlayingSong.Download();
+                            while (isDownloading)
+                                await Task.Delay(200);
                             string musicDesc = currentlyPlayingSong.GetSongDesc();
                             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
                             currentlyPlayingSong.AddFooter(embed);
@@ -795,7 +803,6 @@ namespace DiscordBot.Music
                             }
                             else
                                 await lastChannel.SendMessageAsync(embed.Build());
-                            currentlyPlayingSong.MusicPCMDataStream.Position = 0;
                         }
                         catch (WebException ex)
                         {
@@ -831,10 +838,10 @@ namespace DiscordBot.Music
                                 goto exit;
                             if (isStopped || isSkipThisSong || serverInstance.currentVoiceNextConnection.isDisposed())
                                 break;
-                            if (!isPreparingNextSong && musicQueue.Count > 0 && currentlyPlayingSong.Duration.Ticks * (1 - currentlyPlayingSong.MusicPCMDataStream.Position / (float)currentlyPlayingSong.MusicPCMDataStream.Length) <= 100000000) //10s
+                            if (!isPreparingNextSong && musicQueue.Count > 0 && currentlyPlayingSong.Duration.Ticks * (1 - currentlyPlayingSong.MusicPCMDataStream.Position / (float)currentlyPlayingSong.MusicPCMDataStream.Length) <= 300000000)
                             {
                                 isPreparingNextSong = true;
-                                prepareNextMusicStreamThread = new Thread(PrepareNextMusicStream) { IsBackground = true };
+                                prepareNextMusicStreamThread = new Thread(PrepareNextSong) { IsBackground = true };
                                 prepareNextMusicStreamThread.Start();
                             }
                             while (isPaused)
@@ -917,7 +924,7 @@ namespace DiscordBot.Music
             isThreadAlive = false;
         }
 
-        void PrepareNextMusicStream()
+        void PrepareNextSong()
         {
             if (musicQueue.Count == 0)
                 return;
@@ -930,6 +937,10 @@ namespace DiscordBot.Music
                 int index = musicQueue.CurrentIndex + 1;
                 if (index >= musicQueue.Count)
                     index = 0;
+                isDownloading = true;
+                musicQueue.ElementAt(index).Download();
+                while (musicQueue.ElementAt(index).MusicPCMDataStream == null)
+                    Thread.Sleep(200);
                 musicQueue.ElementAt(index).MusicPCMDataStream.Position = 0;
             }
             catch (WebException ex)
@@ -938,6 +949,7 @@ namespace DiscordBot.Music
                     return;
             }
             catch (Exception ex) { Utils.LogException(ex); }
+            isDownloading = false;
             GC.Collect();
         }
 
