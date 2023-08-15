@@ -153,11 +153,10 @@ namespace DiscordBot
 
         static T GetConfigValue<T>(string configName)
         {
-            string configFile = "Config\\Config.txt";
+            string configFile = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName) + "_config.txt";
             if (!File.Exists(configFile))
             {
                 Console.WriteLine("Config file not found, creating one...");
-                Directory.CreateDirectory("Config");
                 File.Create(configFile);
                 Process.Start(Path.GetFullPath(configFile));
                 Environment.Exit(1);
