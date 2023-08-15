@@ -147,7 +147,7 @@ namespace DiscordBot
             slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
 
             botClient.UseVoiceNext();
-            await botClient.ConnectAsync();
+            await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
             await Task.Delay(Timeout.Infinite);
         }
 
