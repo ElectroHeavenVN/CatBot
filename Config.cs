@@ -67,6 +67,10 @@ namespace DiscordBot
         /// Đường dẫn tới thư mục chứa SFX đặc biệt
         /// </summary>
         internal static string SFXFolderSpecial => GetConfigValue<string>("SFXFolderSpecial") ?? "SFX\\Special";
+        /// <summary>
+        /// Cho biết lệnh chat điều khiển bot có được kích hoạt hay không
+        /// </summary>
+        internal static bool EnableCommandsNext => GetConfigValue<bool>("EnableCommandsNext");
 
         #region Zing MP3
         /// <summary>
@@ -92,12 +96,15 @@ namespace DiscordBot
 
         #region Zalo AI
         /// <summary>
-        /// Cookie Zalo AI
+        /// Zalo AI cookie
         /// </summary>
         internal static string ZaloAICookie => GetConfigValue<string>("ZaloAICookie");
         #endregion
 
         #region Spotify
+        /// <summary>
+        /// Spotify cookie
+        /// </summary>
         internal static string SpotifyCookie => GetConfigValue<string>("SpotifyCookie");
         #endregion
 

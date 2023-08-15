@@ -128,13 +128,15 @@ namespace DiscordBot
             //await restClient.DeleteGuildApplicationCommandAsync(1115634791321190420, 1123285178375217183);
             //return;
 
-            CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
+            if (Config.EnableCommandsNext)
             {
-                StringPrefixes = new string[] { Config.Prefix },
-            });
-            commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
-            commandNext.SetHelpFormatter<HelpFormatter>();
-
+                CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
+                {
+                    StringPrefixes = new string[] { Config.Prefix },
+                });
+                commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
+                commandNext.SetHelpFormatter<HelpFormatter>();
+            }
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
 
             slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
