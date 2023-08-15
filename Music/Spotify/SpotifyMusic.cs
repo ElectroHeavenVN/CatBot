@@ -121,6 +121,8 @@ namespace DiscordBot.Music.Spotify
 
         public LyricData GetLyric()
         {
+            if (string.IsNullOrWhiteSpace(Config.SpotifyCookie))
+                return new LyricData("Không tìm thấy cookie của Spotify!");
             if (string.IsNullOrEmpty(token) || tokenExpireTime < DateTime.Now)
             {
                 string url = "https://open.spotify.com/get_access_token";
