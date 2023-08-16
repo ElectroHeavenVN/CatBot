@@ -204,6 +204,7 @@
     <Compile Include="Emoji\EmojiReplyCore.cs" />
     <Compile Include="Emoji\EmojiReplyBaseCommands.cs" />
     <Compile Include="Emoji\EmojiReplySlashCommands.cs" />
+    <Compile Include="Extension\SpotifyExplodeExtension.cs" />
     <Compile Include="HelpFormatter.cs" />
     <Compile Include="Instance\BotServerInstance.cs" />
     <Compile Include="Instance\GlobalBaseCommands.cs" />
@@ -234,6 +235,7 @@
     <Compile Include="Music\SponsorBlockOptions.cs" />
     <Compile Include="Music\Spotify\SpotifyMusic.cs" />
     <Compile Include="Music\Spotify\SpotifyMusicChoiceProvider.cs" />
+    <Compile Include="Music\Spotify\SpotifyPlaylist.cs" />
     <Compile Include="Music\Spotify\SpotifySearch.cs" />
     <Compile Include="Music\YouTube\YouTubeMusic.cs" />
     <Compile Include="Music\YouTube\YouTubeMusicChoiceProvider.cs" />

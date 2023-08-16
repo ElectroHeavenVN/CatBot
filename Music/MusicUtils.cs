@@ -85,7 +85,7 @@ namespace DiscordBot.Music
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "ffmpeg\\ffmpeg",
-                    Arguments = "-hide_banner -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 -y -threads:v 1 \"" + tempFile + "\"",
+                    Arguments = "-hide_banner -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 -y -threads:a 1 \"" + tempFile + "\"",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
                 },

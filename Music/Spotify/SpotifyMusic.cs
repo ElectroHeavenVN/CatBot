@@ -17,7 +17,7 @@ namespace DiscordBot.Music.Spotify
     internal class SpotifyMusic : IMusic
     {
         internal static readonly Regex regexMatchSpotifyLink = new Regex("^(?:spotify:|https:\\/\\/[a-z]+\\.spotify\\.com\\/track\\/)(.[^\\?]*)(\\?.*)?$", RegexOptions.Compiled);
-        private readonly string spotifyIconLink = "https://open.spotifycdn.com/cdn/images/icons/Spotify_256.17e41e58.png";
+        internal static readonly string spotifyIconLink = "https://open.spotifycdn.com/cdn/images/icons/Spotify_256.17e41e58.png";
         string link;
         TimeSpan duration;
         string title = "";
@@ -29,7 +29,7 @@ namespace DiscordBot.Music.Spotify
         Stream musicPCMDataStream;
         string mp3FilePath;
         Track track;
-        private bool canGetStream;
+        bool canGetStream;
         bool _disposed;
         string pcmFile;
         string lyric;
