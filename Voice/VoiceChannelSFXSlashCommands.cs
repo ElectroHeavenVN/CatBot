@@ -38,7 +38,7 @@ namespace DiscordBot.Voice
         {
             List<DiscordAutoCompleteChoice> choices = new List<DiscordAutoCompleteChoice>();
             List<FileInfo> sfxFiles = new DirectoryInfo(Config.SFXFolder).GetFiles().Concat(new DirectoryInfo(Config.SFXFolderSpecial).GetFiles()).ToList();
-            sfxFiles.Sort((f1, f2) => f1.Name.CompareTo(f2.Name));
+            sfxFiles.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
             string userInput = ctx.FocusedOption.Value.ToString();
             string[] fileNamesUserInput = userInput.Split(' ');
             int index = userInput.LastIndexOf(' ');

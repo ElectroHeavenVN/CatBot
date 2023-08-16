@@ -86,8 +86,9 @@ namespace DiscordBot.Voice
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
             embed.Title = "Danh sách file";
             FileInfo[] sfxs = new DirectoryInfo(Config.SFXFolder).GetFiles();
-            FileInfo[] sfxSpecials = new DirectoryInfo(Config.SFXFolderSpecial).GetFiles();
-            embed.Title += " (tổng số file: " + (sfxs.Length + sfxSpecials.Length) + ")";
+            List<FileInfo> sfxSpecials = new DirectoryInfo(Config.SFXFolderSpecial).GetFiles().ToList();
+            sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
+            embed.Title += " (tổng số file: " + (sfxs.Length + sfxSpecials.Count) + ")";
             embed.Description += "**Các file thông thường (có thể được mọi người sử dụng):**" + Environment.NewLine;
             for (int i = 0; i < sfxs.Length; i++)
                 embed.Description += Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
@@ -96,7 +97,7 @@ namespace DiscordBot.Voice
             {
                 DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder();
                 embed2.Description = "**Các file đặc biệt (chỉ có người có quyền mới được sử dụng):**" + Environment.NewLine;
-                for (int i = 0; i < sfxSpecials.Length; i++)
+                for (int i = 0; i < sfxSpecials.Count; i++)
                     embed2.Description += Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                 embed2.Description = embed2.Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
                 if (messageToReply is DiscordInteraction interaction)
