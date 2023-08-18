@@ -231,6 +231,7 @@ namespace DiscordBot.Voice
                         break;
                     }
                 }
+                file.Close();
             }
             musicPlayer.sfxData.AddRange(sfxData);
             while (musicPlayer.sfxData.Count != 0)
@@ -342,7 +343,7 @@ namespace DiscordBot.Voice
                     Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
                 await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
             }
-            file.Close();
+            file.Position = 0;
         }
     }
 }
