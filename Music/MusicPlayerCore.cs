@@ -952,6 +952,8 @@ namespace DiscordBot.Music
                 content = "Không tìm thấy video này!";
             else if (ex.Message == "Ex: playlist not found")
                 content = "Không tìm thấy danh sách phát này!";
+            else if (ex.Message == "Ex: album not found")
+                content = "Không tìm thấy album này!";
             else if (ex.Message == "YT: channel not found")
                 content = "Không tìm thấy kênh này!";
             else if (ex.Message == "Ex: artist not found")
