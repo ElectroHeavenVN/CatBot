@@ -25,6 +25,7 @@ namespace DiscordBot.Music.YouTube
         bool isYouTubeMusicPlaylist;
         string author;
         string subCount;
+        int hiddenVideos;
 
         public YouTubePlaylist() { }
         public YouTubePlaylist(string link) 
@@ -37,32 +38,40 @@ namespace DiscordBot.Music.YouTube
                 isYouTubeMusicPlaylist = link.Contains("music.youtube.com");
                 if (link.Contains('@') || link.Contains("channel/"))
                 {
-                    string webpage = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);
-                    string channelID = webpage.Substring(webpage.IndexOf("\"externalId\":\"") + 14, 24);
-                    playlistID = 'U' + channelID.Remove(1, 1);
-                    JObject channelInfo = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getChannelInfoAPI, Config.GoogleAPIKey, channelID)));
-                    title = $"Video tải lên của [{channelInfo["items"][0]["snippet"]["title"]}](https://www.youtube.com/channel/{channelID})";
-                    author = $"[{channelInfo["items"][0]["snippet"]["title"]}](https://www.youtube.com/channel/{channelID})";
-                    description = channelInfo["items"][0]["snippet"]["description"].ToString();
-                    thumbnailLink = channelInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
-                    if (!channelInfo["items"][0]["statistics"]["hiddenSubscriberCount"].Value<bool>())
+                    try
                     {
-                        uint subs = uint.Parse(channelInfo["items"][0]["statistics"]["subscriberCount"].ToString());
-                        if (subs < 1000)
-                            subCount = subs.ToString();
-                        if (subs > 1000 && subs < 1000000)
-                            subCount = (subs / 1000f).ToString("0.00") + " N";
-                        if (subs > 1000000)
-                            subCount = (subs / 1000000f).ToString("0.00") + " Tr";
+                        string webpage = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);
+                        string channelID = webpage.Substring(webpage.IndexOf("\"externalId\":\"") + 14, 24);
+                        playlistID = 'U' + channelID.Remove(1, 1);
+                        JObject channelInfo = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getChannelInfoAPI, Config.GoogleAPIKey, channelID)));
+                        title = $"Video tải lên của [{channelInfo["items"][0]["snippet"]["title"]}](https://www.youtube.com/channel/{channelID})";
+                        author = $"[{channelInfo["items"][0]["snippet"]["title"]}](https://www.youtube.com/channel/{channelID})";
+                        description = channelInfo["items"][0]["snippet"]["description"].ToString();
+                        thumbnailLink = channelInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
+                        if (!channelInfo["items"][0]["statistics"]["hiddenSubscriberCount"].Value<bool>())
+                        {
+                            uint subs = uint.Parse(channelInfo["items"][0]["statistics"]["subscriberCount"].ToString());
+                            if (subs < 1000)
+                                subCount = subs.ToString();
+                            if (subs > 1000 && subs < 1000000)
+                                subCount = (subs / 1000f).ToString("0.00") + " N";
+                            if (subs > 1000000)
+                                subCount = (subs / 1000000f).ToString("0.00") + " Tr";
+                        }
                     }
+                    catch (Exception) { throw new WebException("YT: channel not found"); }
                 }
                 else if (link.Contains("playlist?list="))
                 {
                     JObject playlistInfo = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getPlaylistInfoAPI, Config.GoogleAPIKey, playlistID)));
-                    title = $"[{playlistInfo["items"][0]["snippet"]["title"]}]({link})";
-                    description = playlistInfo["items"][0]["snippet"]["description"].ToString();
-                    author = $"[{playlistInfo["items"][0]["snippet"]["channelTitle"]}](https://www.youtube.com/channel/{playlistInfo["items"][0]["snippet"]["channelId"]})";
-                    thumbnailLink = playlistInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
+                    try
+                    {
+                        title = $"[{playlistInfo["items"][0]["snippet"]["title"]}]({link})";
+                        description = playlistInfo["items"][0]["snippet"]["description"].ToString();
+                        author = $"[{playlistInfo["items"][0]["snippet"]["channelTitle"]}](https://www.youtube.com/channel/{playlistInfo["items"][0]["snippet"]["channelId"]})";
+                        thumbnailLink = playlistInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
+                    }
+                    catch (Exception) { throw new WebException("Ex: playlist not found"); }
                 }
                 JObject playlistItemList;
                 do
@@ -72,7 +81,15 @@ namespace DiscordBot.Music.YouTube
                         pageToken = playlistItemList["nextPageToken"].ToString();
                     foreach (JToken playlistItem in playlistItemList["items"])
                     {
-                        videoList.Add(new YouTubeMusic($"https://{(isYouTubeMusicPlaylist ? "music" : "www")}.youtube.com/watch?v={playlistItem["contentDetails"]["videoId"]}"));
+                        try
+                        {
+                            videoList.Add(new YouTubeMusic($"https://{(isYouTubeMusicPlaylist ? "music" : "www")}.youtube.com/watch?v={playlistItem["contentDetails"]["videoId"]}"));
+                        }
+                        catch (WebException ex)
+                        { 
+                            if (ex.Message == "YT: video not found")
+                                hiddenVideos++; 
+                        }
                     }
                 }
                 while (playlistItemList.ContainsKey("nextPageToken"));
@@ -95,7 +112,7 @@ namespace DiscordBot.Music.YouTube
 
         public string GetPlaylistDesc()
         {
-            string playlistDesc = $"Danh sách phát: {title}" + Environment.NewLine;
+            string playlistDesc = $"Danh sách phát: {title} ({hiddenVideos} video không xem được)" + Environment.NewLine;
             playlistDesc += $"Tải lên bởi: {author} " + (!string.IsNullOrEmpty(subCount) ? $"({subCount} người đăng ký)" : "") + Environment.NewLine;
             playlistDesc += $"Số {(isYouTubeMusicPlaylist ? "bài nhạc" : "video")}: {videoList.Count}" + Environment.NewLine;
             playlistDesc += description + Environment.NewLine;

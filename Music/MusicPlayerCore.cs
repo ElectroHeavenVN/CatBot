@@ -81,18 +81,26 @@ namespace DiscordBot.Music
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bắt đầu phát nhạc!"));
                     return;
                 }
-                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                try
                 {
-                    foreach (IMusic track in playlist.Tracks)
-                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                    serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
-                    serverInstance.musicPlayer.isStopped = false;
-                    serverInstance.isDisconnect = false;
-                    serverInstance.musicPlayer.InitMainPlay();
-                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
-                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
-                    playlist.AddFooter(embed2);                    
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    {
+                        foreach (IMusic track in playlist.Tracks)
+                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                        serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
+                        serverInstance.musicPlayer.isStopped = false;
+                        serverInstance.isDisconnect = false;
+                        serverInstance.musicPlayer.InitMainPlay();
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                        playlist.AddFooter(embed2);
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                        return;
+                    }
+                }
+                catch (WebException ex)
+                { 
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
                 }
                 IMusic music = null;
@@ -104,7 +112,7 @@ namespace DiscordBot.Music
                 catch (WebException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
-                    throw;
+                    return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
@@ -130,15 +138,23 @@ namespace DiscordBot.Music
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
-                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                try 
+                { 
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    {
+                        foreach (IMusic track in playlist.Tracks)
+                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                        serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                        playlist.AddFooter(embed2);
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                        return;
+                    }
+                }
+                catch (WebException ex)
                 {
-                    foreach (IMusic track in playlist.Tracks)
-                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                    serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
-                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
-                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
-                    playlist.AddFooter(embed2);
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
                 }
                 IMusic music = null;
@@ -150,7 +166,7 @@ namespace DiscordBot.Music
                 catch (WebException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
-                    throw;
+                    return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
@@ -173,18 +189,26 @@ namespace DiscordBot.Music
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
-                if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                try 
+                { 
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    {
+                        foreach (IMusic track in playlist.Tracks)
+                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
+                        serverInstance.musicPlayer.musicQueue.InsertRange(0, playlist.Tracks);
+                        serverInstance.musicPlayer.isStopped = false;
+                        serverInstance.isDisconnect = false;
+                        serverInstance.musicPlayer.InitMainPlay();
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
+                        playlist.AddFooter(embed2);
+                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                        return;
+                    }
+                }
+                catch (WebException ex)
                 {
-                    foreach (IMusic track in playlist.Tracks)
-                        track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                    serverInstance.musicPlayer.musicQueue.InsertRange(0, playlist.Tracks);
-                    serverInstance.musicPlayer.isStopped = false;
-                    serverInstance.isDisconnect = false;
-                    serverInstance.musicPlayer.InitMainPlay();
-                    embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
-                    DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
-                    playlist.AddFooter(embed2);
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
                 }
                 IMusic music = null;
@@ -196,7 +220,7 @@ namespace DiscordBot.Music
                 catch (WebException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
-                    throw;
+                    return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
                 serverInstance.musicPlayer.musicQueue.Peek().DeletePCMFile();
@@ -319,7 +343,7 @@ namespace DiscordBot.Music
                 catch (WebException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
-                    throw;
+                    return;
                 }
             }
             catch (Exception ex) { Utils.LogException(ex); }
@@ -899,12 +923,6 @@ namespace DiscordBot.Music
                     Thread.Sleep(200);
                 nextSong.MusicPCMDataStream.Position = 0;
             }
-            catch (WebException ex)
-            {
-                if (!string.IsNullOrEmpty(GetErrorMessage(ex)))
-                    return;
-                Utils.LogException(ex);
-            }
             catch (Exception ex) { Utils.LogException(ex); }
             isDownloading = false;
             GC.Collect();
@@ -921,7 +939,7 @@ namespace DiscordBot.Music
 
         static string GetErrorMessage(WebException ex)
         {
-            string content = "";
+            string content;
             if (ex.Message.StartsWith("-1110"))
                 content = $"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!";
             if (ex.Message == "Ex: songs not found")
@@ -930,6 +948,18 @@ namespace DiscordBot.Music
                 content = "Không tìm thấy bài này!";
             else if (ex.Message == "NCT: not available")
                 content = "Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!";
+            else if (ex.Message == "YT: video not found")
+                content = "Không tìm thấy video này!";
+            else if (ex.Message == "Ex: playlist not found")
+                content = "Không tìm thấy danh sách phát này!";
+            else if (ex.Message == "YT: channel not found")
+                content = "Không tìm thấy kênh này!";
+            else if (ex.Message == "Ex: artist not found")
+                content = "Không tìm thấy nghệ sĩ này!";
+            else if (ex.Message == "SC: invalid short link")
+                content = "Link SoundCloud không hợp lệ!";
+            else
+                content = ex.ToString();
             return content;
         }
 

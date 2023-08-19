@@ -25,7 +25,7 @@ namespace DiscordBot.Music.SoundCloud
                     new SearchResult(track.PermalinkUrl.AbsoluteUri, track.Title, track.User.Username, track.User.PermalinkUrl.AbsoluteUri, track.ArtworkUrl.AbsoluteUri) 
                 };
             }
-            List<TrackSearchResult> searchResult = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword, 0, count).GetAwaiter().GetResult();
+            List<TrackSearchResult> searchResult = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword, 0, count).ToListAsync().GetAwaiter().GetResult();
             return searchResult.Select(sR => new SearchResult(sR.PermalinkUrl.AbsoluteUri, sR.Title, sR.User.Username, sR.User.PermalinkUrl.AbsoluteUri, (sR.ArtworkUrl == null ? "" : sR.ArtworkUrl.AbsoluteUri))).ToList();
         }
     }

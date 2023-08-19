@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,7 +34,14 @@ namespace DiscordBot.Music
             {
                 IMusic singletonInstance = (IMusic)Activator.CreateInstance(type, true);
                 if (singletonInstance.MusicType == musicType)
-                    return (IMusic)Activator.CreateInstance(type, linkOrKeywordOrPath);
+                    try
+                    {
+                        return (IMusic)Activator.CreateInstance(type, linkOrKeywordOrPath);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        throw ex.InnerException;
+                    }
             }
             throw new ArgumentOutOfRangeException();
         }
@@ -47,7 +55,14 @@ namespace DiscordBot.Music
                 IMusic singletonInstance = (IMusic)Activator.CreateInstance(musicType, true);
                 if (singletonInstance.isLinkMatch(link))
                 {
-                    music = (IMusic)Activator.CreateInstance(musicType, link);
+                    try
+                    {
+                        music = (IMusic)Activator.CreateInstance(musicType, link);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        throw ex.InnerException;
+                    }
                     return true;
                 }
             }
@@ -67,9 +82,12 @@ namespace DiscordBot.Music
                     {
                         playlist = (IPlaylist)Activator.CreateInstance(musicPlaylistType, link);
                     }
-                    catch (NotAPlaylistException) 
+                    catch (TargetInvocationException ex) 
                     {
-                        continue; 
+                        if (ex.InnerException is NotAPlaylistException)
+                            continue;
+                        if (ex.InnerException is WebException)
+                        throw ex.InnerException;
                     }
                     return true;
                 }

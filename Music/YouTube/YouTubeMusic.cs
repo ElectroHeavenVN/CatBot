@@ -50,13 +50,17 @@ namespace DiscordBot.Music.YouTube
                 isYouTubeMusicVideo = regexMatchYTMusicLink.IsMatch(linkOrKeyword);
                 videoID = regexMatchYTVideoLink.Match(linkOrKeyword).Groups[5].Value;
                 string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(videoID)));
-                JToken videoResource = JObject.Parse(json)["items"][0];
-                videoID = videoResource["id"].ToString();
-                link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
-                title = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}]({link})";
-                artists = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{videoResource["snippet"]["channelId"]})";
-                albumThumbnailLink = videoResource["snippet"]["thumbnails"]["high"]["url"].ToString();
-                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
+                try
+                {
+                    JToken videoResource = JObject.Parse(json)["items"][0];
+                    videoID = videoResource["id"].ToString();
+                    link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
+                    title = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}]({link})";
+                    artists = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{videoResource["snippet"]["channelId"]})";
+                    albumThumbnailLink = videoResource["snippet"]["thumbnails"]["high"]["url"].ToString();
+                    durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
+                }
+                catch (Exception) { throw new WebException("YT: video not found"); }
             }
             else
             {
