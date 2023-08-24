@@ -890,6 +890,13 @@ namespace DiscordBot.Music
                             sentOutOfTrack = true;
                             await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build());
                         }
+                        while (sfxData.Count != 0)
+                        {
+                            byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
+                            sfxData.CopyTo(0, buffer, 0, Math.Min(buffer.Length, sfxData.Count));
+                            sfxData.RemoveRange(0, Math.Min(buffer.Length, sfxData.Count));
+                            await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                        }
                     }
                     if (token.IsCancellationRequested)
                         goto exit;
