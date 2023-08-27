@@ -290,7 +290,9 @@ namespace DiscordBot.Voice
         async Task InternalStopSpeaking(SnowflakeObject messageToReact)
         {
             isStop = true;
-            BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
+            serverInstance.isVoicePlaying = false;
+            serverInstance.musicPlayer.sfxData.Clear();
             if (messageToReact is DiscordMessage message)
                 await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
             else if (messageToReact is DiscordInteraction interaction)
