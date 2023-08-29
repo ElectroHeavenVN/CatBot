@@ -133,13 +133,14 @@ namespace DiscordBot
             return ffmpeg.StandardOutput.BaseStream;
         }
 
-        internal static void LogException(Exception ex)
+        internal static void LogException(Exception ex, bool reportException = true)
         {
             string exceptionMessage = $"[Ex: {DateTime.Now}] {ex}";
             Console.WriteLine(exceptionMessage);
             try
             {
-                Config.exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```");
+                if (reportException)
+                    Config.exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```");
             }
             catch (Exception ex2) { Console.WriteLine(ex2); }
         }
@@ -168,5 +169,30 @@ namespace DiscordBot
                 result += str[random.Next(0, str.Length)];
             return result;
         }
+
+        internal static string GetMemorySize(ulong bytes)
+        {
+            string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
+            if (bytes == 0)
+                return "0" + suf[0];
+            int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+            double num = Math.Round(bytes / Math.Pow(1024, place), 3);
+            return num + suf[place];
+        }
+
+        //internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
+        //{
+        //    List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder>();
+        //    string description = embed.Description;
+        //    while (description.Length > 4096)
+        //    {
+        //        DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+        //        embedBuilder.Description = description.Substring(0, 4096);
+        //        description = description.Substring(4096);
+        //        embeds.Add(embedBuilder);
+        //    }
+        //    embeds[0] = embed.WithDescription(embeds[0].Description);
+        //    return embeds;
+        //}
     }
 }

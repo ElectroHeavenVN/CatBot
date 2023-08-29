@@ -81,35 +81,64 @@ namespace DiscordBot.Voice
 
         internal static async Task Dictionary(SnowflakeObject messageToReply)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReply.TryGetChannel();
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-            embed.Title = "Danh sách file";
-            FileInfo[] sfxs = new DirectoryInfo(Config.SFXFolder).GetFiles();
-            List<FileInfo> sfxSpecials = new DirectoryInfo(Config.SFXFolderSpecial).GetFiles().ToList();
-            sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
-            embed.Title += " (tổng số file: " + (sfxs.Length + sfxSpecials.Count) + ")";
-            embed.Description += "**Các file thông thường (có thể được mọi người sử dụng):**" + Environment.NewLine;
-            for (int i = 0; i < sfxs.Length; i++)
-                embed.Description += Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
-            embed.Description = embed.Description.Trim(',', ' ');
-            if (((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+            try
             {
-                DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder();
-                embed2.Description = "**Các file đặc biệt (chỉ có người có quyền mới được sử dụng):**" + Environment.NewLine;
-                for (int i = 0; i < sfxSpecials.Count; i++)
-                    embed2.Description += Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
-                embed2.Description = embed2.Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
-                if (messageToReply is DiscordInteraction interaction)
-                    await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
-                else if (messageToReply is DiscordMessage message) 
-                    await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
+                serverInstance.lastChannel = messageToReply.TryGetChannel();
+                FileInfo[] sfxs = new DirectoryInfo(Config.SFXFolder).GetFiles();
+                List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+                string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
+                embeds[0].Title = $"Danh sách file ({sfxs.Length} file, {totalSize})";
+                for (int i = 0; i < sfxs.Length; i++)
+                {
+                    string description = embeds.Last().Description + Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                    if (description.Length > 2048 - 38 + Config.Prefix.Length)
+                    {
+                        embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+                        embeds.Add(new DiscordEmbedBuilder());
+                        description = Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                    }
+                    embeds.Last().Description = description;
+                }
+                embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+                if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+                    embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
+                if (messageToReply is DiscordMessage message)
+                    await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
+                else if (messageToReply is DiscordInteraction interaction)
+                    await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
+                foreach (DiscordEmbedBuilder embed in embeds.Skip(1))
+                {
+                    await Task.Delay(200);
+                    await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
+                }
+                if (((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+                {
+                    List<FileInfo> sfxSpecials = new DirectoryInfo(Config.SFXFolderSpecial).GetFiles().ToList();
+                    List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+                    sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
+                    string totalSizeSpecial = Utils.GetMemorySize((ulong)sfxSpecials.Select(f => f.Length).Sum());
+                    embeds2[0].Title = $"Danh sách file đặc biệt ({sfxSpecials.Count} file, {totalSizeSpecial})";
+                    for (int i = 0; i < sfxSpecials.Count; i++)
+                    {
+                        string description = embeds2.Last().Description + Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
+                        if (description.Length > 2048 - 38 + Config.Prefix.Length)
+                        {
+                            embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ');
+                            embeds2.Add(new DiscordEmbedBuilder());
+                            description = Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
+                        }
+                        embeds2.Last().Description = description;
+                    }
+                    embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
+                    foreach (DiscordEmbedBuilder embed in embeds2)
+                    {
+                        await Task.Delay(200);
+                        await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
+                    }
+                }
             }
-            else
-            {
-                embed.Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.Prefix + "s <tên file> để bot nói!";
-                await messageToReply.TryRespondAsync(embed.Build());
-            }
+            catch (Exception ex) { Utils.LogException(ex); }
         }
 
         internal static async Task Disconnect(SnowflakeObject messageToReact)
