@@ -348,6 +348,36 @@ namespace DiscordBot.Music
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
+        
+        internal static async Task SeekTo(InteractionContext ctx, long seconds)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+                {
+                    await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                    return;
+                }
+                try
+                {
+                    int bytesPerSeconds = 2 * 16 * 48000 / 8;
+                    int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                    bytesToSeek -= bytesToSeek % 2;
+                    serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position = bytesToSeek;
+                    await ctx.CreateResponseAsync($"Đã tua bài hiện tại đến vị trí {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
+                }
+                catch (WebException ex)
+                {
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
+                    return;
+                }
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
 
         internal static async Task Clear(InteractionContext ctx)
         {

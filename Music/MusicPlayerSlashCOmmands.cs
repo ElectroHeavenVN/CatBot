@@ -77,6 +77,9 @@ namespace DiscordBot.Music
 
         [SlashCommand("seek", "Tua bài hiện tại")]
         public async Task Seek(InteractionContext ctx, [Option("seconds", "số giây để tua (mặc định: 10)"), Minimum(int.MinValue), Maximum(int.MaxValue)] long seconds = 10) => await MusicPlayerCore.Seek(ctx, seconds);
+        
+        [SlashCommand("seekto", "Tua bài hiện tại đến vị trí chỉ định")]
+        public async Task SeekTo(InteractionContext ctx, [Option("seconds", "số giây tính từ đầu (mặc định: 0)"), Minimum(int.MinValue), Maximum(int.MaxValue)] long seconds = 0) => await MusicPlayerCore.SeekTo(ctx, seconds);
 
         [SlashCommand("clear", "Xóa hết nhạc trong hàng đợi")]
         public async Task Clear(InteractionContext ctx) => await MusicPlayerCore.Clear(ctx);
