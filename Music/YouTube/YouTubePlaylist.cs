@@ -59,7 +59,7 @@ namespace DiscordBot.Music.YouTube
                                 subCount = (subs / 1000000f).ToString("0.00") + " Tr";
                         }
                     }
-                    catch (Exception) { throw new WebException("YT: channel not found"); }
+                    catch (Exception) { throw new MusicException("YT: channel not found"); }
                 }
                 else if (link.Contains("playlist?list="))
                 {
@@ -71,7 +71,7 @@ namespace DiscordBot.Music.YouTube
                         author = $"[{playlistInfo["items"][0]["snippet"]["channelTitle"]}](https://www.youtube.com/channel/{playlistInfo["items"][0]["snippet"]["channelId"]})";
                         thumbnailLink = playlistInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
                     }
-                    catch (Exception) { throw new WebException("Ex: playlist not found"); }
+                    catch (Exception) { throw new MusicException("Ex: playlist not found"); }
                 }
                 JObject playlistItemList;
                 do
@@ -85,7 +85,7 @@ namespace DiscordBot.Music.YouTube
                         {
                             videoList.Add(new YouTubeMusic($"https://{(isYouTubeMusicPlaylist ? "music" : "www")}.youtube.com/watch?v={playlistItem["contentDetails"]["videoId"]}"));
                         }
-                        catch (WebException ex)
+                        catch (MusicException ex)
                         { 
                             if (ex.Message == "YT: video not found")
                                 hiddenVideos++; 

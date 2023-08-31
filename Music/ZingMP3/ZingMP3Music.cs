@@ -151,7 +151,7 @@ namespace DiscordBot.Music.ZingMP3
             JObject obj = GetInfoFromZingMP3("/api/v2/page/get/song", $"id={GetSongID(linkOrID)}");
             if (obj["err"].ToString() == "0")
                 return obj["data"];
-            throw new WebException(obj["err"] + ": " + obj["msg"]);
+            throw new MusicException(obj["err"] + ": " + obj["msg"]);
         }
 
         static JToken GetSongLyricInfo(string linkOrID)
@@ -159,7 +159,7 @@ namespace DiscordBot.Music.ZingMP3
             JObject obj = GetInfoFromZingMP3("/api/v2/lyric/get/lyric", $"id={GetSongID(linkOrID)}");
             if (obj["err"].ToString() == "0")
                 return obj["data"];
-            throw new WebException(obj["err"] + ": " + obj["msg"]);
+            throw new MusicException(obj["err"] + ": " + obj["msg"]);
         }
 
         static string GetMP3Link(string zingMP3Link)
@@ -167,14 +167,14 @@ namespace DiscordBot.Music.ZingMP3
             JObject obj = GetInfoFromZingMP3("/api/v2/song/get/streaming", $"id={GetSongID(zingMP3Link)}");
             if (obj["err"].ToString() == "0")
                 return obj["data"]["128"].ToString();
-            throw new WebException(obj["err"] + ": " + obj["msg"]);
+            throw new MusicException(obj["err"] + ": " + obj["msg"]);
         }
 
         internal static string FindSongID(string name)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/search", $"q={Uri.EscapeUriString(name)}", "type=song", "page=1", $"count=1");
             if (obj["err"].ToString() != "0")
-                throw new WebException("Ex: songs not found");
+                throw new MusicException("Ex: songs not found");
             return obj["data"]["items"][0]["encodeId"].ToString();
         }
 
@@ -183,7 +183,7 @@ namespace DiscordBot.Music.ZingMP3
             JObject obj = GetInfoFromZingMP3("/api/v2/search", $"q={query}", "type=song", "page=1", $"count={count}");
             if (obj["err"].ToString() == "0")
                 return obj["data"];
-            throw new WebException(obj["err"] + ": " + obj["msg"]);
+            throw new MusicException(obj["err"] + ": " + obj["msg"]);
         }
 
         static JObject GetInfoFromZingMP3(string apiEndpoint, params string[] parameters)

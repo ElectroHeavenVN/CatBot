@@ -86,7 +86,7 @@ namespace DiscordBot.Music
                     {
                         if (ex.InnerException is NotAPlaylistException)
                             continue;
-                        if (ex.InnerException is WebException)
+                        if (ex.InnerException is MusicException)
                         throw ex.InnerException;
                     }
                     return true;

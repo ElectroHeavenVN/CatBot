@@ -65,7 +65,7 @@ namespace DiscordBot.Music.SoundCloud
                             if (user.AvatarUrl != null)
                                 thumbnailLink = user.AvatarUrl.AbsoluteUri;
                         }
-                        catch (Exception) { throw new WebException("SC: invalid short link"); }
+                        catch (Exception) { throw new MusicException("SC: invalid short link"); }
                     }
                 }
                 else if (link.Contains("/sets/"))
@@ -81,7 +81,7 @@ namespace DiscordBot.Music.SoundCloud
                         if (playlist.ArtworkUrl != null)
                             thumbnailLink = playlist.ArtworkUrl.AbsoluteUri;
                     }
-                    catch (Exception) { throw new WebException("Ex: playlist not found"); }
+                    catch (Exception) { throw new MusicException("Ex: playlist not found"); }
                 }
                 else
                 {

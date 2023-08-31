@@ -126,9 +126,7 @@ namespace DiscordBot.Music.NhacCuaTui
         {
             XmlDocument xmlDoc = GetXML(link);
             string lyricLink = xmlDoc.DocumentElement["track"].SelectSingleNode("lyric").InnerText;
-            bool retry = false;
-        retry:;
-            if (string.IsNullOrWhiteSpace(lyricLink) || lyricLink == "https://lrc-nct.nixcdn.com/null" || retry)
+            if (string.IsNullOrWhiteSpace(lyricLink) || lyricLink == "https://lrc-nct.nixcdn.com/null")
             {
                 string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);
                 int startIndex = html.IndexOf("<p id=\"divLyric\" class=\"pd_lyric trans\" style=\"height:auto;max-height:255px;overflow:hidden;\">") + 94;
@@ -144,9 +142,10 @@ namespace DiscordBot.Music.NhacCuaTui
             { 
                 encryptedLyric = new WebClient().DownloadString(lyricLink);
             }
-            catch (WebException) { retry = true; }
-            if (retry)
-                goto retry;
+            catch (WebException) 
+            { 
+                return new LyricData("Lỗi khi lấy lời bài hát!");
+            }
             string decryptedLyric = RemoveEmptyLines(MusicUtils.RemoveLyricTimestamps(DecryptLyric(encryptedLyric)));
             return new LyricData(MusicUtils.RemoveEmbedLink(title), MusicUtils.RemoveEmbedLink(artists), decryptedLyric, albumThumbnailLink);
         }
@@ -180,8 +179,8 @@ namespace DiscordBot.Music.NhacCuaTui
             if (string.IsNullOrWhiteSpace(linkContainInfo))
             {
                 if (html.Contains("Sorry, this content is currently not available in your country"))
-                    throw new WebException("NCT: not available");
-                throw new WebException("Ex: not found");
+                    throw new MusicException("NCT: not available");
+                throw new MusicException("Ex: not found");
             }
             string xml = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(linkContainInfo);
             XmlDocument xmlDoc = new XmlDocument();
@@ -193,9 +192,9 @@ namespace DiscordBot.Music.NhacCuaTui
         {
             JObject obj = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeUriString(keyword)));
             if (obj["error_code"].ToString() != "0")
-                throw new WebException("Ex: songs not found");
+                throw new MusicException("Ex: songs not found");
             if (obj["data"]["song"].Count() == 0)
-                throw new WebException("Ex: songs not found");
+                throw new MusicException("Ex: songs not found");
             return obj["data"]["song"][0];
         }
 

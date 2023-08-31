@@ -43,7 +43,7 @@ namespace DiscordBot.Music.Spotify
                     {
                         tracks = SpotifyMusic.spClient.Albums.GetAllTracksAsync(id).GetAwaiter().GetResult();
                     }
-                    catch (Exception) { throw new WebException("Ex: album not found"); }
+                    catch (Exception) { throw new MusicException("Ex: album not found"); }
                     Album album = SpotifyMusic.spClient.Albums.GetAsync(id).GetAwaiter().GetResult();
                     title = $"[{album.Name}]({album.Url})";
                     author = string.Join(", ", album.Artists.Select(artist => $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id})"));
@@ -55,7 +55,7 @@ namespace DiscordBot.Music.Spotify
                     {
                         tracks = SpotifyMusic.spClient.Playlists.GetAllTracksAsync(id).GetAwaiter().GetResult();
                     }
-                    catch (Exception) { throw new WebException("Ex: playlist not found"); }
+                    catch (Exception) { throw new MusicException("Ex: playlist not found"); }
                     Playlist playlist = SpotifyMusic.spClient.Playlists.GetAsync(id).GetAwaiter().GetResult();
                     string[] imageLinks = SpotifyMusic.spClient.Playlists.GetImagesAsync(id).GetAwaiter().GetResult();
                     title = $"[{playlist.Name}](https://open.spotify.com/playlist/{playlist.Id})";
@@ -75,7 +75,7 @@ namespace DiscordBot.Music.Spotify
                     {
                         tracks = SpotifyMusic.spClient.Artists.GetTopTracks(id).GetAwaiter().GetResult();
                     }
-                    catch (Exception) { throw new WebException("Ex: artist not found"); }
+                    catch (Exception) { throw new MusicException("Ex: artist not found"); }
                     Artist artist = SpotifyMusic.spClient.Artists.GetAsync(id).GetAwaiter().GetResult();
                     title = $"Nhạc phổ biến của [{artist.Name}](https://open.spotify.com/artist/{artist.Id})";
                     author = $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id})";

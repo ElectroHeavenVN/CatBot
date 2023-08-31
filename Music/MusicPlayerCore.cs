@@ -98,7 +98,7 @@ namespace DiscordBot.Music
                         return;
                     }
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 { 
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -109,7 +109,7 @@ namespace DiscordBot.Music
                     if (!MusicUtils.TryCreateMusicInstance(input, out music))
                         music = MusicUtils.CreateMusicInstance(input, musicType);
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -152,7 +152,7 @@ namespace DiscordBot.Music
                         return;
                     }
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -163,7 +163,7 @@ namespace DiscordBot.Music
                     if (!MusicUtils.TryCreateMusicInstance(input, out music))
                         music = MusicUtils.CreateMusicInstance(input, musicType);
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -206,7 +206,7 @@ namespace DiscordBot.Music
                         return;
                     }
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -217,7 +217,7 @@ namespace DiscordBot.Music
                     if (!MusicUtils.TryCreateMusicInstance(input, out music))
                         music = MusicUtils.CreateMusicInstance(input, musicType);
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
                     return;
@@ -340,7 +340,7 @@ namespace DiscordBot.Music
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
                     await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
                     return;
@@ -370,7 +370,7 @@ namespace DiscordBot.Music
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position = bytesToSeek;
                     await ctx.CreateResponseAsync($"Đã tua bài hiện tại đến vị trí {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 }
-                catch (WebException ex)
+                catch (MusicException ex)
                 {
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
                     return;
@@ -850,7 +850,7 @@ namespace DiscordBot.Music
                             else
                                 await lastChannel.SendMessageAsync(embed.Build());
                         }
-                        catch (WebException ex)
+                        catch (MusicException ex)
                         {
                             await lastChannel.SendMessageAsync(GetErrorMessage(ex));
                             continue;
@@ -992,12 +992,12 @@ namespace DiscordBot.Music
             }
         }
 
-        static string GetErrorMessage(WebException ex)
+        static string GetErrorMessage(MusicException ex)
         {
             string content;
             if (ex.Message.StartsWith("-1110"))
                 content = $"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!";
-            if (ex.Message == "Ex: songs not found")
+            else if (ex.Message == "Ex: songs not found")
                 content = "Không tìm thấy bài \"{0}\"!";
             else if (ex.Message == "Ex: not found")
                 content = "Không tìm thấy bài này!";

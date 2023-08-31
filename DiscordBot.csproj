@@ -214,6 +214,7 @@
     <Compile Include="Instance\GlobalSlashCommands.cs" />
     <Compile Include="Music\IMusic.cs" />
     <Compile Include="Music\IPlaylist.cs" />
+    <Compile Include="Music\MusicException.cs" />
     <Compile Include="Music\MusicPlayerBaseCommands.cs" />
     <Compile Include="Music\MusicQueue.cs" />
     <Compile Include="Music\NhacCuaTui\NhacCuaTuiSearch.cs" />
