@@ -763,6 +763,24 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
+        internal static async Task ViewAlbumArtwork(InteractionContext ctx)
+        {
+            try
+            {
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                    return;
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
+                if (string.IsNullOrEmpty(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink))
+                {
+                    await ctx.CreateResponseAsync("Bài đang phát không có ảnh album!");
+                    return;
+                }
+                await ctx.CreateResponseAsync(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink);
+            }
+            catch (Exception ex) { Utils.LogException(ex); }
+        }
+
         async Task MainPlay(CancellationToken token)
         {
             try

@@ -113,5 +113,8 @@ namespace DiscordBot.Music
 
         [SlashCommand("musicvolume", "Xem hoặc chỉnh âm lượng nhạc của bot")]
         public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
+
+        [SlashCommand("albumartwork", "Xem ảnh album của bài đang phát")]
+        public async Task ViewAlbumArtwork(InteractionContext ctx) => await MusicPlayerCore.ViewAlbumArtwork(ctx);
     }
 }
