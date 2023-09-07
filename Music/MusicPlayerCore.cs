@@ -223,7 +223,6 @@ namespace DiscordBot.Music
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                serverInstance.musicPlayer.musicQueue.Peek().DeletePCMFile();
                 serverInstance.musicPlayer.musicQueue.Insert(0, music);
                 serverInstance.musicPlayer.isPreparingNextSong = false;
                 serverInstance.musicPlayer.isStopped = false;
