@@ -305,6 +305,9 @@ namespace DiscordBot.Music
                     DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
                     serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
                     string albumThumbnailLink = serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink;
+                    DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong));
+                    DiscordMessage cacheWaveformMessage = Config.cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
+                    embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
                     if (!string.IsNullOrEmpty(albumThumbnailLink))
                     {
                         DiscordMessage message = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.WithThumbnail(albumThumbnailLink).Build()));
@@ -840,6 +843,9 @@ namespace DiscordBot.Music
                             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
                             currentlyPlayingSong.AddFooter(embed);
                             string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
+                            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
+                            DiscordMessage cacheWaveformMessage = Config.cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
+                            embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
                             if (!string.IsNullOrEmpty(albumThumbnailLink))
                             {
                                 DiscordMessage message = await lastChannel.SendMessageAsync(embed.WithThumbnail(albumThumbnailLink).Build());

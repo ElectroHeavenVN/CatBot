@@ -214,6 +214,8 @@ namespace DiscordBot.Music.ZingMP3
             return link;
         }
 
+        public string GetPCMFilePath() => pcmFile;
+
         public void DeletePCMFile()
         {
             try

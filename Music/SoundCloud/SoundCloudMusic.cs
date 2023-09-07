@@ -117,6 +117,8 @@ namespace DiscordBot.Music.SoundCloud
 
         public bool isLinkMatch(string link) => regexMatchSoundCloudLink.IsMatch(link);
 
+        public string GetPCMFilePath() => pcmFile;
+
         public void DeletePCMFile()
         {
             try

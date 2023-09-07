@@ -221,6 +221,8 @@ namespace DiscordBot.Music.NhacCuaTui
             return link;
         }
 
+        public string GetPCMFilePath() => pcmFile;
+
         public void DeletePCMFile()
         {
             try

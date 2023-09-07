@@ -179,6 +179,8 @@ namespace DiscordBot.Music.Spotify
 
         public bool isLinkMatch(string link) => regexMatchSpotifyLink.IsMatch(link);
 
+        public string GetPCMFilePath() => pcmFile;
+
         public void DeletePCMFile()
         {
             try

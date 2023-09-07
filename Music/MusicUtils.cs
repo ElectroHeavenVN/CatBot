@@ -1,12 +1,8 @@
-﻿using DiscordBot.Music.Local;
-using DiscordBot.Music.NhacCuaTui;
-using DiscordBot.Music.SoundCloud;
-using DiscordBot.Music.YouTube;
-using DiscordBot.Music.ZingMP3;
-using Leaf.xNet;
+﻿using System.Drawing.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,6 +11,8 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using DiscordBot.Music.ZingMP3;
+using Leaf.xNet;
 
 namespace DiscordBot.Music
 {
@@ -206,6 +204,40 @@ namespace DiscordBot.Music
                     ZingMP3Music.zingMP3Version = mainMinJSRegex.Match(zingMP3Web).Groups[1].Value.Replace("v", "");
                 lastTimeCheckZingMP3Version = DateTime.Now;
             }
+        }
+
+        internal static MemoryStream GetMusicWaveform(IMusic music, bool fullGray = false)
+        {
+            byte[] buffer = File.ReadAllBytes(music.GetPCMFilePath());
+            long pos = music.MusicPCMDataStream.Position;
+            Bitmap bitmap = new Bitmap(500, 30);
+            int samplesPerBar = buffer.Length / 2 / (bitmap.Width - 1);
+            int[] samples = new int[bitmap.Width];
+            int currentSampleIndex = 0;
+            for (int i = 0; i < buffer.Length; i += 2)
+            {
+                int index = i / 2 / samplesPerBar;
+                if (i == pos - pos % 2)
+                    currentSampleIndex = index;
+                samples[index] = Math.Max(samples[index], Math.Abs((int)BitConverter.ToInt16(buffer, i)));
+            }
+
+            Graphics g = Graphics.FromImage(bitmap);
+            Pen pen = new Pen(Color.White, 1);
+            Pen pen2 = new Pen(Color.Gray, 1);
+            g.Clear(Color.Transparent);
+            int maxHeight = bitmap.Height / 2;
+            for (int i = 0; i < samples.Length; i++)
+            {
+                if (!fullGray && i <= currentSampleIndex)
+                    g.DrawLine(pen, i, maxHeight + samples[i] * (maxHeight / 32767f), i, maxHeight - samples[i] * (maxHeight / 32767f));
+                else
+                    g.DrawLine(pen2, i, maxHeight + samples[i] * (maxHeight / 32767f), i, maxHeight - samples[i] * (maxHeight / 32767f));
+            }
+            MemoryStream result = new MemoryStream();
+            bitmap.Save(result, ImageFormat.Png);
+            result.Position = 0;
+            return result;
         }
 
         internal static void SetCookie(HttpRequest httpRequest, string cookies, bool RemoveOldCookie = true)

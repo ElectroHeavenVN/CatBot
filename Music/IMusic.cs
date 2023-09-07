@@ -22,6 +22,7 @@ namespace DiscordBot.Music
         Stream MusicPCMDataStream { get; }
         DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed);
         string GetSongDesc(bool hasTimeStamp = false);
+        string GetPCMFilePath();
         void DeletePCMFile();
         string[] GetFilesInUse();
         string GetIcon();
