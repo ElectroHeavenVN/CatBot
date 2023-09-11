@@ -42,7 +42,7 @@ namespace DiscordBot.Music.YouTube
         SponsorBlockOptions sponsorBlockOptions;
         bool hasSponsorBlockSegment;
         string videoID;
-        SponsorBlockSkipSegment[] sponsorBlockSkipSegments;
+        SponsorBlockSkipSegment[] sponsorBlockSkipSegments = new SponsorBlockSkipSegment[0];
 
         public YouTubeMusic() { }
 
