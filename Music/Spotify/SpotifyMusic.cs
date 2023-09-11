@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
+using DiscordBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using SpotifyExplode;

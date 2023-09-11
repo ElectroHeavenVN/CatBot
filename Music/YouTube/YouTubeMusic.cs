@@ -1,5 +1,7 @@
 ﻿using DiscordBot.Instance;
+using DiscordBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -40,6 +42,7 @@ namespace DiscordBot.Music.YouTube
         SponsorBlockOptions sponsorBlockOptions;
         bool hasSponsorBlockSegment;
         string videoID;
+        SponsorBlockSkipSegment[] sponsorBlockSkipSegments;
 
         public YouTubeMusic() { }
 
@@ -82,15 +85,17 @@ namespace DiscordBot.Music.YouTube
             {
                 while (sponsorBlockOptions == null)
                     Thread.Sleep(100);
+                try
+                {
+                    string sponsorBlockJSON = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}");
+                    sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
+                    hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
+                }
+                catch (WebException) { }
                 DownloadWEBM(link, ref webmFilePath);
                 TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
                 duration = webmFile.Properties.Duration;
                 webmFile.Dispose();
-                try
-                {
-                    hasSponsorBlockSegment = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}") != "Not Found";
-                }
-                catch (WebException) { }
                 canGetStream = true;
                 musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
                 File.Delete(webmFilePath);
@@ -172,14 +177,15 @@ namespace DiscordBot.Music.YouTube
 
         void DownloadWEBM(string link, ref string tempFile)
         {
-            tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{Utils.RandomString(10)}.webm");
+            string randomString = Utils.RandomString(10);
+            tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.webm");
             Thread.Sleep(100);
             Process yt_dlp_x86 = new Process() 
             { 
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "yt-dlp\\yt-dlp_x86",
-                    Arguments = $"-f bestaudio --ffmpeg-location ../ffmpeg{sponsorBlockOptions.GetArgument()} --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
+                    Arguments = $"-f bestaudio --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
                     WorkingDirectory = "yt-dlp",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
@@ -190,6 +196,46 @@ namespace DiscordBot.Music.YouTube
             yt_dlp_x86.Start();
             yt_dlp_x86.WaitForExit();
             Console.WriteLine("--------------End of yt-dlp Console output--------------");
+            if (sponsorBlockSkipSegments.Length > 0)
+            {
+                string tempWEBMFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.temp.webm");
+                string concatFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.temp.webm.concat");
+                File.Move(tempFile, tempWEBMFile);
+                WriteConcatFile(concatFile, tempWEBMFile);
+                Process ffmpeg = new Process()
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "ffmpeg\\ffmpeg",
+                        Arguments = $"-y -hide_banner -f concat -safe 0 -i \"{concatFile}\" -map 0 -dn -ignore_unknown -c copy -movflags +faststart \"{tempFile}\"",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        UseShellExecute = false,
+                    },
+                    EnableRaisingEvents = true,
+                };
+                Console.WriteLine("--------------FFMpeg Console output--------------");
+                ffmpeg.Start();
+                ffmpeg.WaitForExit();
+                Console.WriteLine("--------------End of FFMpeg Console output--------------");
+                File.Delete(tempWEBMFile);
+                File.Delete(concatFile);
+            }
+        }
+
+        private void WriteConcatFile(string concatFile, string tempWEBMFile)
+        {
+            string concatFileContent = "ffconcat version 1.0" + Environment.NewLine;
+            foreach (SponsorBlockSkipSegment segment in sponsorBlockSkipSegments)
+            {
+                if (segment.Segment.IsLengthZero())
+                    continue;
+                concatFileContent += "file '" + tempWEBMFile + "'" + Environment.NewLine;
+                if (segment.Segment.Start > 0)
+                    concatFileContent += "outpoint " + segment.Segment.Start.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
+                if (segment.VideoDuration - segment.Segment.End > 0)
+                    concatFileContent += "inpoint " + segment.Segment.End.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
+            }
+            File.WriteAllText(concatFile, concatFileContent);
         }
 
         public void Dispose()

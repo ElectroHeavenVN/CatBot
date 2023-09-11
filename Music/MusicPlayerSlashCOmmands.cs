@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Music.Spotify;
 using DiscordBot.Voice;
+using DiscordBot.Music.SponsorBlock;
 
 namespace DiscordBot.Music
 {
@@ -112,7 +113,7 @@ namespace DiscordBot.Music
         public async Task Lyric(InteractionContext ctx, [Option("name", "Tên bài hát")] string name = "", [Option("artists", "Tên nghệ sĩ")] string artistsName = "") => await MusicPlayerCore.Lyric(ctx, name, artistsName);
 
         [SlashCommand("sponsorblock", "Thêm vào hoặc xóa loại phân đoạn SponsorBlock khỏi danh sách phân đoạn bỏ qua")]
-        public async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, [Option("type", "Loại phân đoạn")] SponsorBlockSectionType type = 0) => await MusicPlayerCore.AddOrRemoveSponsorBlockOption(ctx, type);
+        public async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, [Option("type", "Loại phân đoạn")] SponsorBlockCategory type = 0) => await MusicPlayerCore.AddOrRemoveSponsorBlockOption(ctx, type);
 
         [SlashCommand("musicvolume", "Xem hoặc chỉnh âm lượng nhạc của bot")]
         public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);

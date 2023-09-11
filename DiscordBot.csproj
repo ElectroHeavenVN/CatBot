@@ -69,8 +69,8 @@
     <Reference Include="DSharpPlus.VoiceNext, Version=4.4.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\DSharpPlus.VoiceNext.4.4.2\lib\netstandard2.0\DSharpPlus.VoiceNext.dll</HintPath>
     </Reference>
-    <Reference Include="HtmlAgilityPack, Version=1.11.51.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>packages\HtmlAgilityPack.1.11.51\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.11.53.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>packages\HtmlAgilityPack.1.11.53\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Leaf.xNet, Version=5.2.10.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Leaf.xNet.5.2.10\lib\net45\Leaf.xNet.dll</HintPath>
@@ -90,8 +90,8 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SoundCloudExplode, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SoundCloudExplode.1.5.1\lib\net461\SoundCloudExplode.dll</HintPath>
+    <Reference Include="SoundCloudExplode, Version=1.5.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SoundCloudExplode.1.5.3\lib\net461\SoundCloudExplode.dll</HintPath>
     </Reference>
     <Reference Include="SpotifyExplode, Version=1.0.7.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\SpotifyExplode.1.0.7\lib\net461\SpotifyExplode.dll</HintPath>
@@ -149,6 +149,7 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security.Cryptography.Algorithms, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Security.Cryptography.Algorithms.4.3.1\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
       <Private>True</Private>
@@ -237,7 +238,12 @@
     <Compile Include="Music\SoundCloud\SoundCloudMusicChoiceProvider.cs" />
     <Compile Include="Music\SoundCloud\SoundCloudPlaylist.cs" />
     <Compile Include="Music\SoundCloud\SoundCloudSearch.cs" />
-    <Compile Include="Music\SponsorBlockOptions.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockActionType.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockCategory.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockOptions.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockSegment.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockSegmentJsonConverter.cs" />
+    <Compile Include="Music\SponsorBlock\SponsorBlockSkipSegment.cs" />
     <Compile Include="Music\Spotify\SpotifyMusic.cs" />
     <Compile Include="Music\Spotify\SpotifyMusicChoiceProvider.cs" />
     <Compile Include="Music\Spotify\SpotifyPlaylist.cs" />

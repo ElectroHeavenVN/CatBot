@@ -1,4 +1,5 @@
 ﻿using DiscordBot.Instance;
+using DiscordBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using System;

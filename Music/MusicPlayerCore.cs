@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DiscordBot.Instance;
 using DiscordBot.Music.Local;
+using DiscordBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
@@ -760,7 +761,7 @@ namespace DiscordBot.Music
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        internal static async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, SponsorBlockSectionType type)
+        internal static async Task AddOrRemoveSponsorBlockOption(InteractionContext ctx, SponsorBlockCategory type)
         {
             try
             {
@@ -778,7 +779,7 @@ namespace DiscordBot.Music
                 }
                 else 
                 {
-                    if (type == SponsorBlockSectionType.All)
+                    if (type == SponsorBlockCategory.All)
                     {
                         if (serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
                             serverInstance.musicPlayer.sponsorBlockOptions.SetOptions(type);
@@ -786,7 +787,7 @@ namespace DiscordBot.Music
                             serverInstance.musicPlayer.sponsorBlockOptions.SetOptions(0);
                     }
                     serverInstance.musicPlayer.sponsorBlockOptions.AddOrRemoveOptions(type);
-                    str = $"Đã {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "thêm" : "xóa")} {(type == SponsorBlockSectionType.All ? "tất cả loại phân đoạn" : $"loại phân đoạn \"{type.GetName()}\"")} {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "vào" : "khỏi")} danh sách bỏ qua!";
+                    str = $"Đã {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "thêm" : "xóa")} {(type == SponsorBlockCategory.All ? "tất cả loại phân đoạn" : $"loại phân đoạn \"{type.GetName()}\"")} {(serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) ? "vào" : "khỏi")} danh sách bỏ qua!";
                     if (!serverInstance.musicPlayer.sponsorBlockOptions.HasOption(type) && !serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
                         str += Environment.NewLine + $"Không có loại phân đoạn nào để bỏ qua, tắt chức năng bỏ qua phân đoạn SponsorBlock!";
                 }
