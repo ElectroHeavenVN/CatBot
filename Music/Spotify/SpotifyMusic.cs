@@ -65,17 +65,10 @@ namespace DiscordBot.Music.Spotify
         public void Download()
         {
             string url = $"https://api.spotifydown.com/download/{trackID}";
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
             httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
-            httpClient.DefaultRequestHeaders.Add("sec-ch-ua", Config.SecChUaHeader);
-            httpClient.DefaultRequestHeaders.Add("accept-language", "en-US,en;q=0.9");
-            httpClient.DefaultRequestHeaders.Add("sec-ch-ua-mobile", "?0");
-            httpClient.DefaultRequestHeaders.Add("sec-ch-ua-platform", "\"Windows\"");
-            httpClient.DefaultRequestHeaders.Add("sec-fetch-dest", "empty");
-            httpClient.DefaultRequestHeaders.Add("sec-fetch-mode", "cors");
-            httpClient.DefaultRequestHeaders.Add("sec-fetch-site", "same-site");
             httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
-            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com");
+            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com/");
             HttpResponseMessage response = httpClient.GetAsync(url).GetAwaiter().GetResult();
             JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
             string downloadUrl = responseData["link"].ToString();

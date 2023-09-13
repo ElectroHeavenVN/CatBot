@@ -171,12 +171,6 @@ namespace DiscordBot.Music
                 httpRequestWithCookie.AddHeader(HttpHeader.Accept, "*/*");
                 httpRequestWithCookie.AddHeader(HttpHeader.AcceptLanguage, "vi");
                 httpRequestWithCookie.AddHeader("Host", "zingmp3.vn");
-                httpRequestWithCookie.AddHeader("Sec-Ch-Ua", Config.SecChUaHeader);
-                httpRequestWithCookie.AddHeader("Sec-Ch-Ua-Mobile", "?0");
-                httpRequestWithCookie.AddHeader("Sec-Ch-Ua-Platform", "\"Windows\"");
-                httpRequestWithCookie.AddHeader("Sec-Fetch-Dest", "empty");
-                httpRequestWithCookie.AddHeader("Sec-Fetch-Mode", "cors");
-                httpRequestWithCookie.AddHeader("Sec-Fetch-Site", "same-origin");
                 httpRequestWithCookie.Get(ZingMP3Music.zingMP3Link, null);    
             }
             return httpRequestWithCookie;
@@ -193,12 +187,6 @@ namespace DiscordBot.Music
                 http.AddHeader(HttpHeader.Accept, "*/*");
                 http.AddHeader(HttpHeader.AcceptLanguage, "vi");
                 http.AddHeader("Host", "zingmp3.vn");
-                http.AddHeader("Sec-Ch-Ua", Config.SecChUaHeader);
-                http.AddHeader("Sec-Ch-Ua-Mobile", "?0");
-                http.AddHeader("Sec-Ch-Ua-Platform", "\"Windows\"");
-                http.AddHeader("Sec-Fetch-Dest", "empty");
-                http.AddHeader("Sec-Fetch-Mode", "cors");
-                http.AddHeader("Sec-Fetch-Site", "same-origin");
                 string zingMP3Web = http.Get(ZingMP3Music.zingMP3Link, null).ToString();
                 while(string.IsNullOrWhiteSpace(ZingMP3Music.zingMP3Version))
                     ZingMP3Music.zingMP3Version = mainMinJSRegex.Match(zingMP3Web).Groups[1].Value.Replace("v", "");

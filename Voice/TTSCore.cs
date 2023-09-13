@@ -125,12 +125,6 @@ namespace DiscordBot.Voice
             webRequest.Headers.Add(HttpRequestHeader.AcceptEncoding, "gzip, deflate, br");
             webRequest.Headers.Add(HttpRequestHeader.AcceptLanguage, "vi-VN,vi;q=0.9");
             webRequest.Headers.Add("origin", "https://zalo.ai");
-            webRequest.Headers.Add("sec-ch-ua", Config.SecChUaHeader);
-            webRequest.Headers.Add("sec-ch-ua-mobile", "?0");
-            webRequest.Headers.Add("sec-ch-ua-platform", "\"Windows\"");
-            webRequest.Headers.Add("sec-fetch-dest", "empty");
-            webRequest.Headers.Add("sec-fetch-mode", "cors");
-            webRequest.Headers.Add("sec-fetch-site", "same-origin");
             webRequest.Accept = "application/json, text/plain, */*";
             webRequest.GetRequestStream().Write(data, 0, data.Length);
             HttpWebResponse httpWebResponse = (HttpWebResponse)await webRequest.GetResponseAsync();

@@ -114,11 +114,6 @@ namespace DiscordBot
         internal static string UserAgent => GetConfigValue<string>("UserAgent");
 
         /// <summary>
-        /// Sec-Ch-Ua header
-        /// </summary>
-        internal static string SecChUaHeader => GetConfigValue<string>("Sec-Ch-Ua");
-
-        /// <summary>
         /// API tìm lời bài hát
         /// </summary>
         internal static string LyricAPI => GetConfigValue<string>("LyricAPI") ?? "https://lyrist.vercel.app/api/";
