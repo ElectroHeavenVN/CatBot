@@ -41,7 +41,7 @@ namespace DiscordBot.Music
         internal SponsorBlockOptions sponsorBlockOptions = new SponsorBlockOptions();
         internal List<byte> sfxData = new List<byte>();
         Thread prepareNextMusicStreamThread;
-        internal double volume = 1;
+        internal double volume = .75;
         internal PlayMode playMode = new PlayMode();
         bool isDownloading;
         int currentIndex;
