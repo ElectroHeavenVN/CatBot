@@ -101,7 +101,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 { 
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -112,7 +112,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -155,7 +155,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -166,7 +166,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -209,7 +209,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -220,7 +220,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), input)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -345,7 +345,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -375,7 +375,7 @@ namespace DiscordBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -858,7 +858,7 @@ namespace DiscordBot.Music
                         }
                         catch (MusicException ex)
                         {
-                            await lastChannel.SendMessageAsync(GetErrorMessage(ex));
+                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title))).WithColor(DiscordColor.Red).Build());
                             continue;
                         }
                         catch (Exception ex)

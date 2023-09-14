@@ -1,15 +1,4 @@
-﻿using DiscordBot.Music.SponsorBlock;
-using DiscordBot.SoundCloudExplodeExtension;
-using DiscordBot.Voice;
-using Newtonsoft.Json;
-using SoundCloudExplode;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
 namespace DiscordBot
 {
