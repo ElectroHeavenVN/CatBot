@@ -880,7 +880,7 @@ namespace DiscordBot.Music
                                 prepareNextMusicStreamThread = new Thread(PrepareNextSong) { IsBackground = true };
                                 prepareNextMusicStreamThread.Start();
                             }
-                            while (isPaused)
+                            while (isPaused || !serverInstance.canSpeak)
                                 await Task.Delay(500);
                             tryagain:;
                             try

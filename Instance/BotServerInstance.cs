@@ -27,6 +27,7 @@ namespace DiscordBot.Instance
         internal DiscordGuild server;
         internal VoiceNextConnection currentVoiceNextConnection;
         internal bool isDisconnect;
+        internal bool canSpeak = true;
         internal DiscordChannel lastChannel
         {
             get => m_lastChannel;
@@ -146,7 +147,11 @@ namespace DiscordBot.Instance
                 {
                     voiceNextConnection = await member.VoiceState.Channel.ConnectAsync();
                     if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                        await (await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                    {
+                        DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
+                        if (botMember.VoiceState.IsSuppressed)
+                            await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                    }
                     voiceNextConnection.SetVolume(volume);
                     serverInstance.currentVoiceNextConnection = voiceNextConnection;
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
@@ -159,7 +164,11 @@ namespace DiscordBot.Instance
                     return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
                 voiceNextConnection = await channel.ConnectAsync();
                 if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                    await (await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                {
+                    DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
+                    if (botMember.VoiceState.IsSuppressed)
+                        await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                }
                 voiceNextConnection.SetVolume(volume);
                 serverInstance.currentVoiceNextConnection = voiceNextConnection;
                 serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
@@ -262,7 +271,11 @@ namespace DiscordBot.Instance
                         {
                             voiceNextConnection = await channel.ConnectAsync();
                             if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                                await (await channel.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                            {
+                                DiscordMember botMember = await channel.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
+                                if (botMember.VoiceState.IsSuppressed)
+                                    await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                            }
                             GetBotServerInstance(channel.Guild).currentVoiceNextConnection = voiceNextConnection;
                             GetBotServerInstance(channel.Guild).lastTimeCheckVoiceChannel = DateTime.Now;
                         }
@@ -313,9 +326,42 @@ namespace DiscordBot.Instance
 
         internal static async Task onVoiceStateUpdated(VoiceStateUpdateEventArgs args)
         {
+            BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
+            if (serverInstance.currentVoiceNextConnection != null)
+                serverInstance.canSpeak = serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count >= 2;
+            if (!serverInstance.canSpeak)
+            {
+                DiscordChannel channel = serverInstance.GetLastChannel();
+                bool isDelete = false;
+                DiscordMessage discordMessage = null;
+                string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
+                if (serverInstance.currentVoiceNextConnection != null && serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                    message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
+                if (channel != null)
+                {
+                    discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                }
+                else
+                {
+                    isDelete = true;
+                    foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                    {
+                        try
+                        {
+                            discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                            break;
+                        }
+                        catch (Exception) { }
+                    }
+                }
+                if (isDelete)
+                {
+                    await Task.Delay(3000);
+                    await discordMessage?.DeleteAsync();
+                }
+            }
             if (args.User.Id == DiscordBotMain.botClient.CurrentUser.Id)
             {
-                BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
                 if (serverInstance.suppressOnVoiceStateUpdatedEvent)
                     return;
                 try
@@ -339,9 +385,12 @@ namespace DiscordBot.Instance
                             DiscordChannel channel = serverInstance.GetLastChannel();
                             bool isDelete = false;
                             DiscordMessage discordMessage = null;
+                            string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!";
+                            if (args.Channel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                                message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel.Id}>!";
                             if (channel != null)
                             {
-                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle($"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!").WithColor(DiscordColor.Red).Build());
+                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
                             }
                             else
                             {
@@ -350,7 +399,7 @@ namespace DiscordBot.Instance
                                 {
                                     try
                                     {
-                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle($"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!").WithColor(DiscordColor.Red).Build());
+                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
                                         break;
                                     }
                                     catch (Exception) { }
@@ -388,6 +437,45 @@ namespace DiscordBot.Instance
                         catch (Exception ex) { Utils.LogException(ex); }
                         serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     }
+                    else if ((!args.Before.IsServerMuted && args.After.IsServerMuted) || (!args.Before.IsSuppressed && args.After.IsSuppressed))
+                    {
+                        //mute
+                        DiscordChannel channel = serverInstance.GetLastChannel();
+                        bool isDelete = false;
+                        DiscordMessage discordMessage = null;
+                        string message = "Bot đã bị tắt tiếng! Nhạc sẽ được tạm dừng đến khi bot được bật tiếng!";
+                        if (args.Channel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                            message = "Bot đã bị chuyển thành người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
+                        if (channel != null)
+                        {
+                            discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                        }
+                        else
+                        {
+                            isDelete = true;
+                            foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                            {
+                                try
+                                {
+                                    discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                    break;
+                                }
+                                catch (Exception) { }
+                            }
+                        }
+                        serverInstance.canSpeak = false;
+                        if (isDelete)
+                        {
+                            await Task.Delay(3000);
+                            await discordMessage?.DeleteAsync();
+                        }
+                    }
+                    else if ((args.Before.IsServerMuted && !args.After.IsServerMuted) || (args.Before.IsSuppressed && !args.After.IsSuppressed))
+                    {
+                        //unmute
+                        serverInstance.canSpeak = true;
+                    }
+
                 }
                 catch (Exception ex)
                 {
