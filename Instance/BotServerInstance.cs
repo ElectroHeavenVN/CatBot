@@ -145,6 +145,8 @@ namespace DiscordBot.Instance
                 else
                 {
                     voiceNextConnection = await member.VoiceState.Channel.ConnectAsync();
+                    if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                        await (await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                     voiceNextConnection.SetVolume(volume);
                     serverInstance.currentVoiceNextConnection = voiceNextConnection;
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
@@ -156,6 +158,8 @@ namespace DiscordBot.Instance
                 if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id))
                     return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
                 voiceNextConnection = await channel.ConnectAsync();
+                if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                    await (await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                 voiceNextConnection.SetVolume(volume);
                 serverInstance.currentVoiceNextConnection = voiceNextConnection;
                 serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
@@ -257,6 +261,8 @@ namespace DiscordBot.Instance
                         if (channel.PermissionsFor(channel.Guild.CurrentMember).HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
                         {
                             voiceNextConnection = await channel.ConnectAsync();
+                            if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                                await (await channel.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id)).UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                             GetBotServerInstance(channel.Guild).currentVoiceNextConnection = voiceNextConnection;
                             GetBotServerInstance(channel.Guild).lastTimeCheckVoiceChannel = DateTime.Now;
                         }
