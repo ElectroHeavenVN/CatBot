@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
+using DiscordBot.Music.SoundCloud;
 using DiscordBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
@@ -28,7 +32,7 @@ namespace DiscordBot.Music.Spotify
         string trackID = "";
         internal static SpotifyClient spClient = new SpotifyClient();
         Stream musicPCMDataStream;
-        string mp3FilePath;
+        string mp3OrWEBMFilePath;
         Track track;
         bool canGetStream;
         bool _disposed;
@@ -64,23 +68,39 @@ namespace DiscordBot.Music.Spotify
 
         public void Download()
         {
-            string url = $"https://api.spotifydown.com/download/{trackID}";
-            HttpClient httpClient = new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
-            httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
-            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com/");
-            HttpResponseMessage response = httpClient.GetAsync(url).GetAwaiter().GetResult();
-            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-            string downloadUrl = responseData["link"].ToString();
-            mp3FilePath = Path.GetTempFileName();
-            new WebClient().DownloadFile(downloadUrl, mp3FilePath);
-            TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
-            duration = mp3File.Properties.Duration;
-            mp3File.Dispose();
+            string mimeType;
+            mp3OrWEBMFilePath = Path.GetTempFileName();
+            try
+            {
+                GetTrackFromYtDlp();
+                mimeType = "taglib/webm";
+            }
+            catch
+            {
+                try
+                {
+                    GetTrackFromSoundCloud();
+                    mimeType = "taglib/mp3";
+                }
+                catch 
+                { 
+                    try
+                    {
+                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
+                        mimeType = "taglib/mp3";
+                    }
+                    catch { throw new MusicException("Sp: not found"); }
+                }
+            }
+            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, mimeType, TagLib.ReadStyle.Average);
+            duration = mp3OrWEBMFile.Properties.Duration;
+            mp3OrWEBMFile.Dispose();
+            if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
+                throw new MusicException("Sp: not found");
             canGetStream = true;
-            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-            File.Delete(mp3FilePath);
-            mp3FilePath = null;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3OrWEBMFilePath, ref pcmFile));
+            File.Delete(mp3OrWEBMFilePath);
+            mp3OrWEBMFilePath = null;
         }
 
         public MusicType MusicType => MusicType.Spotify;
@@ -153,7 +173,7 @@ namespace DiscordBot.Music.Spotify
 
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by Spotify", spotifyIconLink);
 
-        public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
+        public string[] GetFilesInUse() => new string[] { mp3OrWEBMFilePath, pcmFile };
 
         public string GetIcon() => Config.SpotifyIcon;
 
@@ -169,6 +189,59 @@ namespace DiscordBot.Music.Spotify
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;
+        }
+
+        void GetTrackFromYtDlp()
+        {
+            MusicUtils.DownloadWEBMFromYouTube($"\"ytsearch: {MusicUtils.RemoveEmbedLink(title).ToLower()} {MusicUtils.RemoveEmbedLink(artists).ToLower()}\"", ref mp3OrWEBMFilePath);
+            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/webm", TagLib.ReadStyle.Average);
+            TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
+            mp3OrWEBMFile.Dispose();
+            if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
+                throw new MusicException("Wrong track");
+        }
+
+        void GetTrackFromSoundCloud()
+        {
+            List<SoundCloudExplode.Search.TrackSearchResult> results = SoundCloudMusic.scClient.Search.GetTracksAsync($"{MusicUtils.RemoveEmbedLink(title).ToLower()} {MusicUtils.RemoveEmbedLink(artists).ToLower()}").ToListAsync().GetAwaiter().GetResult();
+            if (results.Count == 0)
+                throw new MusicException("not found");
+            int i = 0;
+            int count = Math.Min(5, results.Count);
+            for (; i < count; i++)
+            {
+                SoundCloudExplode.Search.TrackSearchResult result = results[i];
+                string mp3Link = SoundCloudMusic.scClient.Tracks.GetDownloadUrlAsync(result.PermalinkUrl.AbsoluteUri).GetAwaiter().GetResult();
+                new WebClient().DownloadFile(mp3Link, mp3OrWEBMFilePath);
+                TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
+                TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
+                mp3OrWEBMFile.Dispose();
+                if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) <= 15000)
+                    break;
+            }
+            if (i == count)
+                throw new MusicException("Wrong track");
+        }
+
+        string GetLinkFromSpotifyDown()
+        {
+            string url = $"https://api.spotifydown.com/download/{trackID}";
+            HttpClient httpClient = new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }) { Timeout = TimeSpan.FromSeconds(10) };
+            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+            httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
+            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com/");
+            HttpResponseMessage response;
+            try
+            {
+                response = httpClient.GetAsync(url).GetAwaiter().GetResult();
+            }
+            catch (TaskCanceledException)
+            {
+                throw new MusicException("Sp: music download timeout");
+            }
+            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+            string downloadUrl = responseData["link"].ToString();
+            return downloadUrl;
         }
 
         public bool isLinkMatch(string link) => regexMatchSpotifyLink.IsMatch(link);
@@ -204,7 +277,7 @@ namespace DiscordBot.Music.Spotify
                 DeletePCMFile();
                 try
                 {
-                    File.Delete(mp3FilePath);
+                    File.Delete(mp3OrWEBMFilePath);
                 }
                 catch (Exception) { }
             }

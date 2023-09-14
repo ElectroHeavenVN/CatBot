@@ -1021,6 +1021,10 @@ namespace DiscordBot.Music
                 content = "Không tìm thấy nghệ sĩ này!";
             else if (ex.Message == "SC: invalid short link")
                 content = "Link SoundCloud không hợp lệ!";
+            else if (ex.Message == "Sp: music download timeout")
+                content = "Hết thời gian chờ để tải nhạc từ Spotify!";
+            else if (ex.Message == "Sp: not found")
+                content = "Không thể phát bài \"{0}\" do bài hát không có sẵn trên các nền tảng khác ngoài Spotify!";
             else
                 content = ex.ToString();
             return content;
