@@ -216,6 +216,7 @@
     <Compile Include="Instance\BotServerInstance.cs" />
     <Compile Include="Instance\GlobalBaseCommands.cs" />
     <Compile Include="Instance\GlobalSlashCommands.cs" />
+    <Compile Include="IsTextableChannelHook.cs" />
     <Compile Include="Music\IMusic.cs" />
     <Compile Include="Music\IPlaylist.cs" />
     <Compile Include="Music\MusicException.cs" />
