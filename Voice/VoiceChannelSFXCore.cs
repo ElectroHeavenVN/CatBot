@@ -249,7 +249,7 @@ namespace DiscordBot.Voice
                 {
                     for (int j = 0; j < repeatTimes - 1; j++)
                     {
-                        await TransmitData(file, transmitSink);
+                        await TransmitData(file, transmitSink, serverInstance);
                         if (isStop)
                             break;
                         await Task.Delay(delay);
@@ -363,16 +363,18 @@ namespace DiscordBot.Voice
             }
         }
 
-        async Task TransmitData(FileStream file, VoiceTransmitSink transmitSink)
+        async Task TransmitData(FileStream file, VoiceTransmitSink transmitSink, BotServerInstance serverInstance)
         {
             byte[] buffer = new byte[transmitSink.SampleLength];
             while (file.Read(buffer, 0, buffer.Length) != 0)
             {
                 if (isStop)
                     break;
+                while (!serverInstance.canSpeak)
+                    await Task.Delay(500);
                 for (int i = 0; i < buffer.Length; i += 2)
                     Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
-                await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                await serverInstance.WriteTransmitData(buffer);
             }
             file.Position = 0;
         }

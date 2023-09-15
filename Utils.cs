@@ -126,7 +126,7 @@ namespace DiscordBot
             Process ffmpeg = Process.Start(new ProcessStartInfo
             {
                 FileName = "ffmpeg\\ffmpeg",
-                Arguments = "-hide_banner -loglevel panic -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = "-nostdin -hide_banner -loglevel panic -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 pipe:1",
                 RedirectStandardOutput = true,
                 UseShellExecute = false
             });

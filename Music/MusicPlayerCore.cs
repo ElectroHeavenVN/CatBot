@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DiscordBot.Instance;
 using DiscordBot.Music.Local;
 using DiscordBot.Music.SponsorBlock;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
@@ -54,9 +55,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
@@ -133,9 +134,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
@@ -184,9 +185,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 DiscordEmbedBuilder embed;
                 await ctx.DeferAsync();
@@ -242,9 +243,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
 
                 await ctx.DeferAsync();
                 Random random = new Random();
@@ -272,9 +273,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 await ctx.DeferAsync();
                 List<FileInfo> musicFiles2 = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
                 musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
@@ -294,9 +295,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                     await ctx.CreateResponseAsync(new DiscordEmbedBuilder().WithTitle("Không có bài nào đang phát!").WithColor(DiscordColor.Red).Build());
                 else
@@ -307,7 +308,7 @@ namespace DiscordBot.Music
                     serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
                     string albumThumbnailLink = serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink;
                     DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong));
-                    DiscordMessage cacheWaveformMessage = Config.cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
+                    DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
                     embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
                     if (!string.IsNullOrEmpty(albumThumbnailLink))
                     {
@@ -327,9 +328,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -338,10 +339,10 @@ namespace DiscordBot.Music
                 try
                 {
                     int bytesPerSeconds = 2 * 16 * 48000 / 8;
-                    int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                    long bytesToSeek = Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
                     bytesToSeek -= bytesToSeek % 2;
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
-                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
+                    await ctx.CreateResponseAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, (int)Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 }
                 catch (MusicException ex)
                 {
@@ -357,9 +358,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -368,10 +369,10 @@ namespace DiscordBot.Music
                 try
                 {
                     int bytesPerSeconds = 2 * 16 * 48000 / 8;
-                    int bytesToSeek = (int)Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                    long bytesToSeek = Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length);
                     bytesToSeek -= bytesToSeek % 2;
                     serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position = bytesToSeek;
-                    await ctx.CreateResponseAsync($"Đã tua bài hiện tại đến vị trí {new TimeSpan(0, 0, Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
+                    await ctx.CreateResponseAsync($"Đã tua bài hiện tại đến vị trí {new TimeSpan(0, 0, (int)Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 }
                 catch (MusicException ex)
                 {
@@ -387,9 +388,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.musicQueue.Count == 0)
                 {
                     await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
@@ -418,9 +419,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -437,9 +438,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -457,9 +458,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -517,9 +518,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (startIndex >= serverInstance.musicPlayer.musicQueue.Count)
                 {
                     await ctx.CreateResponseAsync($"Hàng đợi chỉ có {serverInstance.musicPlayer.musicQueue.Count} bài!");
@@ -564,9 +565,9 @@ namespace DiscordBot.Music
                 if (!bool.TryParse(clearQueueStr, out bool clearQueue))
                     return;
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.currentlyPlayingSong == null)
                 {
                     await ctx.CreateResponseAsync("Không có bài nào đang phát!");
@@ -618,9 +619,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.musicQueue.Count == 0)
                 {
                     await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
@@ -643,9 +644,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 switch(playMode)
                 {
                     case PlayModeChoice.Queue:
@@ -681,9 +682,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (serverInstance.musicPlayer.musicQueue.Count == 0)
                 {
                     await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
@@ -710,9 +711,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 await ctx.DeferAsync();
                 string jsonLyric = "";
                 LyricData lyricData = null;
@@ -766,9 +767,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 string str = "";
                 if (type == 0)
                 {
@@ -801,9 +802,9 @@ namespace DiscordBot.Music
             try
             {
                 BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
-                serverInstance.musicPlayer.lastChannel = ctx.Channel;
                 if (string.IsNullOrEmpty(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink))
                 {
                     await ctx.CreateResponseAsync("Bài đang phát không có ảnh album!");
@@ -816,11 +817,11 @@ namespace DiscordBot.Music
 
         async Task MainPlay(CancellationToken token)
         {
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
             try
             {
                 while (true)
                 {
-                    BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
                     if (musicQueue.Count > 0)
                     {
                         isPlaying = true;
@@ -840,21 +841,6 @@ namespace DiscordBot.Music
                             while (isDownloading)
                                 await Task.Delay(200);
                             currentlyPlayingSong.MusicPCMDataStream.Position = 0;
-                            string musicDesc = currentlyPlayingSong.GetSongDesc();
-                            DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
-                            currentlyPlayingSong.AddFooter(embed);
-                            string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
-                            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
-                            DiscordMessage cacheWaveformMessage = Config.cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
-                            embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
-                            if (!string.IsNullOrEmpty(albumThumbnailLink))
-                            {
-                                DiscordMessage message = await lastChannel.SendMessageAsync(embed.WithThumbnail(albumThumbnailLink).Build());
-                                if (currentlyPlayingSong is LocalMusic localMusic)
-                                    await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
-                            }
-                            else
-                                await lastChannel.SendMessageAsync(embed.Build());
                         }
                         catch (MusicException ex)
                         {
@@ -867,6 +853,7 @@ namespace DiscordBot.Music
                             await lastChannel.SendMessageAsync($"Có lỗi xảy ra!");
                             continue;
                         }
+                        await SendCurrentlyPlayingSong(serverInstance);
                         byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
                         while (currentlyPlayingSong.MusicPCMDataStream.Read(buffer, 0, buffer.Length) != 0)
                         {
@@ -903,7 +890,7 @@ namespace DiscordBot.Music
                                             m = a * b / 32768;
                                         else
                                             m = 2 * (a + b) - a * b / 32768 - 65536;
-                                        if (m == 65536) 
+                                        if (m == 65536)
                                             m = 65535;
                                         m -= 32768;
                                         Array.Copy(BitConverter.GetBytes((short)m), 0, buffer, i, sizeof(short));
@@ -911,12 +898,12 @@ namespace DiscordBot.Music
                                     sfxData.RemoveRange(0, Math.Min(buffer.Length, data.Length));
                                 }
                                 for (; i < buffer.Length; i += 2)
-                                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
-                                await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                                await serverInstance.WriteTransmitData(buffer);
                             }
                             catch (Exception ex)
                             {
-                                Utils.LogException(ex);
+                                Utils.LogException(ex, !(ex is ArgumentOutOfRangeException));
                                 goto tryagain;
                             }
                         }
@@ -949,7 +936,7 @@ namespace DiscordBot.Music
                             byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
                             sfxData.CopyTo(0, buffer, 0, Math.Min(buffer.Length, sfxData.Count));
                             sfxData.RemoveRange(0, Math.Min(buffer.Length, sfxData.Count));
-                            await serverInstance.currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                            await serverInstance.WriteTransmitData(buffer);
                         }
                     }
                     if (token.IsCancellationRequested)
@@ -965,6 +952,25 @@ namespace DiscordBot.Music
             currentlyPlayingSong.Dispose();
             isPlaying = false;
             isThreadAlive = false;
+        }
+
+        async Task SendCurrentlyPlayingSong(BotServerInstance serverInstance)
+        {
+            string musicDesc = currentlyPlayingSong.GetSongDesc();
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
+            currentlyPlayingSong.AddFooter(embed);
+            string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
+            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
+            DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
+            embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
+            if (!string.IsNullOrEmpty(albumThumbnailLink))
+            {
+                DiscordMessage message = await lastChannel.SendMessageAsync(embed.WithThumbnail(albumThumbnailLink).Build());
+                if (currentlyPlayingSong is LocalMusic localMusic)
+                    await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
+            }
+            else
+                await lastChannel.SendMessageAsync(embed.Build());
         }
 
         void PrepareNextSong()

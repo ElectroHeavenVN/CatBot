@@ -42,6 +42,7 @@ namespace DiscordBot.Instance
         internal TTSCore textToSpeech = new TTSCore();
         internal bool suppressOnVoiceStateUpdatedEvent;
         internal bool isVoicePlaying;
+        List<byte> stageBuffer = new List<byte>();
 
         internal BotServerInstance() 
         {
@@ -145,15 +146,23 @@ namespace DiscordBot.Instance
                 }
                 else
                 {
+                    if (member.VoiceState.Channel.Type == ChannelType.Stage)
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = true;
                     voiceNextConnection = await member.VoiceState.Channel.ConnectAsync();
                     if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
                     {
-                        DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
-                        if (botMember.VoiceState.IsSuppressed)
-                            await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                        new Thread(async () =>
+                        {
+                            await Task.Delay(150);
+                            DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
+                            if (botMember.VoiceState.IsSuppressed)
+                                await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                        })
+                        { IsBackground = true }.Start();
+                        new Thread(async () => await TransmitEmptyDataInStage(member.VoiceState.Channel)) { IsBackground = true }.Start();
                     }
                     voiceNextConnection.SetVolume(volume);
-                    serverInstance.currentVoiceNextConnection = voiceNextConnection;
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                 }
                 return voiceNextConnection;
@@ -162,15 +171,23 @@ namespace DiscordBot.Instance
             {
                 if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id))
                     return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
+                if (channel.Type == ChannelType.Stage)
+                    serverInstance.suppressOnVoiceStateUpdatedEvent = true;
                 voiceNextConnection = await channel.ConnectAsync();
                 if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
                 {
-                    DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
-                    if (botMember.VoiceState.IsSuppressed)
-                        await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                    new Thread(async () =>
+                    {
+                        await Task.Delay(150);
+                        DiscordMember botMember = await member.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
+                        if (botMember.VoiceState.IsSuppressed)
+                            await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                    })
+                    { IsBackground = true }.Start();
+                    new Thread(async () => await TransmitEmptyDataInStage(channel)) { IsBackground = true }.Start(); 
                 }
                 voiceNextConnection.SetVolume(volume);
-                serverInstance.currentVoiceNextConnection = voiceNextConnection;
                 serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                 return voiceNextConnection;
             }
@@ -252,7 +269,7 @@ namespace DiscordBot.Instance
             DiscordChannel channel = null;
             VoiceNextConnection voiceNextConnection = null;
             foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
-                foreach (DiscordChannel voiceChannel in server.Channels.Values.Where(c => c.Type == DSharpPlus.ChannelType.Voice))
+                foreach (DiscordChannel voiceChannel in server.Channels.Values.Where(c => c.Type == ChannelType.Voice))
                     if (voiceChannel.Id == channelID)
                     {
                         channel = voiceChannel;
@@ -271,11 +288,7 @@ namespace DiscordBot.Instance
                         {
                             voiceNextConnection = await channel.ConnectAsync();
                             if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                            {
-                                DiscordMember botMember = await channel.Guild.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id);
-                                if (botMember.VoiceState.IsSuppressed)
-                                    await botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
-                            }
+                                new Thread(async () => await TransmitEmptyDataInStage(channel)) { IsBackground = true }.Start();
                             GetBotServerInstance(channel.Guild).currentVoiceNextConnection = voiceNextConnection;
                             GetBotServerInstance(channel.Guild).lastTimeCheckVoiceChannel = DateTime.Now;
                         }
@@ -327,24 +340,162 @@ namespace DiscordBot.Instance
         internal static async Task onVoiceStateUpdated(VoiceStateUpdateEventArgs args)
         {
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
-            if (serverInstance.currentVoiceNextConnection != null)
-                serverInstance.canSpeak = serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count >= 2;
-            if (!serverInstance.canSpeak)
+            if (args.User.Id == DiscordBotMain.botClient.CurrentUser.Id)
             {
-                DiscordChannel channel = serverInstance.GetLastChannel();
+                if (!serverInstance.suppressOnVoiceStateUpdatedEvent)
+                    try
+                    {
+                        if (args.After == null || args.After.Channel == null)
+                        {
+                            //leave
+                            if (!serverInstance.isDisconnect)
+                            {
+                                serverInstance.musicPlayer.isStopped = true;
+                                await Task.Delay(500);
+                                for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+                                    serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
+                                serverInstance.musicPlayer.musicQueue.Clear();
+                                serverInstance.isDisconnect = true;
+                                serverInstance.musicPlayer.isThreadAlive = false;
+                                serverInstance.musicPlayer.sentOutOfTrack = true;
+                                serverInstance.musicPlayer.cts.Cancel();
+                                serverInstance.musicPlayer.cts = new CancellationTokenSource();
+                                serverInstance.isVoicePlaying = false;
+                                DiscordChannel channel = serverInstance.GetLastChannel();
+                                bool isDelete = false;
+                                DiscordMessage discordMessage = null;
+                                string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!";
+                                if (args.Before.Channel.Type == ChannelType.Stage)
+                                    message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel.Id}>!";
+                                if (channel != null)
+                                {
+                                    discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                }
+                                else
+                                {
+                                    isDelete = true;
+                                    foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                                    {
+                                        try
+                                        {
+                                            discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                            break;
+                                        }
+                                        catch (Exception) { }
+                                    }
+                                }
+                                if (isDelete)
+                                {
+                                    await Task.Delay(3000);
+                                    await discordMessage?.DeleteAsync();
+                                }
+                                serverInstance.musicPlayer.isStopped = false;
+                            }
+                        }
+                        else if (args.Before == null || args.Before.Channel == null)
+                        {
+                            //join
+                            serverInstance.isDisconnect = false;
+                            serverInstance.canSpeak = await CheckPeopleInVC(args.After.Channel, serverInstance.GetLastChannel(), args.After.Channel.Type == ChannelType.Stage && args.After.IsSuppressed);
+                        }
+                        else if (args.Before.Channel.Id != args.After.Channel.Id)
+                        {
+                            //move
+                            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
+                            try
+                            {
+                                serverInstance.isDisconnect = false;
+                                bool isPaused = serverInstance.musicPlayer.isPaused;
+                                serverInstance.musicPlayer.isPaused = true;
+                                await Task.Delay(600);
+                                VoiceNextConnection connection = serverInstance.currentVoiceNextConnection ?? await GetVoiceConnection(args.After.Channel);
+                                connection.Disconnect();
+                                serverInstance.currentVoiceNextConnection = await GetVoiceConnection(args.After.Channel);
+                                serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
+                                serverInstance.musicPlayer.isPaused = isPaused;
+                                serverInstance.canSpeak = await CheckPeopleInVC(args.After.Channel, serverInstance.GetLastChannel(), args.After.Channel.Type == ChannelType.Stage && args.After.IsSuppressed);
+                            }
+                            catch (Exception ex) { Utils.LogException(ex); }
+                            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                        }
+                        if (args.After != null)
+                        {
+                            if (args.After.IsServerMuted || args.After.IsSuppressed)
+                            {
+                                //mute
+                                DiscordChannel channel = serverInstance.GetLastChannel();
+                                bool isDelete = false;
+                                DiscordMessage discordMessage = null;
+                                string message = "Bot bị tắt tiếng! Nhạc sẽ được tạm dừng đến khi bot được bật tiếng!";
+                                DiscordChannel targetChannel;
+                                if (args.After.Channel != null)
+                                    targetChannel = args.After.Channel;
+                                else
+                                    targetChannel = serverInstance.currentVoiceNextConnection.TargetChannel;
+                                if (targetChannel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                                    message = "Bot đang là người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
+                                if (channel != null)
+                                {
+                                    discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                }
+                                else
+                                {
+                                    isDelete = true;
+                                    foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                                    {
+                                        try
+                                        {
+                                            discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                            break;
+                                        }
+                                        catch (Exception) { }
+                                    }
+                                }
+                                serverInstance.canSpeak = false;
+                                if (isDelete)
+                                {
+                                    await Task.Delay(3000);
+                                    await discordMessage?.DeleteAsync();
+                                }
+                            }
+                            else if (!args.After.IsServerMuted || !args.After.IsSuppressed)
+                            {
+                                //unmute
+                                serverInstance.canSpeak = true;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                        Utils.LogException(ex);
+                    }
+            }
+            else
+            {
+                if (!serverInstance.isDisconnect && serverInstance.currentVoiceNextConnection != null && args.After != null && ((args.After.Channel != null && args.After.Channel == serverInstance.currentVoiceNextConnection.TargetChannel) || (args.Before.Channel != null && args.Before.Channel == serverInstance.currentVoiceNextConnection.TargetChannel)))
+                    serverInstance.canSpeak = await CheckPeopleInVC(serverInstance.currentVoiceNextConnection.TargetChannel, serverInstance.GetLastChannel(), serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage);
+            }
+        }
+
+        static async Task<bool> CheckPeopleInVC(DiscordChannel currentVC, DiscordChannel lastChannel, bool isStageSuppressed)
+        {
+            bool result = currentVC.Users.Count >= 2;
+            if (!result)
+            {
                 bool isDelete = false;
                 DiscordMessage discordMessage = null;
                 string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
-                if (serverInstance.currentVoiceNextConnection != null && serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                if (isStageSuppressed)
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
-                if (channel != null)
+                if (lastChannel != null)
                 {
-                    discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                    discordMessage = await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
                 }
                 else
                 {
                     isDelete = true;
-                    foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                    foreach (DiscordChannel ch in currentVC.Guild.Channels.Values)
                     {
                         try
                         {
@@ -360,129 +511,43 @@ namespace DiscordBot.Instance
                     await discordMessage?.DeleteAsync();
                 }
             }
-            if (args.User.Id == DiscordBotMain.botClient.CurrentUser.Id)
-            {
-                if (serverInstance.suppressOnVoiceStateUpdatedEvent)
-                    return;
-                try
-                {
-                    if (args.After == null || args.After.Channel == null)
-                    {
-                        //leave
-                        if (!serverInstance.isDisconnect)
-                        {
-                            serverInstance.musicPlayer.isStopped = true;
-                            await Task.Delay(500);
-                            for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
-                                serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
-                            serverInstance.musicPlayer.musicQueue.Clear();
-                            serverInstance.isDisconnect = true;
-                            serverInstance.musicPlayer.isThreadAlive = false;
-                            serverInstance.musicPlayer.sentOutOfTrack = true;
-                            serverInstance.musicPlayer.cts.Cancel();
-                            serverInstance.musicPlayer.cts = new CancellationTokenSource();
-                            serverInstance.isVoicePlaying = false;
-                            DiscordChannel channel = serverInstance.GetLastChannel();
-                            bool isDelete = false;
-                            DiscordMessage discordMessage = null;
-                            string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!";
-                            if (args.Channel.Type == ChannelType.Stage && args.After.IsSuppressed)
-                                message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel.Id}>!";
-                            if (channel != null)
-                            {
-                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                            }
-                            else
-                            {
-                                isDelete = true;
-                                foreach (DiscordChannel ch in args.Guild.Channels.Values)
-                                {
-                                    try
-                                    {
-                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                                        break;
-                                    }
-                                    catch (Exception) { }
-                                }
-                            }
-                            if (isDelete)
-                            {
-                                await Task.Delay(3000);
-                                await discordMessage?.DeleteAsync();
-                            }
-                            serverInstance.musicPlayer.isStopped = false;
-                        }
-                    }
-                    else if (args.Before == null || args.Before.Channel == null)
-                    {
-                        //join
-                        serverInstance.isDisconnect = false;
-                    }
-                    else if (args.Before.Channel.Id != args.After.Channel.Id)
-                    {
-                        //move
-                        serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                        try
-                        {
-                            serverInstance.isDisconnect = false;
-                            bool isPaused = serverInstance.musicPlayer.isPaused;
-                            serverInstance.musicPlayer.isPaused = true;
-                            await Task.Delay(600);
-                            VoiceNextConnection connection = serverInstance.currentVoiceNextConnection ?? await GetVoiceConnection(args.After.Channel);
-                            connection.Disconnect();
-                            serverInstance.currentVoiceNextConnection = await GetVoiceConnection(args.After.Channel);
-                            serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
-                            serverInstance.musicPlayer.isPaused = isPaused;
-                        }
-                        catch (Exception ex) { Utils.LogException(ex); }
-                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
-                    }
-                    else if ((!args.Before.IsServerMuted && args.After.IsServerMuted) || (!args.Before.IsSuppressed && args.After.IsSuppressed))
-                    {
-                        //mute
-                        DiscordChannel channel = serverInstance.GetLastChannel();
-                        bool isDelete = false;
-                        DiscordMessage discordMessage = null;
-                        string message = "Bot đã bị tắt tiếng! Nhạc sẽ được tạm dừng đến khi bot được bật tiếng!";
-                        if (args.Channel.Type == ChannelType.Stage && args.After.IsSuppressed)
-                            message = "Bot đã bị chuyển thành người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
-                        if (channel != null)
-                        {
-                            discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                        }
-                        else
-                        {
-                            isDelete = true;
-                            foreach (DiscordChannel ch in args.Guild.Channels.Values)
-                            {
-                                try
-                                {
-                                    discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                                    break;
-                                }
-                                catch (Exception) { }
-                            }
-                        }
-                        serverInstance.canSpeak = false;
-                        if (isDelete)
-                        {
-                            await Task.Delay(3000);
-                            await discordMessage?.DeleteAsync();
-                        }
-                    }
-                    else if ((args.Before.IsServerMuted && !args.After.IsServerMuted) || (args.Before.IsSuppressed && !args.After.IsSuppressed))
-                    {
-                        //unmute
-                        serverInstance.canSpeak = true;
-                    }
+            return result;
+        }
 
-                }
-                catch (Exception ex)
+        static async Task TransmitEmptyDataInStage(DiscordChannel stageChannel)
+        {
+            BotServerInstance serverInstance = GetBotServerInstance(stageChannel.Guild);
+            while (serverInstance.currentVoiceNextConnection == null)
+                await Task.Delay(50);
+            VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
+            int sampleLength = transmitSink.SampleLength;
+            while (true)
+            {
+                byte[] buffer = new byte[sampleLength];
+                if (serverInstance.stageBuffer.Count > 0)
                 {
-                    serverInstance.suppressOnVoiceStateUpdatedEvent = false;
-                    Utils.LogException(ex);
+                    serverInstance.stageBuffer.CopyTo(0, buffer, 0, sampleLength);
+                    serverInstance.stageBuffer.RemoveRange(0, sampleLength);
                 }
+                await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                if (serverInstance.currentVoiceNextConnection.isDisposed())
+                    return;
             }
+        }
+
+        internal async Task WriteTransmitData(byte[] data)
+        {
+            if (currentVoiceNextConnection == null)
+                return;
+            int bytesPerSeconds = 2 * 16 * 48000 / 8;
+            if (currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+            {
+                stageBuffer.AddRange(data);
+                while (stageBuffer.Count > bytesPerSeconds / 2)
+                    await Task.Delay(50);
+            }
+            else 
+                await currentVoiceNextConnection.GetTransmitSink().WriteAsync(new ReadOnlyMemory<byte>(data));
         }
     }
 }

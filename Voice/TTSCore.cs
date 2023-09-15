@@ -66,9 +66,8 @@ namespace DiscordBot.Voice
             if (message is DiscordInteraction interaction)
                 await interaction.DeferAsync();
             MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(message.TryGetChannel().Guild);
-            VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
-            byte[] buffer = new byte[transmitSink.SampleLength];
+            byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
             try
             {
                 MemoryStream ttsStream = await GetTTSPCMStream(tts, voiceId);
@@ -89,9 +88,11 @@ namespace DiscordBot.Voice
                     {
                         if (serverInstance.voiceChannelSFX.isStop)
                             break;
+                        while (!serverInstance.canSpeak)
+                            await Task.Delay(500);
                         for (int i = 0; i < buffer.Length; i += 2)
                             Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
-                        await transmitSink.WriteAsync(new ReadOnlyMemory<byte>(buffer));
+                        await serverInstance.WriteTransmitData(buffer);
                     }
                 }
                 if (serverInstance.voiceChannelSFX.isStop)

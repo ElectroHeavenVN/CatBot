@@ -30,6 +30,14 @@ namespace DiscordBot
             TokenType = TokenType.Bot,
             Token = Config.BotToken,
             Intents = DiscordIntents.All,
+            MinimumLogLevel = LogLevel.Information,
+        });
+
+        internal static DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
+        {
+            TokenType = TokenType.Bot,
+            Token = Config.BotToken,
+            Intents = DiscordIntents.All,
             MinimumLogLevel = LogLevel.Information
         });
 
@@ -120,7 +128,7 @@ namespace DiscordBot
             //DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
             //{
             //    TokenType = TokenType.Bot,
-            //    Token = Config.botToken,
+            //    Token = Config.BotToken,
             //    Intents = DiscordIntents.All,
             //    MinimumLogLevel = LogLevel.Information
             //});
@@ -147,6 +155,8 @@ namespace DiscordBot
             slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
 
             botClient.UseVoiceNext();
+
+            await restClient.InitializeAsync();
             await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
             await Task.Delay(Timeout.Infinite);
         }
