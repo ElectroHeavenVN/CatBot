@@ -70,7 +70,10 @@ namespace DiscordBot.Instance
                     else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
                     {
                         self.suppressOnVoiceStateUpdatedEvent = true;
-                        self.GetLastChannel().SendMessageAsync("Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!");
+                        string content = "Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!";
+                        if (self.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                            content = "Bot tự động rời sân khấu do không có ai trong người nghe trong 30 phút!";
+                        self.GetLastChannel().SendMessageAsync(content);
                         if (self.musicPlayer.isPlaying)
                         {
                             self.musicPlayer.isPaused = false;
@@ -356,7 +359,13 @@ namespace DiscordBot.Instance
         {
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
             if (args.User.Id != DiscordBotMain.botClient.CurrentUser.Id)
+            {
+                if (serverInstance.currentVoiceNextConnection == null)
+                    return;
+                if ((args.Before != null && args.Before.Channel != null && args.Before.Channel == serverInstance.currentVoiceNextConnection.TargetChannel) || (args.After != null && args.After.Channel != null && args.After.Channel == serverInstance.currentVoiceNextConnection.TargetChannel))
+                    await serverInstance.CheckPeopleInVC();
                 return;
+            }
             if (serverInstance.suppressOnVoiceStateUpdatedEvent)
                 return;
             try
@@ -502,33 +511,41 @@ namespace DiscordBot.Instance
 
         internal static void AddEvent(VoiceNextConnection voiceNextConnection)
         {
-            voiceNextConnection.UserJoined += VoiceNextConnection_UserChange;
-            voiceNextConnection.UserLeft += VoiceNextConnection_UserChange; 
+            //fck vps
+            //voiceNextConnection.UserJoined += VoiceNextConnection_UserChange;
+            //voiceNextConnection.UserLeft += VoiceNextConnection_UserChange; 
         }
 
         private static async Task VoiceNextConnection_UserChange(VoiceNextConnection sender, DiscordEventArgs args)
         {
             //Console.WriteLine("event fired " + args?.GetType().Name);
             BotServerInstance serverInstance = GetBotServerInstance(sender);
-            if (serverInstance == null)
+            if (serverInstance != null)
+                await serverInstance.CheckPeopleInVC();
+        }
+
+        async Task CheckPeopleInVC()
+        {
+            if (suppressOnVoiceStateUpdatedEvent)
                 return;
-            if (serverInstance.suppressOnVoiceStateUpdatedEvent)
+            if (currentVoiceNextConnection == null)
                 return;
-            bool result = serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count >= 2;
-            serverInstance.canSpeak = result;
+            int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot).Count() + 1;
+            bool result = userCount >= 2;
+            canSpeak = result;
             //Console.WriteLine("result: " + result);
-            if (!result && serverInstance.lastNumberOfUsersInVC >= 2)
+            if (!result && lastNumberOfUsersInVC >= 2)
             {
                 string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
-                if (serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                if (currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
-                DiscordChannel discordChannel = serverInstance.GetLastChannel();
+                DiscordChannel discordChannel = GetLastChannel();
                 if (discordChannel != null)
                     await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
             }
-            //Console.WriteLine("last users count: " + serverInstance.lastNumberOfUsersInVC);
-            //Console.WriteLine("users count: " + serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count);
-            serverInstance.lastNumberOfUsersInVC = serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count;
+            //Console.WriteLine("last users count: " + lastNumberOfUsersInVC);
+            //Console.WriteLine("users count: " + userCount);
+            lastNumberOfUsersInVC = userCount;
         }
     }
 }

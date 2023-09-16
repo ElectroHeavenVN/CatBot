@@ -206,17 +206,16 @@
     <Compile Include="Admin\AdminSlashCommands.cs" />
     <Compile Include="Emoji\CatNSoupEmoji.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="DeafenHook.cs" />
     <Compile Include="DiscordBotMain.cs" />
     <Compile Include="Emoji\EmojiReplyCore.cs" />
     <Compile Include="Emoji\EmojiReplyBaseCommands.cs" />
     <Compile Include="Emoji\EmojiReplySlashCommands.cs" />
     <Compile Include="Extension\SpotifyExplodeExtension.cs" />
     <Compile Include="HelpFormatter.cs" />
+    <Compile Include="Hook.cs" />
     <Compile Include="Instance\BotServerInstance.cs" />
     <Compile Include="Instance\GlobalBaseCommands.cs" />
     <Compile Include="Instance\GlobalSlashCommands.cs" />
-    <Compile Include="IsTextableChannelHook.cs" />
     <Compile Include="Music\IMusic.cs" />
     <Compile Include="Music\IPlaylist.cs" />
     <Compile Include="Music\MusicException.cs" />
@@ -261,7 +260,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Extension\SoundCloudExplodeExtension.cs" />
-    <Compile Include="SendSpeakingHook.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Voice\TTSBaseCommands.cs" />
     <Compile Include="Voice\TTSCore.cs" />

@@ -33,13 +33,13 @@ namespace DiscordBot
             MinimumLogLevel = LogLevel.Information,
         });
 
-        internal static DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
-        {
-            TokenType = TokenType.Bot,
-            Token = Config.BotToken,
-            Intents = DiscordIntents.All,
-            MinimumLogLevel = LogLevel.Information
-        });
+        //internal static DiscordRestClient botRESTClient = new DiscordRestClient(new DiscordConfiguration()
+        //{
+        //    TokenType = TokenType.Bot,
+        //    Token = Config.BotToken,
+        //    Intents = DiscordIntents.All,
+        //    MinimumLogLevel = LogLevel.Information
+        //});
 
         internal static DiscordActivity activity;
 
@@ -125,17 +125,6 @@ namespace DiscordBot
 
         public static async Task MainAsync()
         {
-            //DiscordRestClient restClient = new DiscordRestClient(new DiscordConfiguration()
-            //{
-            //    TokenType = TokenType.Bot,
-            //    Token = Config.BotToken,
-            //    Intents = DiscordIntents.All,
-            //    MinimumLogLevel = LogLevel.Information
-            //});
-            //await restClient.InitializeAsync();
-            //await restClient.DeleteGuildApplicationCommandAsync(1115634791321190420, 1123285178375217183);
-            //return;
-
             if (Config.EnableCommandsNext)
             {
                 CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
@@ -156,7 +145,7 @@ namespace DiscordBot
 
             botClient.UseVoiceNext();
 
-            await restClient.InitializeAsync();
+            //await botRESTClient.InitializeAsync();
             await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
             await Task.Delay(Timeout.Infinite);
         }
