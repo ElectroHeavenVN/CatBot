@@ -352,7 +352,7 @@ namespace DiscordBot.Instance
             await obj.TryRespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
         }
 
-        internal static async Task onVoiceStateUpdated(VoiceStateUpdateEventArgs args)
+        internal static async Task OnVoiceStateUpdated(VoiceStateUpdateEventArgs args)
         {
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
             if (args.User.Id != DiscordBotMain.botClient.CurrentUser.Id)
@@ -455,7 +455,7 @@ namespace DiscordBot.Instance
                                 message = "Bot đang là người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
                             if (channel != null)
                             {
-                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
                             }
                             else
                             {
@@ -464,7 +464,7 @@ namespace DiscordBot.Instance
                                 {
                                     try
                                     {
-                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
                                         break;
                                     }
                                     catch (Exception) { }
@@ -524,7 +524,7 @@ namespace DiscordBot.Instance
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
                 DiscordChannel discordChannel = serverInstance.GetLastChannel();
                 if (discordChannel != null)
-                    await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                    await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
             }
             //Console.WriteLine("last users count: " + serverInstance.lastNumberOfUsersInVC);
             //Console.WriteLine("users count: " + serverInstance.currentVoiceNextConnection.TargetChannel.Users.Count);
