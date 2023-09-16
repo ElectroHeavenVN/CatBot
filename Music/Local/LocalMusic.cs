@@ -32,16 +32,20 @@ namespace DiscordBot.Music.Local
         {
             path = Path.Combine(Config.MusicFolder, path.EndsWith(".mp3") ? path : (path + ".mp3"));
             this.path = path;
-            TagLib.File musicFile = TagLib.File.Create(path);
-            duration = musicFile.Properties.Duration;
-            title = string.IsNullOrWhiteSpace(musicFile.Tag.Title) ? Path.GetFileNameWithoutExtension(path) : musicFile.Tag.Title;
-            artists = string.Join(", ", musicFile.Tag.Performers);
-            album = musicFile.Tag.Album;
-            if (musicFile.Tag.Pictures.Length != 0 && musicFile.Tag.Pictures[0].Data.Data.Length != 0)
+            try
             {
-                albumThumbnailData = MusicUtils.TrimStartNullBytes(musicFile.Tag.Pictures[0].Data.Data);
-                albumThumbnailExt = TagLib.Picture.GetExtensionFromMime(musicFile.Tag.Pictures[0].MimeType);
+                TagLib.File musicFile = TagLib.File.Create(path);
+                duration = musicFile.Properties.Duration;
+                title = string.IsNullOrWhiteSpace(musicFile.Tag.Title) ? Path.GetFileNameWithoutExtension(path) : musicFile.Tag.Title;
+                artists = string.Join(", ", musicFile.Tag.Performers);
+                album = musicFile.Tag.Album;
+                if (musicFile.Tag.Pictures.Length != 0 && musicFile.Tag.Pictures[0].Data.Data.Length != 0)
+                {
+                    albumThumbnailData = MusicUtils.TrimStartNullBytes(musicFile.Tag.Pictures[0].Data.Data);
+                    albumThumbnailExt = TagLib.Picture.GetExtensionFromMime(musicFile.Tag.Pictures[0].MimeType);
+                }
             }
+            catch (Exception) { throw new MusicException("Lc: file not found"); }
         }
 
         ~LocalMusic() => Dispose(false);

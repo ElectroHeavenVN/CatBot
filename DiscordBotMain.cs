@@ -225,6 +225,6 @@ namespace DiscordBot
             await EmojiReplyCore.onMessageReceived(args.Message);
         }
 
-        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.onVoiceStateUpdated(args);
+        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => new Thread(async () => await BotServerInstance.onVoiceStateUpdated(args)) { IsBackground = true }.Start();
     }
 }

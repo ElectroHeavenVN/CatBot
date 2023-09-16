@@ -903,7 +903,7 @@ namespace DiscordBot.Music
                             }
                             catch (Exception ex)
                             {
-                                Utils.LogException(ex, !(ex is ArgumentOutOfRangeException));
+                                Utils.LogException(ex);
                                 goto tryagain;
                             }
                         }
@@ -949,7 +949,7 @@ namespace DiscordBot.Music
                 Utils.LogException(ex);
             }
         exit:;
-            currentlyPlayingSong.Dispose();
+            currentlyPlayingSong?.Dispose();
             isPlaying = false;
             isThreadAlive = false;
         }
@@ -1031,6 +1031,8 @@ namespace DiscordBot.Music
                 content = "Hết thời gian chờ để tải nhạc từ Spotify!";
             else if (ex.Message == "Sp: not found")
                 content = "Không thể phát bài \"{0}\" do bài hát không có sẵn trên các nền tảng khác ngoài Spotify!";
+            else if (ex.Message == "Lc: file not found")
+                content = "Không tìm thấy bài hát \"{0}\" trong bộ nhớ!";
             else
                 content = ex.ToString();
             return content;
