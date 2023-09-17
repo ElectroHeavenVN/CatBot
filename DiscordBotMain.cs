@@ -62,11 +62,38 @@ namespace DiscordBot
             catch (Exception ex) { Utils.LogException(ex); }
             new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
             new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
-            new Thread(UpdateYTdlp) { IsBackground = true, Name = nameof(UpdateYTdlp) }.Start();
+            new Thread(UpdateYTDlp) { IsBackground = true, Name = nameof(UpdateYTDlp) }.Start();
             MainAsync().GetAwaiter().GetResult();
         }
 
-        private static void UpdateYTdlp()
+        public static async Task MainAsync()
+        {
+            if (Config.EnableCommandsNext)
+            {
+                CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
+                {
+                    StringPrefixes = new string[] { Config.Prefix },
+                });
+                commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
+                commandNext.SetHelpFormatter<HelpFormatter>();
+            }
+            SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
+
+            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
+            //slashCommand.RegisterCommands<EmojiReplySlashCommands>();
+            slashCommand.RegisterCommands<TTSSlashCommands>();
+            slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
+            slashCommand.RegisterCommands<GlobalSlashCommands>();
+            slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
+
+            botClient.UseVoiceNext();
+
+            //await botRESTClient.InitializeAsync();
+            await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
+            await Task.Delay(Timeout.Infinite);
+        }
+
+        private static void UpdateYTDlp()
         {
             while (true)
             {
@@ -121,33 +148,6 @@ namespace DiscordBot
                     catch (Exception) { }
                 }
             }
-        }
-
-        public static async Task MainAsync()
-        {
-            if (Config.EnableCommandsNext)
-            {
-                CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
-                {
-                    StringPrefixes = new string[] { Config.Prefix },
-                });
-                commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
-                commandNext.SetHelpFormatter<HelpFormatter>();
-            }
-            SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
-
-            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
-            slashCommand.RegisterCommands<EmojiReplySlashCommands>();
-            slashCommand.RegisterCommands<TTSSlashCommands>();
-            slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
-            slashCommand.RegisterCommands<GlobalSlashCommands>();
-            slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
-
-            botClient.UseVoiceNext();
-
-            //await botRESTClient.InitializeAsync();
-            await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
-            await Task.Delay(Timeout.Infinite);
         }
 
         private static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)

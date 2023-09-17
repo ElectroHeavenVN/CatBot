@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using DiscordBot.Instance;
 using DiscordBot.Music;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.VoiceNext;
 using Newtonsoft.Json.Linq;
 
 namespace DiscordBot.Voice
@@ -103,10 +101,7 @@ namespace DiscordBot.Voice
             catch (Exception ex)
             {
                 Utils.LogException(ex);
-                if (message is DiscordInteraction interaction2)
-                    await interaction2.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent("```" + Environment.NewLine + ex + Environment.NewLine + "```"));
-                else 
-                    await message.TryRespondAsync("```" + Environment.NewLine + ex + Environment.NewLine + "```");
+                await message.TryRespondAsync("```" + Environment.NewLine + ex + Environment.NewLine + "```");
             }
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
         }

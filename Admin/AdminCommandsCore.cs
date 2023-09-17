@@ -1,5 +1,6 @@
 ﻿using DiscordBot.Instance;
 using DiscordBot.Voice;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.VoiceNext;
@@ -154,11 +155,17 @@ namespace DiscordBot.Admin
 
         internal static async Task ResetBotServerInstance(InteractionContext ctx, string serverIDstr)
         {
-            if (!Config.BotAuthorsID.Contains(ctx.Member.Id))
+            if (serverIDstr != "this" && !Config.BotAuthorsID.Contains(ctx.Member.Id))
             {
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
+            if (!ctx.Member.Permissions.HasFlag(Permissions.Administrator))
+            {
+                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                return;
+            }
+
             if (ulong.TryParse(serverIDstr, out ulong serverID))
                 await BotServerInstance.RemoveBotServerInstance(serverID);
             else if (serverIDstr == "this")

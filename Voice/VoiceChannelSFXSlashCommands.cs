@@ -10,7 +10,7 @@ namespace DiscordBot.Voice
 {
     public class VoiceChannelSFXSlashCommands : ApplicationCommandModule
     {
-        [SlashCommand("speakfile", "Chọn file SFX để nói")]
+        [SlashCommand("speak-file", "Chọn file SFX để nói")]
         public async Task Speak(InteractionContext ctx, [Option("file", "Tên file (cách nhau bằng dấu cách) hoặc \"x\" + số lần lặp lại file SFX trước đó"), Autocomplete(typeof(VoiceSFXChoiceProvider))] string fileNames) => await VoiceChannelSFXCore.Speak(ctx.Interaction, fileNames.Split(' '));
 
         [SlashCommand("reconnect", "Kết nối lại kênh thoại hiện tại")]
@@ -19,7 +19,7 @@ namespace DiscordBot.Voice
         [SlashCommand("dictionary", "Xem danh sách file")]
         public async Task Dictionary(InteractionContext ctx) => await VoiceChannelSFXCore.Dictionary(ctx.Interaction);
 
-        [SlashCommand("stopsspeak", "Dừng phát SFX và TTS")]
+        [SlashCommand("stops-speak", "Dừng phát SFX và TTS")]
         public async Task StopSpeaking(InteractionContext ctx) => await VoiceChannelSFXCore.StopSpeaking(ctx.Interaction);
 
         [SlashCommand("disconnect", "Thoát kênh thoại hiện tại")]

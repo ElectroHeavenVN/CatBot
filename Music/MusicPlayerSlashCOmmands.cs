@@ -28,7 +28,7 @@ namespace DiscordBot.Music
         [SlashCommand("enqueue", "Thêm nhạc vào hàng đợi")]
         public async Task Enqueue(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ SoundCloud nếu dữ liệu nhập vào không phải là link)")] MusicType musicType = MusicType.SoundCloud) => await MusicPlayerCore.Play(ctx, input, musicType);
 
-        [SlashCommand("playlocal", "Thêm nhạc local vào hàng đợi")]
+        [SlashCommand("play-local", "Thêm nhạc local vào hàng đợi")]
         public async Task PlayLocalMusic(InteractionContext ctx, [Option("name", "Tên bài hát"), Autocomplete(typeof(LocalMusicChoiceProvider))] string name) => await MusicPlayerCore.Play(ctx, name, MusicType.Local);
 
         [SlashCommand("youtube", "Thêm video YouTube vào hàng đợi")]
@@ -49,37 +49,37 @@ namespace DiscordBot.Music
         [SlashCommand("nextup", "Thêm nhạc vào đầu hàng đợi")]
         public async Task PlayNextUp(InteractionContext ctx, [Option("input", "Từ khóa hoặc link")] string input, [Option("type", "Loại nhạc (mặc định sẽ tìm nhạc từ SoundCloud nếu dữ liệu nhập vào là tên bài hát)")] MusicType musicType = MusicType.SoundCloud) => await MusicPlayerCore.PlayNextUp(ctx, input, musicType);
 
-        [SlashCommand("nextuplocal", "Thêm nhạc vào đầu hàng đợi")]
+        [SlashCommand("nextup-local", "Thêm nhạc vào đầu hàng đợi")]
         public async Task PlayNextUpLocalMusic(InteractionContext ctx, [Option("name", "Tên bài hát"), Autocomplete(typeof(LocalMusicChoiceProvider))] string name) => await MusicPlayerCore.PlayNextUp(ctx, name, MusicType.Local);
 
-        [SlashCommand("nextupyt", "Thêm video YouTube vào đầu hàng đợi")]
+        [SlashCommand("nextup-yt", "Thêm video YouTube vào đầu hàng đợi")]
         public async Task PlayNextUpYouTubeVideo(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(YouTubeMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.YouTube);
 
-        [SlashCommand("nextupnct", "Thêm nhạc từ NhacCuaTui vào đầu hàng đợi")]
+        [SlashCommand("nextup-nct", "Thêm nhạc từ NhacCuaTui vào đầu hàng đợi")]
         public async Task PlayNextUpNhacCuaTuiMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(NhacCuaTuiMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.NhacCuaTui);
 
-        [SlashCommand("nextupzing", "Thêm nhạc từ ZingMP3 vào đầu hàng đợi")]
+        [SlashCommand("nextup-zing", "Thêm nhạc từ ZingMP3 vào đầu hàng đợi")]
         public async Task PlayNextUpZingMP3Music(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(ZingMP3MusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.ZingMP3);
         
-        [SlashCommand("nextupsc", "Thêm nhạc từ SoundCloud vào đầu hàng đợi")]
+        [SlashCommand("nextup-sc", "Thêm nhạc từ SoundCloud vào đầu hàng đợi")]
         public async Task PlayNextUpSoundCloudMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(SoundCloudMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.SoundCloud);
         
-        [SlashCommand("nextupsp", "Thêm nhạc từ Spotify vào đầu hàng đợi")]
+        [SlashCommand("nextup-sp", "Thêm nhạc từ Spotify vào đầu hàng đợi")]
         public async Task PlayNextUpSpotifyMusic(InteractionContext ctx, [Option("input", "Từ khóa hoặc link"), Autocomplete(typeof(SpotifyMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.Spotify);
 
-        [SlashCommand("playrandom", "Thêm ngẫu nhiên 1 bài nhạc local vào hàng đợi")]
+        [SlashCommand("play-local-random", "Thêm ngẫu nhiên 1 bài nhạc local vào hàng đợi")]
         public async Task PlayRandomLocalMusic(InteractionContext ctx, [Option("count", "Số lượng bài nhạc"), Minimum(1), Maximum(int.MaxValue)] long count = 1) => await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);
 
-        [SlashCommand("playall", "Thêm toàn bộ nhạc local vào hàng đợi")]
+        [SlashCommand("play-local-all", "Thêm toàn bộ nhạc local vào hàng đợi")]
         public async Task PlayAllLocalMusic(InteractionContext ctx) => await MusicPlayerCore.PlayAllLocalMusic(ctx);
 
-        [SlashCommand("nowplaying", "Xem thông tin bài nhạc đang phát")]
+        [SlashCommand("now-playing", "Xem thông tin bài nhạc đang phát")]
         public async Task NowPlaying(InteractionContext ctx) => await MusicPlayerCore.NowPlaying(ctx);
 
         [SlashCommand("seek", "Tua bài hiện tại")]
         public async Task Seek(InteractionContext ctx, [Option("seconds", "số giây để tua (mặc định: 10)"), Minimum(int.MinValue), Maximum(int.MaxValue)] long seconds = 10) => await MusicPlayerCore.Seek(ctx, seconds);
         
-        [SlashCommand("seekto", "Tua bài hiện tại đến vị trí chỉ định")]
+        [SlashCommand("seek-to", "Tua bài hiện tại đến vị trí chỉ định")]
         public async Task SeekTo(InteractionContext ctx, [Option("seconds", "số giây tính từ đầu (mặc định: 0)"), Minimum(int.MinValue), Maximum(int.MaxValue)] long seconds = 0) => await MusicPlayerCore.SeekTo(ctx, seconds);
 
         [SlashCommand("clear", "Xóa hết nhạc trong hàng đợi")]
@@ -118,7 +118,7 @@ namespace DiscordBot.Music
         [SlashCommand("musicvolume", "Xem hoặc chỉnh âm lượng nhạc của bot")]
         public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
 
-        [SlashCommand("albumartwork", "Xem ảnh album của bài đang phát")]
+        [SlashCommand("artwork", "Xem ảnh album của bài đang phát")]
         public async Task ViewAlbumArtwork(InteractionContext ctx) => await MusicPlayerCore.ViewAlbumArtwork(ctx);
     }
 }

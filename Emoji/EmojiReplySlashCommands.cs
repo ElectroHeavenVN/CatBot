@@ -13,7 +13,7 @@ namespace DiscordBot.Emoji
         [SlashCommand("emoji", "chèn emoji từ các server có bot")]
         public async Task ReplyWithEmoji(InteractionContext ctx, [Option("emojiName", "Tên emoji (cách nhau bằng dấu cách)")] string emojiNames) => await EmojiReplyCore.ReplyWithEmoji(ctx.Interaction, emojiNames.Split(' '));
 
-        [SlashCommand("catEmoji", "chèn emoji CatAndSoup")]
+        [SlashCommand("cat-emoji", "chèn emoji CatAndSoup")]
         public async Task InsertCatNSoupEmoji(InteractionContext ctx, [Option("emojiName", "Tên emoji"), Autocomplete(typeof(CatNSoupEmojiProvider))] string emojiName) => await EmojiReplyCore.InsertCatNSoupEmoji(ctx, emojiName);
     }
 
