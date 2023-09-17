@@ -305,13 +305,10 @@ namespace DiscordBot.Voice
                 return;
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             isStop = true;
-            BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
+            serverInstance.isVoicePlaying = false;
+            await messageToReact.TryRespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
             serverInstance.currentVoiceNextConnection.Disconnect();
             serverInstance.musicPlayer.playMode = new PlayMode();
-            if (messageToReact is DiscordMessage message)
-                await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
-            else if (messageToReact is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
             await Task.Delay(1000);
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
         }
@@ -346,10 +343,7 @@ namespace DiscordBot.Voice
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
 
             isStop = false;
-            if (messageToReact is DiscordMessage message)
-                await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
-            else if (messageToReact is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
+            await messageToReact.TryRespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
         }
 
         async Task InternalDelay(SnowflakeObject messageToReact, int delayValue)

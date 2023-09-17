@@ -159,19 +159,29 @@ namespace DiscordBot.Instance
                 }
                 else
                 {
-                    if (member.VoiceState.Channel.Type == ChannelType.Stage)
-                        serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                    voiceNextConnection = await member.VoiceState.Channel.ConnectAsync(); 
-                    if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                    DiscordChannel voiceChannel = member.VoiceState.Channel;
+                    Permissions permissions = voiceChannel.PermissionsFor(serverInstance.botMember);
+                    if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
                     {
-                        if (serverInstance.botMember.VoiceState.IsSuppressed)
-                            await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
-                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                        if (voiceChannel.Type == ChannelType.Stage)
+                            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
+                        voiceNextConnection = await voiceChannel.ConnectAsync();
+                        if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                        {
+                            if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                                await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                        }
+                        voiceNextConnection.SetVolume(volume);
+                        serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
+                        serverInstance.lastNumberOfUsersInVC = int.MaxValue;
+                        AddEvent(voiceNextConnection);
                     }
-                    voiceNextConnection.SetVolume(volume);
-                    serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
-                    serverInstance.lastNumberOfUsersInVC = int.MaxValue;
-                    AddEvent(voiceNextConnection);
+                    else
+                    {
+                        await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
+                        return null;
+                    }
                 }
                 return voiceNextConnection;
             }
@@ -179,20 +189,29 @@ namespace DiscordBot.Instance
             {
                 if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id))
                     return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
-                if (channel.Type == ChannelType.Stage)
-                    serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                voiceNextConnection = await channel.ConnectAsync();
-                if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                Permissions permissions = channel.PermissionsFor(serverInstance.botMember);
+                if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
                 {
-                    if (serverInstance.botMember.VoiceState.IsSuppressed)
-                        await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
-                    serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                    if (channel.Type == ChannelType.Stage)
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = true;
+                    voiceNextConnection = await channel.ConnectAsync();
+                    if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                    {
+                        if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                            await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
+                        serverInstance.suppressOnVoiceStateUpdatedEvent = false;
+                    }
+                    voiceNextConnection.SetVolume(volume);
+                    serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
+                    serverInstance.lastNumberOfUsersInVC = int.MaxValue;
+                    AddEvent(voiceNextConnection);
+                    return voiceNextConnection;
                 }
-                voiceNextConnection.SetVolume(volume);
-                serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
-                serverInstance.lastNumberOfUsersInVC = int.MaxValue;
-                AddEvent(voiceNextConnection);
-                return voiceNextConnection;
+                else
+                {
+                    await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
+                    return null;
+                }
             }
             return null;
         }
@@ -285,30 +304,31 @@ namespace DiscordBot.Instance
                     if (voiceChannel.Id == channelID)
                     {
                         channel = voiceChannel;
-                        foreach (BotServerInstance serverInstance in serverInstances)
+                        BotServerInstance serverInstance = GetBotServerInstance(channel.Guild);
+                        if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
                         {
-                            if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
-                            {
-                                serverInstance.currentVoiceNextConnection.Disconnect();
-                                serverInstance.musicPlayer.playMode = new PlayMode();
-                                serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
-                                await Task.Delay(300);
-                                break;
-                            }
+                            serverInstance.currentVoiceNextConnection.Disconnect();
+                            serverInstance.musicPlayer.playMode = new PlayMode();
+                            serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
+                            await Task.Delay(300);
                         }
-                        if (channel.PermissionsFor(channel.Guild.CurrentMember).HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
+                        Permissions permissions = channel.PermissionsFor(serverInstance.botMember);
+                        if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
                         {
-                            BotServerInstance serverInstance = GetBotServerInstance(channel.Guild);
                             voiceNextConnection = await channel.ConnectAsync();
                             if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
                             {
-                                if (serverInstance.botMember.VoiceState.IsSuppressed)
+                                if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                                     await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                             }
                             serverInstance.currentVoiceNextConnection = voiceNextConnection;
                             serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                             serverInstance.lastNumberOfUsersInVC = int.MaxValue;
                             AddEvent(voiceNextConnection);
+                        }
+                        else
+                        {
+                            return new KeyValuePair<DiscordChannel, VoiceNextConnection>();
                         }
                         return new KeyValuePair<DiscordChannel, VoiceNextConnection>(channel, voiceNextConnection);
                     }
@@ -529,6 +549,8 @@ namespace DiscordBot.Instance
             if (suppressOnVoiceStateUpdatedEvent)
                 return;
             if (currentVoiceNextConnection == null)
+                return;
+            if (currentVoiceNextConnection.isDisposed())
                 return;
             int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot).Count() + 1;
             bool result = userCount >= 2;
