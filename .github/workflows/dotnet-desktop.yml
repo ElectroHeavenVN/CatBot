@@ -95,4 +95,4 @@ jobs:
         path: Release.zip
 
     - name: Delete zip file
-      run: del /f Release.zip
+      run: Remove-Item Release.zip
