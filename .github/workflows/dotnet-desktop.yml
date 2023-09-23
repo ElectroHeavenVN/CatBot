@@ -36,7 +36,7 @@
 # For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
 # refer to https://github.com/microsoft/github-actions-for-desktop-apps
 
-name: .NET Core Desktop
+name: Build CatBot
 
 on:
   push:
@@ -65,12 +65,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Install the .NET Core workload
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-
     # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
@@ -85,17 +79,20 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
   
-    - name: setup-msbuild
-      uses: microsoft/setup-msbuild@v1.1
-
-    - name: Restore Packages
+    - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
     - name: Build solution
       run: msbuild $env:Solution_Name -t:rebuild -property:Configuration=Release
-    # Upload the MSIX package: https://github.com/marketplace/actions/upload-a-build-artifact
+
+    - name: Compress binaries
+      run: Compress-Archive -Path $env:Wap_Project_Directory -DestinationPath Release.zip
+      
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: MSIX Package
-        path: ${{ env.Wap_Project_Directory }}
+        name: ZIP file
+        path: Release.zip
+
+    - name: Delete zip file
+      run: del /f Release.zip
