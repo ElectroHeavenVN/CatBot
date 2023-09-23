@@ -306,6 +306,6 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy $(ProjectDir)Files\* $(TargetDir) /y /s | echo
-"D:\DiscordBot\CopyFile.bat"</PostBuildEvent>
+"D:\DiscordBot\CopyFile.bat | echo"</PostBuildEvent>
   </PropertyGroup>
 </Project>
