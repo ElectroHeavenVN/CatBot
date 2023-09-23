@@ -57,7 +57,7 @@ jobs:
 
     env:
       Solution_Name: DiscordBot.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
-      Wap_Project_Directory: DiscordBot.Package    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      Wap_Project_Directory: bin/Release    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
       
     steps:
     - name: Checkout
@@ -98,4 +98,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: MSIX Package
-        path: ${{ env.Wap_Project_Directory }}\AppPackages
+        path: ${{ env.Wap_Project_Directory }}
