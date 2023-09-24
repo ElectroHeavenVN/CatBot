@@ -57,7 +57,7 @@ namespace DiscordBot
             Console.OutputEncoding = Encoding.Unicode;
             try
             {
-                new Harmony("patchDeafen").PatchAll();
+                new Harmony("Hook").PatchAll();
             }
             catch (Exception ex) { Utils.LogException(ex); }
             new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();

@@ -70,18 +70,27 @@ namespace DiscordBot.Instance
                             content = "Bot tự động rời sân khấu do không có ai trong người nghe trong 30 phút!";
                         self.GetLastChannel().SendMessageAsync(content);
                         if (self.musicPlayer.isPlaying)
-                        {
-                            self.musicPlayer.isPaused = false;
-                            self.musicPlayer.isStopped = true;
-                        }
-                        self.currentVoiceNextConnection.Disconnect();
-                        self.musicPlayer.playMode = new PlayMode();
-                        for (int i = self.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
-                            self.musicPlayer.musicQueue.ElementAt(i).Dispose();
-                        self.musicPlayer.musicQueue.Clear();
-                        self.lastTimeCheckVoiceChannel = DateTime.Now;
-                        Thread.Sleep(3000);
-                        self.suppressOnVoiceStateUpdatedEvent = false;
+						{
+							self.musicPlayer.isPaused = false;
+							self.musicPlayer.isStopped = true;
+						}
+                        Thread.Sleep(500);
+						for (int i = self.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+							self.musicPlayer.musicQueue.ElementAt(i).Dispose();
+						self.musicPlayer.musicQueue.Clear();
+						self.musicPlayer.isPlaying = false;
+						self.isDisconnect = true;
+						self.musicPlayer.isThreadAlive = false;
+						self.musicPlayer.sentOutOfTrack = true;
+						self.musicPlayer.cts.Cancel();
+						self.musicPlayer.cts = new CancellationTokenSource();
+						self.isVoicePlaying = false;
+						self.currentVoiceNextConnection.Disconnect();
+						self.lastNumberOfUsersInVC = int.MaxValue;
+						self.musicPlayer.playMode = new PlayMode();
+						self.lastTimeCheckVoiceChannel = DateTime.Now;
+						Thread.Sleep(3000);
+						self.suppressOnVoiceStateUpdatedEvent = false;
                     }
                 }
                 Thread.Sleep(10000);
@@ -401,6 +410,7 @@ namespace DiscordBot.Instance
                         serverInstance.musicPlayer.cts.Cancel();
                         serverInstance.musicPlayer.cts = new CancellationTokenSource();
                         serverInstance.isVoicePlaying = false;
+                        serverInstance.lastNumberOfUsersInVC = int.MaxValue;
                         DiscordChannel channel = serverInstance.GetLastChannel();
                         bool isDelete = false;
                         DiscordMessage discordMessage = null;
