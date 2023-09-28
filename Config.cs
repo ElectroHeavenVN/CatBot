@@ -45,10 +45,14 @@ namespace DiscordBot
         /// Kênh báo lỗi bot
         /// </summary>
         internal static DiscordChannel exceptionReportChannel;
+
+        internal static DiscordChannel debugChannel;
         /// <summary>
         /// ID kênh báo lỗi bot
         /// </summary>
         internal static ulong ExceptionReportChannelID => GetConfigValue<ulong>("ExceptionReportChannelID");
+        
+        internal static ulong DebugChannelID => GetConfigValue<ulong>("DebugChannelID");
 
         /// <summary>
         /// ID tác giả của bot

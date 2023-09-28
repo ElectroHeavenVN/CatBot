@@ -158,6 +158,7 @@ namespace DiscordBot
                 Config.adminServer = botClient.Guilds.First(g => g.Key == Config.AdminServerID).Value;
                 Config.cacheImageChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.CacheImageChannelID);
                 Config.exceptionReportChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.ExceptionReportChannelID);
+                Config.debugChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.DebugChannelID);
             });
             await GlobalSlashCommands.GetMentionStrings();
             new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();

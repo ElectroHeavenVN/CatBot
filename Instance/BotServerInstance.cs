@@ -543,7 +543,7 @@ namespace DiscordBot.Instance
 
         private static async Task VoiceNextConnection_UserChange(VoiceNextConnection sender, DiscordEventArgs args)
         {
-            //Console.WriteLine("event fired " + args?.GetType().Name);
+            Console.WriteLine("event fired " + args?.GetType().Name);
             BotServerInstance serverInstance = GetBotServerInstance(sender);
             if (serverInstance != null)
                 await serverInstance.CheckPeopleInVC();
@@ -552,7 +552,10 @@ namespace DiscordBot.Instance
         async Task CheckPeopleInVC()
         {
             if (suppressOnVoiceStateUpdatedEvent)
+            {
+                Console.WriteLine("Don't check!");
                 return;
+            }
             if (currentVoiceNextConnection == null)
                 return;
             if (currentVoiceNextConnection.isDisposed())

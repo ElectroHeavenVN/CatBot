@@ -174,6 +174,13 @@ namespace DiscordBot.Admin
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại instance bot của server!").AsEphemeral());
         }
 
+        internal static async Task GetFieldValue(DiscordMessage message)
+        {
+            if (message.Channel != Config.debugChannel)
+                return;
+            
+        }
+
         internal static async Task SetBotStatus(InteractionContext ctx, string name, ActivityType activityType)
         {
             if (!Config.BotAuthorsID.Contains(ctx.Member.Id))
