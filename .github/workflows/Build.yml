@@ -1,0 +1,87 @@
+name: Build CatBot
+
+on: workflow_dispatch
+
+jobs:
+  build-zotify:
+    name: Build Zotify from source
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+       
+    - name: Setup Python environment 
+      uses: actions/setup-python@v3
+      with: 
+        python-version: 3.12
+          
+    - name: Clone Zotify repository
+      run: git clone https://github.com/zotify-dev/zotify.git
+     
+    - name: Install PyInstaller 
+      run: pip install -U pyinstaller
+        
+    - name: Install required libraries
+      run: pip install -r zotify/requirements.txt
+      
+    - name: Run PyInstaller
+      run: pyinstaller --onefile -F zotify\zotify\__main__.py
+
+    - name: Rename __main__.exe to Zotify.exe
+      run: ren dist\__main__.exe Zotify.exe
+
+    - name: Move Zotify.exe to Debug folder
+      run: move –Path dist\Zotify.exe bin\Debug\Zotify
+      
+    - name: Move Zotify.exe to Release folder
+      run: move –Path dist\Zotify.exe bin\Release\Zotify
+      
+  build-catbot-release:
+    name: Build CatBot (Debug & Release)
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    env:
+      Solution_Name: DiscordBot.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    - name: Restore the application
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+  
+    - name: Restore NuGet Packages
+      run: nuget restore $env:Solution_Name
+
+    - name: Build solution
+      run: msbuild $env:Solution_Name -t:rebuild -property:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
+       
+    - name: Upload build artifacts (Debug)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Debug.zip
+        path: bin/Debug
+        
+    - name: Upload build artifacts (Release)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release.zip
+        path: bin/Release
