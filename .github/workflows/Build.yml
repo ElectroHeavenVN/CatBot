@@ -59,7 +59,7 @@ jobs:
       run: pyinstaller --onefile -F zotify\zotify\__main__.py
 
     - name: Move Zotify to output folder
-      run: move dist\__main__.exe bin\${{ matrix.configuration }}\Zotify\Zotify.exe
+      run: mkdir bin\${{ matrix.configuration }}\Zotify & move dist\__main__.exe bin\${{ matrix.configuration }}\Zotify\Zotify.exe
        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
