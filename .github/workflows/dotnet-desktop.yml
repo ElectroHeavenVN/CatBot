@@ -76,15 +76,9 @@ jobs:
 
     - name: Build solution
       run: msbuild $env:Solution_Name -t:rebuild -property:Configuration=Release
-
-    - name: Compress binaries
-      run: Compress-Archive -Path $env:Wap_Project_Directory -DestinationPath Release.zip
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:
         name: ZIP file
-        path: Release.zip
-
-    - name: Delete zip file
-      run: Remove-Item Release.zip
+        path: $env:Wap_Project_Directory
