@@ -64,5 +64,5 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.configuration }}.zip
+        name: CatBot_${{ matrix.configuration }}
         path: bin/${{ matrix.configuration }}
