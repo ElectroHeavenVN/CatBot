@@ -69,11 +69,8 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
       
-    - name: Move Zotify.exe to Debug folder
-      run: move –Path dist\Zotify.exe bin\Debug\Zotify
-      
-    - name: Move Zotify.exe to Release folder
-      run: move –Path dist\Zotify.exe bin\Release\Zotify
+    - name: Move Zotify.exe to output folder
+      run: move –Path dist\Zotify.exe bin\${{ matrix.configuration }}\Zotify
        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
