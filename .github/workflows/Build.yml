@@ -30,12 +30,6 @@ jobs:
     - name: Rename __main__.exe to Zotify.exe
       run: ren dist\__main__.exe Zotify.exe
 
-    - name: Move Zotify.exe to Debug folder
-      run: move –Path dist\Zotify.exe bin\Debug\Zotify
-      
-    - name: Move Zotify.exe to Release folder
-      run: move –Path dist\Zotify.exe bin\Release\Zotify
-      
   build-catbot-release:
     name: Build CatBot
     needs: build-zotify
@@ -74,6 +68,12 @@ jobs:
       run: msbuild $env:Solution_Name -t:rebuild -property:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
+      
+    - name: Move Zotify.exe to Debug folder
+      run: move –Path dist\Zotify.exe bin\Debug\Zotify
+      
+    - name: Move Zotify.exe to Release folder
+      run: move –Path dist\Zotify.exe bin\Release\Zotify
        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
