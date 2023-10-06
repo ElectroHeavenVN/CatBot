@@ -58,11 +58,8 @@ jobs:
     - name: Run PyInstaller
       run: pyinstaller --onefile -F zotify\zotify\__main__.py
 
-    - name: Rename __main__.exe to Zotify.exe
-      run: ren dist\__main__.exe Zotify.exe
-      
-    - name: Move Zotify.exe to output folder
-      run: move dist\Zotify.exe bin\${{ matrix.configuration }}\Zotify
+    - name: Move Zotify to output folder
+      run: move dist\__main__.exe bin\${{ matrix.configuration }}\Zotify\Zotify.exe
        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
