@@ -3,36 +3,8 @@ name: Build CatBot
 on: workflow_dispatch
 
 jobs:
-  build-zotify:
-    name: Build Zotify from source
-    runs-on: windows-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-       
-    - name: Setup Python environment 
-      uses: actions/setup-python@v3
-      with: 
-        python-version: 3.12
-          
-    - name: Clone Zotify repository
-      run: git clone https://github.com/zotify-dev/zotify.git
-     
-    - name: Install PyInstaller 
-      run: pip install -U pyinstaller
-        
-    - name: Install required libraries
-      run: pip install -r zotify/requirements.txt
-      
-    - name: Run PyInstaller
-      run: pyinstaller --onefile -F zotify\zotify\__main__.py
-
-    - name: Rename __main__.exe to Zotify.exe
-      run: ren dist\__main__.exe Zotify.exe
-
-  build-catbot-release:
+  build-catbot:
     name: Build CatBot
-    needs: build-zotify
     strategy:
       matrix:
         configuration: [Debug, Release]
@@ -54,7 +26,21 @@ jobs:
    
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.0.5
-  
+      
+    - name: Setup Python environment 
+      uses: actions/setup-python@v3
+      with: 
+        python-version: 3.12
+          
+    - name: Clone Zotify repository
+      run: git clone https://github.com/zotify-dev/zotify.git
+     
+    - name: Install PyInstaller 
+      run: pip install -U pyinstaller
+        
+    - name: Install required libraries
+      run: pip install -r zotify/requirements.txt
+    
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
@@ -69,8 +55,14 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
       
+    - name: Run PyInstaller
+      run: pyinstaller --onefile -F zotify\zotify\__main__.py
+
+    - name: Rename __main__.exe to Zotify.exe
+      run: ren dist\__main__.exe Zotify.exe
+      
     - name: Move Zotify.exe to output folder
-      run: move –Path dist\Zotify.exe bin\${{ matrix.configuration }}\Zotify
+      run: move dist\Zotify.exe bin\${{ matrix.configuration }}\Zotify
        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
