@@ -57,16 +57,16 @@ jobs:
     # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
-
+   
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+  
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
       env:
         Configuration: ${{ matrix.configuration }}
-        
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.5
-  
+     
     - name: Restore NuGet Packages
       run: nuget restore $env:Solution_Name
 
@@ -75,14 +75,8 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
        
-    - name: Upload build artifacts (Debug)
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: Debug.zip
-        path: bin/Debug
-        
-    - name: Upload build artifacts (Release)
-      uses: actions/upload-artifact@v3
-      with:
-        name: Release.zip
-        path: bin/Release
+        name: ${{ matrix.configuration }}.zip
+        path: bin/${{ matrix.configuration }}
