@@ -1,0 +1,41 @@
+name: Build Zotify from source
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+       
+    - name: Setup Python environment 
+      uses: actions/setup-python@v2 
+      with: 
+        python-version: 3.12
+          
+    - name: Clone Zotify repository
+      run: git clone https://github.com/zotify-dev/zotify.git
+     
+    - name: Install PyInstaller 
+      run: pip install -U pyinstaller
+        
+    - name: Install requirement libraries
+      run: pip install -r zotify/requirements.txt
+      
+    - name: Run PyInstaller
+      run: pyinstaller --onefile -F zotify\zotify\__main__.py
+
+    - name: Rename __main__.exe to Zotify.exe
+      run: ren zotify\zotify\dist\__main__.exe Zotify.exe
+
+    - name: Upload build artifacts 
+      uses: actions/upload-artifact@v3 
+      with: 
+         name: ZIP file 
+         path: zotify\zotify\dist\Zotify.exe
+         
