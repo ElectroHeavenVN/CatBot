@@ -37,7 +37,8 @@ jobs:
       run: move –Path dist\Zotify.exe bin\Release\Zotify
       
   build-catbot-release:
-    name: Build CatBot (Debug & Release)
+    name: Build CatBot
+    needs: build-zotify
     strategy:
       matrix:
         configuration: [Debug, Release]
