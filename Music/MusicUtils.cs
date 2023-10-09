@@ -120,6 +120,7 @@ namespace DiscordBot.Music
         internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
         {
             string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), Utils.RandomString(10));
+            Directory.CreateDirectory(tempFolder);
             tempFile = Path.Combine(tempFolder, "..tmp");
             Process zotify = new Process()
             {
