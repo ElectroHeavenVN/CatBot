@@ -110,6 +110,10 @@ namespace DiscordBot
         /// Spotify cookie
         /// </summary>
         internal static string SpotifyCookie => GetConfigValue<string>("SpotifyCookie");
+
+        internal static string SpotifyUsername => GetConfigValue<string>("SpotifyUsername");
+
+        internal static string SpotifyPassword => GetConfigValue<string>("SpotifyPassword");
         #endregion
 
         /// <summary>

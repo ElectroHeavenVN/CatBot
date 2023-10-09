@@ -117,6 +117,30 @@ namespace DiscordBot.Music
             return tempFile;
         }
 
+        internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
+        {
+            string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), Utils.RandomString(10));
+            tempFile = Path.Combine(tempFolder, "..tmp");
+            Process zotify = new Process()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "Zotify\\Zotify",
+                    Arguments = $"--username {Config.SpotifyUsername} --password {Config.SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output {tempFile} {link}",
+                    WorkingDirectory = tempFolder,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false,
+                },
+                EnableRaisingEvents = true,
+            };
+            Console.WriteLine("--------------Zotify Console output--------------");
+            zotify.Start();
+            zotify.WaitForExit();
+            Console.WriteLine("--------------End of Zotify Console output--------------");
+            
+
+        }
+
         internal static void DownloadWEBMFromYouTube(string link, ref string tempFile, SponsorBlockSkipSegment[] sponsorBlockSkipSegments = null)
         {
             string randomString = Utils.RandomString(10);

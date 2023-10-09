@@ -71,24 +71,32 @@ namespace DiscordBot.Music.Spotify
             mp3OrWEBMFilePath = Path.GetTempFileName();
             try
             {
-                GetTrackFromYtDlp();
-                mimeType = "taglib/webm";
+                 DownloadTrackUsingZotify();
+                 mimeType = "taglib/ogg";
             }
             catch
             {
                 try
                 {
-                    GetTrackFromSoundCloud();
-                    mimeType = "taglib/mp3";
+                    GetTrackFromYtDlp();
+                    mimeType = "taglib/webm";
                 }
-                catch 
-                { 
+                catch
+                {
                     try
                     {
-                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
+                        GetTrackFromSoundCloud();
                         mimeType = "taglib/mp3";
                     }
-                    catch { throw new MusicException("Sp: not found"); }
+                    catch 
+                    { 
+                        try
+                        {
+                            new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
+                            mimeType = "taglib/mp3";
+                        }
+                        catch { throw new MusicException("Sp: not found"); }
+                    }
                 }
             }
             TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, mimeType, TagLib.ReadStyle.Average);
@@ -188,6 +196,16 @@ namespace DiscordBot.Music.Spotify
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;
+        }
+
+        void DownloadTrackUsingZotify()
+        {
+            MusicUtils.DownloadOGGFromSpotify(link, ref mp3OrWEBMFilePath);
+            TagLib.File oggFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/ogg", TagLib.ReadStyle.Average);
+            TimeSpan duration = oggFile.Properties.Duration;
+            oggFile.Dispose();
+            if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
+                throw new MusicException("Wrong track");
         }
 
         void GetTrackFromYtDlp()
