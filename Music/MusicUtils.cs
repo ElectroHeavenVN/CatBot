@@ -138,9 +138,9 @@ namespace DiscordBot.Music
             zotify.Start();
             zotify.WaitForExit();
             Console.WriteLine("--------------End of Zotify Console output--------------");
-            tempFile = tempFolder + ".tmp";
+            tempFile = "tmp" + tempFolder + ".tmp";
             File.Move(Path.Combine(tempFolder, "..tmp"), tempFile);
-            Directory.Delete(tempFolder);
+            Directory.Delete(tempFolder, true);
         }
 
         internal static void DownloadWEBMFromYouTube(string link, ref string tempFile, SponsorBlockSkipSegment[] sponsorBlockSkipSegments = null)
