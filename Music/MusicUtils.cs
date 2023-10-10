@@ -119,7 +119,7 @@ namespace DiscordBot.Music
 
         internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
         {
-            string randomString = Utils.RandomString(10); 
+            string randomString = "tmp" + Utils.RandomString(10); 
             string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), randomString);
             Directory.CreateDirectory(tempFolder);
             Process zotify = new Process()
@@ -138,7 +138,7 @@ namespace DiscordBot.Music
             zotify.Start();
             zotify.WaitForExit();
             Console.WriteLine("--------------End of Zotify Console output--------------");
-            tempFile = "tmp" + tempFolder + ".tmp";
+            tempFile = tempFolder + ".tmp";
             File.Move(Path.Combine(tempFolder, "..tmp"), tempFile);
             Directory.Delete(tempFolder, true);
         }
