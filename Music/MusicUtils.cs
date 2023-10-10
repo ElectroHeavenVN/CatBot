@@ -119,15 +119,15 @@ namespace DiscordBot.Music
 
         internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
         {
-            string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), Utils.RandomString(10));
+            string randomString = Utils.RandomString(10); 
+            string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), randomString);
             Directory.CreateDirectory(tempFolder);
-            tempFile = Path.Combine(tempFolder, "..tmp");
             Process zotify = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "Zotify\\Zotify",
-                    Arguments = $"--username {Config.SpotifyUsername} --password {Config.SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output {tempFile} {link}",
+                    Arguments = $"--username {Config.SpotifyUsername} --password {Config.SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output ..tmp {link}",
                     WorkingDirectory = tempFolder,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
@@ -138,8 +138,9 @@ namespace DiscordBot.Music
             zotify.Start();
             zotify.WaitForExit();
             Console.WriteLine("--------------End of Zotify Console output--------------");
-            
-
+            tempFile = tempFolder + ".tmp";
+            File.Move(Path.Combine(tempFolder, "..tmp"), tempFile);
+            Directory.Delete(tempFolder);
         }
 
         internal static void DownloadWEBMFromYouTube(string link, ref string tempFile, SponsorBlockSkipSegment[] sponsorBlockSkipSegments = null)
