@@ -287,7 +287,6 @@
     <Content Include="Files\SoundCloud.png" />
     <Content Include="Files\YouTubeMusic.png" />
     <Content Include="Files\YouTubeIcon.png" />
-    <Content Include="Files\yt-dlp\yt-dlp_x86.exe" />
     <Content Include="Files\ZaloAI.png" />
     <Content Include="Files\ZingMP3.png" />
     <Content Include="ReadMeResources\raw_emoji_string.png" />
