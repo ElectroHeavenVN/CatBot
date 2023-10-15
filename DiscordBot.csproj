@@ -285,6 +285,7 @@
     <Content Include="Files\Lyrist.png" />
     <Content Include="Files\NCT.png" />
     <Content Include="Files\SoundCloud.png" />
+    <Content Include="Files\spotdl\spotdl.exe" />
     <Content Include="Files\YouTubeMusic.png" />
     <Content Include="Files\YouTubeIcon.png" />
     <Content Include="Files\ZaloAI.png" />
