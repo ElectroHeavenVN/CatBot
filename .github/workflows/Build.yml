@@ -9,10 +9,10 @@ jobs:
       matrix:
         configuration: [Debug, Release]
         
-    runs-on: windows-latest  # For a list of available runner types, refer to
-                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    runs-on: windows-latest  
+
     env:
-      Solution_Name: DiscordBot.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      Solution_Name: DiscordBot.sln                        
       
     steps:
     - name: Checkout
@@ -20,7 +20,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
    
@@ -34,14 +33,16 @@ jobs:
           
     - name: Clone Zotify repository
       run: git clone https://github.com/zotify-dev/zotify.git
-     
+      
+    - name: Download yt-dlp executable
+      run:  New-Item -ItemType Directory -Path bin\${{ matrix.configuration }}\yt-dlp && Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile bin\${{ matrix.configuration }}\yt-dlp\yt-dlp.exe
+      
     - name: Install PyInstaller 
       run: pip install -U pyinstaller
         
     - name: Install required libraries
       run: pip install -r zotify/requirements.txt
     
-    # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
       env:
