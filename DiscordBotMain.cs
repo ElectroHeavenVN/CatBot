@@ -97,11 +97,11 @@ namespace DiscordBot
         {
             while (true)
             {
-                Process yt_dlp_x86 = new Process()
+                Process yt_dlp = new Process()
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "yt-dlp\\yt-dlp_x86",
+                        FileName = "yt-dlp\\yt-dlp",
                         Arguments = "-U",
                         WindowStyle = ProcessWindowStyle.Hidden,
                         UseShellExecute = false,
@@ -109,8 +109,8 @@ namespace DiscordBot
                     EnableRaisingEvents = true,
                 };
                 Console.WriteLine("--------------yt-dlp Console output--------------");
-                yt_dlp_x86.Start();
-                yt_dlp_x86.WaitForExit();
+                yt_dlp.Start();
+                yt_dlp.WaitForExit();
                 Console.WriteLine("--------------End of yt-dlp Console output--------------");
                 Thread.Sleep(1000 * 60 * 60 * 24);
             }

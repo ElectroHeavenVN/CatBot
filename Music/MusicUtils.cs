@@ -148,11 +148,11 @@ namespace DiscordBot.Music
             string randomString = Utils.RandomString(10);
             tempFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.webm");
             Thread.Sleep(100);
-            Process yt_dlp_x86 = new Process()
+            Process yt_dlp = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "yt-dlp\\yt-dlp_x86",
+                    FileName = "yt-dlp\\yt-dlp",
                     Arguments = $"-f bestaudio --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
                     WorkingDirectory = "yt-dlp",
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -161,8 +161,8 @@ namespace DiscordBot.Music
                 EnableRaisingEvents = true,
             };
             Console.WriteLine("--------------yt-dlp Console output--------------");
-            yt_dlp_x86.Start();
-            yt_dlp_x86.WaitForExit();
+            yt_dlp.Start();
+            yt_dlp.WaitForExit();
             Console.WriteLine("--------------End of yt-dlp Console output--------------");
             if (sponsorBlockSkipSegments != null && sponsorBlockSkipSegments.Length > 0)
             {
