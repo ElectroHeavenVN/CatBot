@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest  
 
     env:
-      Solution_Name: DiscordBot.sln                        
+      Solution_Name: CatBot.sln                        
       
     steps:
     - name: Checkout
