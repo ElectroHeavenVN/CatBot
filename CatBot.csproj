@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>DiscordBot</RootNamespace>
-    <AssemblyName>DiscordBot</AssemblyName>
+    <RootNamespace>CatBot</RootNamespace>
+    <AssemblyName>CatBot</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -37,11 +37,11 @@
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <Deterministic>False</Deterministic>
-    <DocumentationFile>bin\Release\DiscordBot.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\CatBot.xml</DocumentationFile>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>DiscordBot.Program</StartupObject>
+    <StartupObject>CatBot.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.2.2.0, Culture=neutral, processorArchitecture=MSIL">
@@ -281,15 +281,16 @@
     <Content Include="Files\ffmpeg\ffprobe.exe" />
     <Content Include="Files\libopus.dll" />
     <Content Include="Files\libsodium.dll" />
-    <Content Include="Files\Local.png" />
-    <Content Include="Files\Lyrist.png" />
-    <Content Include="Files\NCT.png" />
-    <Content Include="Files\SoundCloud.png" />
+    <Content Include="Files\Images\Local.png" />
+    <Content Include="Files\Images\Lyrist.png" />
+    <Content Include="Files\Images\NCT.png" />
+    <Content Include="Files\Images\SoundCloud.png" />
     <Content Include="Files\spotdl\spotdl.exe" />
-    <Content Include="Files\YouTubeMusic.png" />
-    <Content Include="Files\YouTubeIcon.png" />
-    <Content Include="Files\ZaloAI.png" />
-    <Content Include="Files\ZingMP3.png" />
+    <Content Include="Files\Images\YouTubeMusic.png" />
+    <Content Include="Files\Images\YouTubeIcon.png" />
+    <Content Include="Files\Images\ZaloAI.png" />
+    <Content Include="Files\Images\ZingMP3.png" />
+    <Content Include="Files\Images\Spotify.png" />
     <Content Include="ReadMeResources\raw_emoji_string.png" />
     <Content Include="ReadMeResources\sec_ch_ua_1.png" />
     <Content Include="ReadMeResources\user_agent_1.png" />

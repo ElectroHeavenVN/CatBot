@@ -1,5 +1,5 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Music.SponsorBlock;
+﻿using CatBot.Instance;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using System;
@@ -10,7 +10,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.Local
+namespace CatBot.Music.Local
 {
     internal class LocalMusic : IMusic
     {

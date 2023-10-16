@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Emoji
+namespace CatBot.Emoji
 {
     public class EmojiReplyBaseCommands : BaseCommandModule
     {

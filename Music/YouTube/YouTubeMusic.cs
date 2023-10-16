@@ -1,5 +1,5 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Music.SponsorBlock;
+﻿using CatBot.Instance;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -15,7 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace DiscordBot.Music.YouTube
+namespace CatBot.Music.YouTube
 {
     internal class YouTubeMusic : IMusic
     {

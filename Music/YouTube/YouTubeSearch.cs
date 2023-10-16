@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.YouTube
+namespace CatBot.Music.YouTube
 {
     internal static class YouTubeSearch
     {

@@ -7,13 +7,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AngleSharp.Text;
-using DiscordBot.SoundCloudExplodeExtension;
+using CatBot.SoundCloudExplodeExtension;
 using DSharpPlus.Entities;
 using SoundCloudExplode.Playlists;
 using SoundCloudExplode.Tracks;
 using SoundCloudExplode.Users;
 
-namespace DiscordBot.Music.SoundCloud
+namespace CatBot.Music.SoundCloud
 {
     internal class SoundCloudPlaylist : IPlaylist
     {

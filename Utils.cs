@@ -1,5 +1,5 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Music;
+﻿using CatBot.Instance;
+using CatBot.Music;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -17,7 +17,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot
+namespace CatBot
 {
     public static class Utils
     {

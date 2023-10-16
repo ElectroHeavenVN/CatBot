@@ -1,4 +1,4 @@
-﻿using DiscordBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     internal interface IMusic : IDisposable
     {

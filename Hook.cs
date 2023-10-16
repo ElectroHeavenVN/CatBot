@@ -7,7 +7,7 @@ using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordBot
+namespace CatBot
 {
     internal class Hook
     {

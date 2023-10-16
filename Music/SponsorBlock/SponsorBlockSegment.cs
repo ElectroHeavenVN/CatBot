@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace DiscordBot.Music.SponsorBlock
+namespace CatBot.Music.SponsorBlock
 {
     [JsonConverter(typeof(SponsorBlockSegmentJsonConverter))]
     internal class SponsorBlockSegment

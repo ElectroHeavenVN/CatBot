@@ -1,5 +1,5 @@
-﻿using DiscordBot.Music.SponsorBlock;
-using DiscordBot.Voice;
+﻿using CatBot.Music.SponsorBlock;
+using CatBot.Voice;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
 using Leaf.xNet;
@@ -17,7 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace DiscordBot.Music.ZingMP3
+namespace CatBot.Music.ZingMP3
 {
     internal class ZingMP3Music : IMusic
     {

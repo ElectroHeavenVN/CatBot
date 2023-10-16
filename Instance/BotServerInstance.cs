@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DiscordBot.Music;
-using DiscordBot.Voice;
+using CatBot.Music;
+using CatBot.Voice;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.VoiceNext;
 
-namespace DiscordBot.Instance
+namespace CatBot.Instance
 {
     /// <summary>
     /// Mỗi server sẽ có 1 instance bot riêng tránh gây xung đột
@@ -62,13 +62,13 @@ namespace DiscordBot.Instance
                 {
                     if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot))
                         self.lastTimeCheckVoiceChannel = DateTime.Now;
-                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
+                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > .3)
                     {
                         self.suppressOnVoiceStateUpdatedEvent = true;
                         string content = "Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!";
                         if (self.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                            content = "Bot tự động rời sân khấu do không có ai trong người nghe trong 30 phút!";
-                        self.GetLastChannel().SendMessageAsync(content);
+                            content = "Bot tự động rời sân khấu do không có người nghe trong 30 phút!";
+                        self.GetLastChannel().SendMessageAsync(new DiscordEmbedBuilder().WithTitle(content).WithColor(DiscordColor.Red));
                         if (self.musicPlayer.isPlaying)
 						{
 							self.musicPlayer.isPaused = false;
@@ -89,6 +89,7 @@ namespace DiscordBot.Instance
 						self.lastNumberOfUsersInVC = int.MaxValue;
 						self.musicPlayer.playMode = new PlayMode();
 						self.lastTimeCheckVoiceChannel = DateTime.Now;
+                        self.canSpeak = true;
 						Thread.Sleep(3000);
 						self.suppressOnVoiceStateUpdatedEvent = false;
                     }
@@ -384,9 +385,14 @@ namespace DiscordBot.Instance
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
             if (args.User.Id != DiscordBotMain.botClient.CurrentUser.Id)
             {
-                if (serverInstance.currentVoiceNextConnection == null)
+                if (serverInstance.currentVoiceNextConnection == null || serverInstance.currentVoiceNextConnection.isDisposed())
                     return;
-                if ((args.Before != null && args.Before.Channel != null && args.Before.Channel == serverInstance.currentVoiceNextConnection.TargetChannel) || (args.After != null && args.After.Channel != null && args.After.Channel == serverInstance.currentVoiceNextConnection.TargetChannel))
+                DiscordChannel voiceChannel = null;
+                if (args.Before != null && args.Before.Channel != null)
+                    voiceChannel = args.Before.Channel;
+                else if (args.After != null && args.After.Channel != null)
+                    voiceChannel = args.After.Channel;
+                if (voiceChannel != null && voiceChannel == serverInstance.currentVoiceNextConnection.TargetChannel)
                     await serverInstance.CheckPeopleInVC();
                 return;
             }
@@ -489,7 +495,7 @@ namespace DiscordBot.Instance
                                 message = "Bot đang là người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
                             if (channel != null)
                             {
-                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
+                                discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
                             }
                             else
                             {
@@ -498,7 +504,7 @@ namespace DiscordBot.Instance
                                 {
                                     try
                                     {
-                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
+                                        discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
                                         break;
                                     }
                                     catch (Exception) { }
@@ -543,7 +549,6 @@ namespace DiscordBot.Instance
 
         private static async Task VoiceNextConnection_UserChange(VoiceNextConnection sender, DiscordEventArgs args)
         {
-            Console.WriteLine("event fired " + args?.GetType().Name);
             BotServerInstance serverInstance = GetBotServerInstance(sender);
             if (serverInstance != null)
                 await serverInstance.CheckPeopleInVC();
@@ -551,11 +556,6 @@ namespace DiscordBot.Instance
 
         async Task CheckPeopleInVC()
         {
-            if (suppressOnVoiceStateUpdatedEvent)
-            {
-                Console.WriteLine("Don't check!");
-                return;
-            }
             if (currentVoiceNextConnection == null)
                 return;
             if (currentVoiceNextConnection.isDisposed())
@@ -563,7 +563,6 @@ namespace DiscordBot.Instance
             int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot).Count() + 1;
             bool result = userCount >= 2;
             canSpeak = result;
-            //Console.WriteLine("result: " + result);
             if (!result && lastNumberOfUsersInVC >= 2)
             {
                 string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
@@ -571,10 +570,8 @@ namespace DiscordBot.Instance
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
                 DiscordChannel discordChannel = GetLastChannel();
                 if (discordChannel != null)
-                    await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Orange).Build());
+                    await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
             }
-            //Console.WriteLine("last users count: " + lastNumberOfUsersInVC);
-            //Console.WriteLine("users count: " + userCount);
             lastNumberOfUsersInVC = userCount;
         }
     }

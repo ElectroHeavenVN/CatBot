@@ -1,4 +1,4 @@
-﻿using DiscordBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using SoundCloudExplode;
 using SoundCloudExplode.Search;
@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.SoundCloud
+namespace CatBot.Music.SoundCloud
 {
     internal class SoundCloudMusic : IMusic
     {

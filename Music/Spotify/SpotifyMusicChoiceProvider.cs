@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 
-namespace DiscordBot.Music.Spotify
+namespace CatBot.Music.Spotify
 {
     internal class SpotifyMusicChoiceProvider : IAutocompleteProvider
     {

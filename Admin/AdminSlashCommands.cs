@@ -1,4 +1,4 @@
-﻿using DiscordBot.Voice;
+﻿using CatBot.Voice;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Admin
+namespace CatBot.Admin
 {
     [SlashCommandGroup("admin", "admin commands")]
     public class AdminSlashCommands : ApplicationCommandModule

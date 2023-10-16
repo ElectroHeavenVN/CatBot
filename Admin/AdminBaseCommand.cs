@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Admin
+namespace CatBot.Admin
 {
     public class AdminBaseCommand : BaseCommandModule
     {

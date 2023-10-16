@@ -1,4 +1,4 @@
-﻿using DiscordBot.Instance;
+﻿using CatBot.Instance;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Voice
+namespace CatBot.Voice
 {
     public class VoiceChannelSFXBaseCommands : BaseCommandModule
     {

@@ -11,7 +11,7 @@ using SpotifyExplode.Artists;
 using SpotifyExplode.Playlists;
 using SpotifyExplode.Tracks;
 
-namespace DiscordBot.Extension
+namespace CatBot.Extension
 {
     internal static class SpotifyExplodeExtension
     {

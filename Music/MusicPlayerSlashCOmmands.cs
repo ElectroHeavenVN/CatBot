@@ -1,9 +1,9 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Music.Local;
-using DiscordBot.Music.NhacCuaTui;
-using DiscordBot.Music.YouTube;
-using DiscordBot.Music.ZingMP3;
-using DiscordBot.Music.SoundCloud;
+﻿using CatBot.Instance;
+using CatBot.Music.Local;
+using CatBot.Music.NhacCuaTui;
+using CatBot.Music.YouTube;
+using CatBot.Music.ZingMP3;
+using CatBot.Music.SoundCloud;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
@@ -14,11 +14,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using DiscordBot.Music.Spotify;
-using DiscordBot.Voice;
-using DiscordBot.Music.SponsorBlock;
+using CatBot.Music.Spotify;
+using CatBot.Voice;
+using CatBot.Music.SponsorBlock;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     public class MusicPlayerSlashCommands : ApplicationCommandModule
     {

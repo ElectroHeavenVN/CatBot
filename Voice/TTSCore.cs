@@ -4,12 +4,12 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DiscordBot.Instance;
-using DiscordBot.Music;
+using CatBot.Instance;
+using CatBot.Music;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordBot.Voice
+namespace CatBot.Voice
 {
     internal class TTSCore
     {

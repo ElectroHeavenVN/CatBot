@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.ZingMP3
+namespace CatBot.Music.ZingMP3
 {
     internal class ZingMP3MusicChoiceProvider : IAutocompleteProvider
     {

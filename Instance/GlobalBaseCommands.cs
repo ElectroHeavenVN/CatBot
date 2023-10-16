@@ -13,7 +13,7 @@ using System.Threading;
 using DSharpPlus.Entities;
 using DSharpPlus;
 
-namespace DiscordBot.Instance
+namespace CatBot.Instance
 {
     public class GlobalBaseCommands : BaseCommandModule
     {

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.Local
+namespace CatBot.Music.Local
 {
     internal class LocalMusicChoiceProvider : IAutocompleteProvider
     {

@@ -1,4 +1,4 @@
-﻿using DiscordBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using System;
@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace DiscordBot.Music.NhacCuaTui
+namespace CatBot.Music.NhacCuaTui
 {
     internal class NhacCuaTuiMusic : IMusic
     {

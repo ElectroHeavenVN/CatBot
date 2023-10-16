@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.NhacCuaTui
+namespace CatBot.Music.NhacCuaTui
 {
     internal class NhacCuaTuiMusicChoiceProvider : IAutocompleteProvider
     {

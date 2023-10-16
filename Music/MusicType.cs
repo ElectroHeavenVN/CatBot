@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     public enum MusicType
     {

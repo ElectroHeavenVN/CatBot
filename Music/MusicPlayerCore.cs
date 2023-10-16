@@ -6,15 +6,15 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DiscordBot.Instance;
-using DiscordBot.Music.Local;
-using DiscordBot.Music.SponsorBlock;
+using CatBot.Instance;
+using CatBot.Music.Local;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     internal class MusicPlayerCore
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Voice
+namespace CatBot.Voice
 {
     public class TTSSlashCommands : ApplicationCommandModule
     {

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     internal interface IPlaylist
     {

@@ -7,8 +7,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using DiscordBot.Music.SoundCloud;
-using DiscordBot.Music.SponsorBlock;
+using CatBot.Music.SoundCloud;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using SpotifyExplode;
@@ -16,7 +16,7 @@ using SpotifyExplode.Artists;
 using SpotifyExplode.Search;
 using SpotifyExplode.Tracks;
 
-namespace DiscordBot.Music.Spotify
+namespace CatBot.Music.Spotify
 {
     internal class SpotifyMusic : IMusic
     {

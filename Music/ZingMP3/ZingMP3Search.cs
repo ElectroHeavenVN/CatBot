@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace DiscordBot.Music.ZingMP3
+namespace CatBot.Music.ZingMP3
 {
     internal static class ZingMP3Search
     {

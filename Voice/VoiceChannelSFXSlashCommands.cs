@@ -1,4 +1,4 @@
-﻿using DiscordBot.Instance;
+﻿using CatBot.Instance;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Voice
+namespace CatBot.Voice
 {
     public class VoiceChannelSFXSlashCommands : ApplicationCommandModule
     {

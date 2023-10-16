@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     internal class MusicQueue : IEnumerable, IEnumerable<IMusic>, ICollection, ICollection<IMusic>, IList, IList<IMusic>
     {

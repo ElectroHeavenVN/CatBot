@@ -11,12 +11,12 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using DiscordBot.Music.SponsorBlock;
+using CatBot.Music.SponsorBlock;
 using System.Threading;
-using DiscordBot.Music.ZingMP3;
+using CatBot.Music.ZingMP3;
 using Leaf.xNet;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     internal static class MusicUtils
     {

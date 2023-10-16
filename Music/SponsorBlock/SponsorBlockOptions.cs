@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.SponsorBlock
+namespace CatBot.Music.SponsorBlock
 {
     internal class SponsorBlockOptions
     {

@@ -1,8 +1,8 @@
-﻿using DiscordBot.Admin;
-using DiscordBot.Emoji;
-using DiscordBot.Instance;
-using DiscordBot.Music;
-using DiscordBot.Voice;
+﻿using CatBot.Admin;
+using CatBot.Emoji;
+using CatBot.Instance;
+using CatBot.Music;
+using CatBot.Voice;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -21,7 +21,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DiscordBot
+namespace CatBot
 {
     internal class DiscordBotMain
     {
@@ -135,7 +135,7 @@ namespace DiscordBot
         {
             while (true)
             {
-                Thread.Sleep(15000);
+                Thread.Sleep(1000 * 60 * 60);
                 List<string> allFilesInUse = Utils.GetAllFilesInUse();
                 DirectoryInfo temp = new DirectoryInfo(Environment.ExpandEnvironmentVariables("%temp%"));
                 foreach (FileInfo file in temp.GetFiles().Where(f => f.Name.StartsWith("tmp") && (f.Extension == ".tmp" || f.Extension == ".webm")))
@@ -154,11 +154,11 @@ namespace DiscordBot
         {
             await Task.Run(() =>
             {
-                Config.mainServer = botClient.Guilds.First(g => g.Key == Config.MainServerID).Value;
-                Config.adminServer = botClient.Guilds.First(g => g.Key == Config.AdminServerID).Value;
-                Config.cacheImageChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.CacheImageChannelID);
-                Config.exceptionReportChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.ExceptionReportChannelID);
-                Config.debugChannel = Config.mainServer.Channels.Values.First(ch => ch.Id == Config.DebugChannelID);
+                Config.mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.MainServerID).Value;
+                Config.adminServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.AdminServerID).Value;
+                Config.cacheImageChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.CacheImageChannelID);
+                Config.exceptionReportChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.ExceptionReportChannelID);
+                Config.debugChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.DebugChannelID);
             });
             await GlobalSlashCommands.GetMentionStrings();
             new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();
@@ -216,6 +216,6 @@ namespace DiscordBot
             await EmojiReplyCore.onMessageReceived(args.Message);
         }
 
-        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => new Thread(async () => await BotServerInstance.OnVoiceStateUpdated(args)) { IsBackground = true }.Start();
+        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.OnVoiceStateUpdated(args);
     }
 }

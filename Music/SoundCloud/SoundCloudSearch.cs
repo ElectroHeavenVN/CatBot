@@ -3,7 +3,7 @@ using System.Linq;
 using SoundCloudExplode.Search;
 using SoundCloudExplode.Tracks;
 
-namespace DiscordBot.Music.SoundCloud
+namespace CatBot.Music.SoundCloud
 {
     internal class SoundCloudSearch
     {

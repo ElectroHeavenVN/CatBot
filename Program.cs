@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DiscordBot
+namespace CatBot
 {
 
     internal class Program

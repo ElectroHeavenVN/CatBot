@@ -3,7 +3,7 @@ using DSharpPlus.SlashCommands;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace DiscordBot.Music.SponsorBlock
+namespace CatBot.Music.SponsorBlock
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum SponsorBlockCategory

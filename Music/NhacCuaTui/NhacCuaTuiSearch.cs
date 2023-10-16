@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using TagLib.Ape;
 
-namespace DiscordBot.Music.NhacCuaTui
+namespace CatBot.Music.NhacCuaTui
 {
     internal static class NhacCuaTuiSearch
     {

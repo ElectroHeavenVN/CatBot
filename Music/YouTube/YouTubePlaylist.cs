@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 
-namespace DiscordBot.Music.YouTube
+namespace CatBot.Music.YouTube
 {
     internal class YouTubePlaylist : IPlaylist
     {

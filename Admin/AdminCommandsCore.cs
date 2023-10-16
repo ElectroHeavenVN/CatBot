@@ -1,5 +1,5 @@
-﻿using DiscordBot.Instance;
-using DiscordBot.Voice;
+﻿using CatBot.Instance;
+using CatBot.Voice;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -12,7 +12,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Admin
+namespace CatBot.Admin
 {
     internal class AdminCommandsCore
     {

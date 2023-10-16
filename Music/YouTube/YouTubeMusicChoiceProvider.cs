@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Music.YouTube
+namespace CatBot.Music.YouTube
 {
     internal class YouTubeMusicChoiceProvider : IAutocompleteProvider
     {

@@ -14,7 +14,7 @@ using SoundCloudExplode.Playlists;
 using SoundCloudExplode.Tracks;
 using SoundCloudExplode.Users;
 
-namespace DiscordBot.SoundCloudExplodeExtension
+namespace CatBot.SoundCloudExplodeExtension
 {
     internal static class Extension
     {

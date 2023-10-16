@@ -13,11 +13,11 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Newtonsoft.Json.Linq;
 using DSharpPlus;
-using DiscordBot.Instance;
-using DiscordBot.Music;
+using CatBot.Instance;
+using CatBot.Music;
 using DSharpPlus.SlashCommands;
 
-namespace DiscordBot.Voice
+namespace CatBot.Voice
 {
     internal class VoiceChannelSFXCore
     {
@@ -55,10 +55,7 @@ namespace DiscordBot.Voice
             if (serverInstance.voiceChannelSFX == null)
                 return;
             serverInstance.voiceChannelSFX.isStop = false;
-            new Thread(async () =>
-            {
-                await serverInstance.voiceChannelSFX.InternalSpeak(message, fileNames);
-            }) { IsBackground = true }.Start();
+            await serverInstance.voiceChannelSFX.InternalSpeak(message, fileNames);
         }
 
         internal static async Task Reconnect(SnowflakeObject messageToReact)

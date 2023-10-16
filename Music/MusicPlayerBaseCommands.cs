@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DiscordBot.Voice;
+using CatBot.Voice;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 
-namespace DiscordBot.Music
+namespace CatBot.Music
 {
     public class MusicPlayerBaseCommands : BaseCommandModule
     {

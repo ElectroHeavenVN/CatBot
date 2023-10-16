@@ -3,7 +3,7 @@ using System.Linq;
 using SpotifyExplode.Search;
 using SpotifyExplode.Tracks;
 
-namespace DiscordBot.Music.Spotify
+namespace CatBot.Music.Spotify
 {
     internal class SpotifySearch
     {

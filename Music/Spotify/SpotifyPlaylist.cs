@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using AngleSharp.Text;
-using DiscordBot.Extension;
+using CatBot.Extension;
 using DSharpPlus.Entities;
 using HtmlAgilityPack;
 using SpotifyExplode.Albums;
@@ -16,7 +16,7 @@ using SpotifyExplode.Common;
 using SpotifyExplode.Playlists;
 using SpotifyExplode.Tracks;
 
-namespace DiscordBot.Music.Spotify
+namespace CatBot.Music.Spotify
 {
     internal class SpotifyPlaylist : IPlaylist
     {

@@ -1,6 +1,6 @@
 ﻿using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using DiscordBot.Admin;
+using CatBot.Admin;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using static System.Net.Mime.MediaTypeNames;
@@ -10,7 +10,7 @@ using System.Linq;
 using System;
 using DSharpPlus;
 
-namespace DiscordBot.Instance
+namespace CatBot.Instance
 {
     public class GlobalSlashCommands : ApplicationCommandModule
     {
