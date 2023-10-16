@@ -59,7 +59,7 @@ namespace CatBot.Music.YouTube
                                 subCount = (subs / 1000000f).ToString("0.00") + " Tr";
                         }
                     }
-                    catch (Exception) { throw new MusicException("YT: channel not found"); }
+                    catch (Exception) { throw new MusicException(MusicType.YouTube, "channel not found"); }
                 }
                 else if (link.Contains("playlist?list="))
                 {
@@ -71,7 +71,7 @@ namespace CatBot.Music.YouTube
                         author = $"[{playlistInfo["items"][0]["snippet"]["channelTitle"]}](https://www.youtube.com/channel/{playlistInfo["items"][0]["snippet"]["channelId"]})";
                         thumbnailLink = playlistInfo["items"][0]["snippet"]["thumbnails"]["high"]["url"].ToString();
                     }
-                    catch (Exception) { throw new MusicException("Ex: playlist not found"); }
+                    catch (Exception) { throw new MusicException("playlist not found"); }
                 }
                 JObject playlistItemList;
                 do
@@ -87,7 +87,7 @@ namespace CatBot.Music.YouTube
                         }
                         catch (MusicException ex)
                         { 
-                            if (ex.Message == "YT: video not found")
+                            if (ex.Message == "video not found")
                                 hiddenVideos++; 
                         }
                     }

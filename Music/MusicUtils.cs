@@ -143,6 +143,32 @@ namespace CatBot.Music
             Directory.Delete(tempFolder, true);
         }
 
+        internal static void DownloadTrackUsingSpotdl(string link, ref string tempFile)
+        {
+            string randomString = "tmp" + Utils.RandomString(10);
+            string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), randomString);
+            Directory.CreateDirectory(tempFolder);
+            Process spotdl = new Process()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "spotdl\\spotdl",
+                    Arguments = $"--ffmpeg ../ffmpeg/ffmpeg.exe --audio slider-kz --audio soundcloud --audio bandcamp --audio piped --audio youtube --audio youtube-music --output {tempFolder} {link}",
+                    WorkingDirectory = "spotdl",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false,
+                },
+                EnableRaisingEvents = true,
+            };
+            Console.WriteLine("--------------Spotdl Console output--------------");
+            spotdl.Start();
+            spotdl.WaitForExit();
+            Console.WriteLine("--------------End of Spotdl Console output--------------");
+            tempFile = tempFolder + ".tmp";
+            File.Move(new DirectoryInfo(tempFolder).GetFiles()[0].FullName, tempFile);
+            Directory.Delete(tempFolder, true);
+        }
+
         internal static void DownloadWEBMFromYouTube(string link, ref string tempFile, SponsorBlockSkipSegment[] sponsorBlockSkipSegments = null)
         {
             string randomString = Utils.RandomString(10);
@@ -289,7 +315,7 @@ namespace CatBot.Music
         {
             byte[] buffer = File.ReadAllBytes(music.GetPCMFilePath());
             long pos = music.MusicPCMDataStream.Position;
-            Bitmap bitmap = new Bitmap(500, 30);
+            Bitmap bitmap = new Bitmap(1500, 90);
             int samplesPerBar = buffer.Length / 2 / (bitmap.Width - 1);
             int[] samples = new int[bitmap.Width];
             int currentSampleIndex = 0;

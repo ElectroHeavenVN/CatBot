@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using CatBot.Music.SoundCloud;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
@@ -20,7 +18,7 @@ namespace CatBot.Music.Spotify
 {
     internal class SpotifyMusic : IMusic
     {
-        internal static readonly Regex regexMatchSpotifyLink = new Regex("^(?:spotify:|https:\\/\\/[a-z]+\\.spotify\\.com\\/track\\/)(.[^\\?]*)(\\?.*)?$", RegexOptions.Compiled);
+        internal static readonly Regex regexMatchSpotifyLink = new Regex("^(?:(?:(?:spotify:|https?:\\/\\/)[a-z]*\\.?spotify\\.com(?:\\/embed)?\\/track\\/)|(?:https?:\\/\\/spotify\\.link\\/))(.[^\\?\\n]*)(\\?.*)?$", RegexOptions.Compiled);
         internal static readonly string spotifyIconLink = "https://open.spotifycdn.com/cdn/images/icons/Spotify_256.17e41e58.png";
         string link;
         TimeSpan duration;
@@ -48,8 +46,14 @@ namespace CatBot.Music.Spotify
             {
                 List<TrackSearchResult> result = spClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
                 if (result.Count == 0)
-                    throw new MusicException("Ex: songs not found");
+                    throw new MusicException("songs not found");
                 linkOrKeyword = result[0].Url;
+            }
+            if (linkOrKeyword.Contains("spotify.link"))
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, linkOrKeyword);
+                var response = new HttpClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                linkOrKeyword = response.RequestMessage.RequestUri.ToString();
             }
             link = linkOrKeyword;
             track = spClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
@@ -71,39 +75,31 @@ namespace CatBot.Music.Spotify
             mp3OrWEBMFilePath = Path.GetTempFileName();
             try
             {
-                 DownloadTrackUsingZotify();
-                 mimeType = "taglib/ogg";
+                DownloadTrackUsingZotify();
+                mimeType = "taglib/ogg";
             }
             catch
             {
                 try
                 {
-                    GetTrackFromYtDlp();
-                    mimeType = "taglib/webm";
+                    GetTrackFromSpotdl();
+                    mimeType = "taglib/mp3";
                 }
                 catch
                 {
                     try
                     {
-                        GetTrackFromSoundCloud();
+                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
                         mimeType = "taglib/mp3";
                     }
-                    catch 
-                    { 
-                        try
-                        {
-                            new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
-                            mimeType = "taglib/mp3";
-                        }
-                        catch { throw new MusicException("Sp: not found"); }
-                    }
+                    catch { throw new MusicException(MusicType.Spotify, "not found"); }
                 }
             }
             TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, mimeType, TagLib.ReadStyle.Average);
             duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
             if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
-                throw new MusicException("Sp: not found");
+                throw new MusicException("not found");
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3OrWEBMFilePath, ref pcmFile));
             File.Delete(mp3OrWEBMFilePath);
@@ -208,35 +204,13 @@ namespace CatBot.Music.Spotify
                 throw new MusicException("Wrong track");
         }
 
-        void GetTrackFromYtDlp()
+        void GetTrackFromSpotdl()
         {
-            MusicUtils.DownloadWEBMFromYouTube($"\"ytsearch: {MusicUtils.RemoveEmbedLink(title).ToLower()} {MusicUtils.RemoveEmbedLink(artists).ToLower()}\"", ref mp3OrWEBMFilePath);
-            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/webm", TagLib.ReadStyle.Average);
+            MusicUtils.DownloadTrackUsingSpotdl(link, ref mp3OrWEBMFilePath);
+            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
             TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
             if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
-                throw new MusicException("Wrong track");
-        }
-
-        void GetTrackFromSoundCloud()
-        {
-            List<SoundCloudExplode.Search.TrackSearchResult> results = SoundCloudMusic.scClient.Search.GetTracksAsync($"{MusicUtils.RemoveEmbedLink(title).ToLower()} {MusicUtils.RemoveEmbedLink(artists).ToLower()}").ToListAsync().GetAwaiter().GetResult();
-            if (results.Count == 0)
-                throw new MusicException("not found");
-            int i = 0;
-            int count = Math.Min(5, results.Count);
-            for (; i < count; i++)
-            {
-                SoundCloudExplode.Search.TrackSearchResult result = results[i];
-                string mp3Link = SoundCloudMusic.scClient.Tracks.GetDownloadUrlAsync(result.PermalinkUrl.AbsoluteUri).GetAwaiter().GetResult();
-                new WebClient().DownloadFile(mp3Link, mp3OrWEBMFilePath);
-                TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
-                TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
-                mp3OrWEBMFile.Dispose();
-                if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) <= 15000)
-                    break;
-            }
-            if (i == count)
                 throw new MusicException("Wrong track");
         }
 
@@ -254,7 +228,7 @@ namespace CatBot.Music.Spotify
             }
             catch (TaskCanceledException)
             {
-                throw new MusicException("Sp: music download timeout");
+                throw new MusicException(MusicType.Spotify, "music download timeout");
             }
             JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
             string downloadUrl = responseData["link"].ToString();

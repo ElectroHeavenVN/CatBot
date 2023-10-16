@@ -49,6 +49,7 @@ namespace CatBot.Music
         int nextIndex = -1;
         Random random = new Random();
         bool isFirstTimeDequeue;
+        DiscordMessage lastNowPlayingMessage;
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
         {
@@ -102,7 +103,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 { 
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -113,7 +114,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -156,7 +157,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -167,7 +168,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -210,7 +211,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -221,7 +222,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -346,7 +347,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -376,7 +377,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -844,7 +845,7 @@ namespace CatBot.Music
                         }
                         catch (MusicException ex)
                         {
-                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(string.Format(GetErrorMessage(ex), MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title))).WithColor(DiscordColor.Red).Build());
+                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title))).WithColor(DiscordColor.Red).Build());
                             continue;
                         }
                         catch (Exception ex)
@@ -963,14 +964,19 @@ namespace CatBot.Music
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
             DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
             embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
-            if (!string.IsNullOrEmpty(albumThumbnailLink))
+            IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
+            DiscordEmbed messageEmbed = string.IsNullOrEmpty(albumThumbnailLink) ? embed.Build() : embed.WithThumbnail(albumThumbnailLink).Build();
+            if (lastNowPlayingMessage != null)
             {
-                DiscordMessage message = await lastChannel.SendMessageAsync(embed.WithThumbnail(albumThumbnailLink).Build());
-                if (currentlyPlayingSong is LocalMusic localMusic)
-                    await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
+                if (lastMessage[0] != lastNowPlayingMessage)
+                    await lastNowPlayingMessage.DeleteAsync();
+                if (lastNowPlayingMessage == lastMessage[0])
+                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(messageEmbed);
             }
-            else
-                await lastChannel.SendMessageAsync(embed.Build());
+            if (lastNowPlayingMessage == null || lastNowPlayingMessage != lastMessage[0])
+                lastNowPlayingMessage = await lastChannel.SendMessageAsync(messageEmbed);
+            if (currentlyPlayingSong is LocalMusic localMusic)
+                await localMusic.lastCacheImageMessage.ModifyAsync(lastNowPlayingMessage.JumpLink.AbsoluteUri);
         }
 
         void PrepareNextSong()
@@ -1002,40 +1008,6 @@ namespace CatBot.Music
                 isThreadAlive = true;
                 new Thread(async() => await MainPlay(cts.Token)) { IsBackground = true }.Start();
             }
-        }
-
-        static string GetErrorMessage(MusicException ex)
-        {
-            string content;
-            if (ex.Message.StartsWith("-1110"))
-                content = $"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!";
-            else if (ex.Message == "Ex: songs not found")
-                content = "Không tìm thấy bài \"{0}\"!";
-            else if (ex.Message == "Ex: not found")
-                content = "Không tìm thấy bài này!";
-            else if (ex.Message == "NCT: not available")
-                content = "Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!";
-            else if (ex.Message == "YT: video not found")
-                content = "Không tìm thấy video này!";
-            else if (ex.Message == "Ex: playlist not found")
-                content = "Không tìm thấy danh sách phát này!";
-            else if (ex.Message == "Ex: album not found")
-                content = "Không tìm thấy album này!";
-            else if (ex.Message == "YT: channel not found")
-                content = "Không tìm thấy kênh này!";
-            else if (ex.Message == "Ex: artist not found")
-                content = "Không tìm thấy nghệ sĩ này!";
-            else if (ex.Message == "SC: invalid short link")
-                content = "Link SoundCloud không hợp lệ!";
-            else if (ex.Message == "Sp: music download timeout")
-                content = "Hết thời gian chờ để tải nhạc từ Spotify!";
-            else if (ex.Message == "Sp: not found")
-                content = "Không thể phát bài \"{0}\" do bài hát không có sẵn trên các nền tảng khác ngoài Spotify!";
-            else if (ex.Message == "Lc: file not found")
-                content = "Không tìm thấy bài hát \"{0}\" trong bộ nhớ!";
-            else
-                content = ex.ToString();
-            return content;
         }
 
         void RandomIndex() => currentIndex = random.Next(0, musicQueue.Count);

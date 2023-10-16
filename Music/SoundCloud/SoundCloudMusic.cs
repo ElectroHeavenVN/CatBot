@@ -39,7 +39,7 @@ namespace CatBot.Music.SoundCloud
             {
                 List<TrackSearchResult> result = scClient.Search.GetTracksAsync(linkOrKeyword).ToListAsync().GetAwaiter().GetResult();
                 if (result.Count == 0)
-                    throw new MusicException("Ex: songs not found");
+                    throw new MusicException("songs not found");
                 linkOrKeyword = result[0].PermalinkUrl.AbsoluteUri;
             }
             link = linkOrKeyword;

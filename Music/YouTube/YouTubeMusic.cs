@@ -63,7 +63,7 @@ namespace CatBot.Music.YouTube
                     albumThumbnailLink = videoResource["snippet"]["thumbnails"]["high"]["url"].ToString();
                     durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
                 }
-                catch (Exception) { throw new MusicException("YT: video not found"); }
+                catch (Exception) { throw new MusicException(MusicType.YouTube, "video not found"); }
             }
             else
             {

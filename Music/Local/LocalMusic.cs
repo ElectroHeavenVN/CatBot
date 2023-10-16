@@ -45,7 +45,7 @@ namespace CatBot.Music.Local
                     albumThumbnailExt = TagLib.Picture.GetExtensionFromMime(musicFile.Tag.Pictures[0].MimeType);
                 }
             }
-            catch (Exception) { throw new MusicException("Lc: file not found"); }
+            catch (Exception) { throw new MusicException(MusicType.Local, "file not found"); }
         }
 
         ~LocalMusic() => Dispose(false);

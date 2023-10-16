@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using SpotifyExplode.Search;
 using SpotifyExplode.Tracks;
 
@@ -11,6 +12,12 @@ namespace CatBot.Music.Spotify
         {
             if (SpotifyMusic.regexMatchSpotifyLink.IsMatch(linkOrKeyword))
             {
+                if (linkOrKeyword.Contains("spotify.link"))
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, linkOrKeyword);
+                    var response = new HttpClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                    linkOrKeyword = response.RequestMessage.RequestUri.ToString();
+                }
                 Track track;
                 try
                 {

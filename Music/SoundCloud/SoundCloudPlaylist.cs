@@ -65,7 +65,7 @@ namespace CatBot.Music.SoundCloud
                             if (user.AvatarUrl != null)
                                 thumbnailLink = user.AvatarUrl.AbsoluteUri;
                         }
-                        catch (Exception) { throw new MusicException("SC: invalid short link"); }
+                        catch (Exception) { throw new MusicException(MusicType.SoundCloud, "invalid short link"); }
                     }
                 }
                 else if (link.Contains("/sets/"))
@@ -81,7 +81,7 @@ namespace CatBot.Music.SoundCloud
                         if (playlist.ArtworkUrl != null)
                             thumbnailLink = playlist.ArtworkUrl.AbsoluteUri;
                     }
-                    catch (Exception) { throw new MusicException("Ex: playlist not found"); }
+                    catch (Exception) { throw new MusicException("playlist not found"); }
                 }
                 else
                 {

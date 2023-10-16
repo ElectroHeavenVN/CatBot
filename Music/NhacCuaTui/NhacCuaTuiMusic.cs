@@ -180,8 +180,8 @@ namespace CatBot.Music.NhacCuaTui
             if (string.IsNullOrWhiteSpace(linkContainInfo))
             {
                 if (html.Contains("Sorry, this content is currently not available in your country"))
-                    throw new MusicException("NCT: not available");
-                throw new MusicException("Ex: not found");
+                    throw new MusicException(MusicType.NhacCuaTui, "not available");
+                throw new MusicException("not found");
             }
             string xml = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(linkContainInfo);
             XmlDocument xmlDoc = new XmlDocument();
@@ -193,9 +193,9 @@ namespace CatBot.Music.NhacCuaTui
         {
             JObject obj = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeUriString(keyword)));
             if (obj["error_code"].ToString() != "0")
-                throw new MusicException("Ex: songs not found");
+                throw new MusicException("songs not found");
             if (obj["data"]["song"].Count() == 0)
-                throw new MusicException("Ex: songs not found");
+                throw new MusicException("songs not found");
             return obj["data"]["song"][0];
         }
 
