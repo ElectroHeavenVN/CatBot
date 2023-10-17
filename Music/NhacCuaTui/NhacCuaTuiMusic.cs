@@ -129,7 +129,7 @@ namespace CatBot.Music.NhacCuaTui
             string lyricLink = xmlDoc.DocumentElement["track"].SelectSingleNode("lyric").InnerText;
             if (string.IsNullOrWhiteSpace(lyricLink) || lyricLink == "https://lrc-nct.nixcdn.com/null")
             {
-                string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);
+                string html = MusicUtils.GetHttpRequestWithCookie().Get(link).ToString();
                 int startIndex = html.IndexOf("<p id=\"divLyric\" class=\"pd_lyric trans\" style=\"height:auto;max-height:255px;overflow:hidden;\">") + 94;
                 string htmlLyric = html.Substring(startIndex, html.IndexOf("<div class=\"more_add\" id=\"divMoreAddLyric\">") - startIndex).Replace("<br />", "");
                 string lyric = string.Join(Environment.NewLine, WebUtility.HtmlDecode(htmlLyric).Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim())).Replace("</p>", "").Trim();
@@ -174,7 +174,7 @@ namespace CatBot.Music.NhacCuaTui
 
         internal static XmlDocument GetXML(string link)
         {
-            string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(link);
+            string html = MusicUtils.GetHttpRequestWithCookie().Get(link).ToString();
             Regex regex = new Regex("player\\.peConfig\\.xmlURL = \"(.*)\";");
             string linkContainInfo = regex.Match(html).Groups[1].Value;
             if (string.IsNullOrWhiteSpace(linkContainInfo))
@@ -183,7 +183,7 @@ namespace CatBot.Music.NhacCuaTui
                     throw new MusicException(MusicType.NhacCuaTui, "not available");
                 throw new MusicException("not found");
             }
-            string xml = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(linkContainInfo);
+            string xml = MusicUtils.GetHttpRequestWithCookie().Get(linkContainInfo).ToString();
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(xml);
             return xmlDoc;
@@ -191,7 +191,7 @@ namespace CatBot.Music.NhacCuaTui
 
         static JToken FindSongInfo(string keyword)
         {
-            JObject obj = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeUriString(keyword)));
+            JObject obj = JObject.Parse(MusicUtils.GetHttpRequestWithCookie().Get(searchLink + Uri.EscapeUriString(keyword)).ToString());
             if (obj["error_code"].ToString() != "0")
                 throw new MusicException("songs not found");
             if (obj["data"]["song"].Count() == 0)

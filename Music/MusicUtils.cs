@@ -275,7 +275,7 @@ namespace CatBot.Music
 
         internal static string HashSHA256(string text) => BitConverter.ToString(new SHA256Managed().ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
 
-        internal static HttpRequest InitHttpRequestWithCookie()
+        internal static HttpRequest GetHttpRequestWithCookie()
         {
             if (httpRequestWithCookie == null)
             {
@@ -304,7 +304,7 @@ namespace CatBot.Music
                 http.AddHeader(HttpHeader.Accept, "*/*");
                 http.AddHeader(HttpHeader.AcceptLanguage, "vi");
                 http.AddHeader("Host", "zingmp3.vn");
-                string zingMP3Web = http.Get(ZingMP3Music.zingMP3Link, null).ToString();
+                string zingMP3Web = http.Get(ZingMP3Music.zingMP3Link).ToString();
                 while(string.IsNullOrWhiteSpace(ZingMP3Music.zingMP3Version))
                     ZingMP3Music.zingMP3Version = mainMinJSRegex.Match(zingMP3Web).Groups[1].Value.Replace("v", "");
                 lastTimeCheckZingMP3Version = DateTime.Now;

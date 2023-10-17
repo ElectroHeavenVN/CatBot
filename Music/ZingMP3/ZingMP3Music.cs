@@ -189,7 +189,7 @@ namespace CatBot.Music.ZingMP3
 
         static JObject GetInfoFromZingMP3(string apiEndpoint, params string[] parameters)
         {
-            HttpRequest http = MusicUtils.InitHttpRequestWithCookie();
+            HttpRequest http = MusicUtils.GetHttpRequestWithCookie();
             string ctime = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             string secretKey = Config.ZingMP3SecretKey;
             string apiKey = Config.ZingMP3APIKey;
