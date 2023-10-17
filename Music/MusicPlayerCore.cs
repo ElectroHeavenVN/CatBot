@@ -86,15 +86,13 @@ namespace CatBot.Music
                 }
                 try
                 {
-                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
-                        foreach (IMusic track in playlist.Tracks)
-                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                        serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
+                        playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
                         serverInstance.musicPlayer.isStopped = false;
                         serverInstance.isDisconnect = false;
                         serverInstance.musicPlayer.InitMainPlay();
-                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm danh sách phát {playlist.Title} vào hàng đợi!");
                         DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
                         playlist.AddFooter(embed2);
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
@@ -103,7 +101,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 { 
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -114,7 +112,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -143,12 +141,10 @@ namespace CatBot.Music
                 await ctx.DeferAsync();
                 try 
                 { 
-                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
-                        foreach (IMusic track in playlist.Tracks)
-                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                        serverInstance.musicPlayer.musicQueue.AddRange(playlist.Tracks);
-                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm danh sách phát {playlist.Title} vào hàng đợi!");
                         DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
                         playlist.AddFooter(embed2);
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
@@ -157,7 +153,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -168,7 +164,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -194,15 +190,13 @@ namespace CatBot.Music
                 await ctx.DeferAsync();
                 try 
                 { 
-                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, out IPlaylist playlist))
+                    if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
-                        foreach (IMusic track in playlist.Tracks)
-                            track.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
-                        serverInstance.musicPlayer.musicQueue.InsertRange(0, playlist.Tracks);
+                        playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
                         serverInstance.musicPlayer.isStopped = false;
                         serverInstance.isDisconnect = false;
                         serverInstance.musicPlayer.InitMainPlay();
-                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm {playlist.Tracks.Count} bài từ danh sách phát {playlist.Title} vào hàng đợi!");
+                        embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm danh sách phát {playlist.Title} vào hàng đợi!");
                         DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
                         playlist.AddFooter(embed2);
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddEmbed(embed2.Build()));
@@ -211,7 +205,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 IMusic music = null;
@@ -222,7 +216,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
                 music.SponsorBlockOptions = serverInstance.musicPlayer.sponsorBlockOptions;
@@ -347,7 +341,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -377,7 +371,7 @@ namespace CatBot.Music
                 }
                 catch (MusicException ex)
                 {
-                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), serverInstance.musicPlayer.currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build()));
                     return;
                 }
             }
@@ -845,7 +839,7 @@ namespace CatBot.Music
                         }
                         catch (MusicException ex)
                         {
-                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(string.Format(ex.GetErrorMessage(), MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title))).WithColor(DiscordColor.Red).Build());
+                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title))).WithColor(DiscordColor.Red).Build());
                             continue;
                         }
                         catch (Exception ex)

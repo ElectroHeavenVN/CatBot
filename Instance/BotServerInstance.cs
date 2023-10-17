@@ -62,7 +62,7 @@ namespace CatBot.Instance
                 {
                     if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot))
                         self.lastTimeCheckVoiceChannel = DateTime.Now;
-                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > .3)
+                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
                     {
                         self.suppressOnVoiceStateUpdatedEvent = true;
                         string content = "Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!";

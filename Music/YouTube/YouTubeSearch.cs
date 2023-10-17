@@ -1,31 +1,29 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using YoutubeExplode.Common;
+using YoutubeExplode.Search;
+using YoutubeExplode.Videos;
 
 namespace CatBot.Music.YouTube
 {
     internal static class YouTubeSearch
     {
-        private static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&type=video";
-
         internal static List<SearchResult> Search(string linkOrKeyword, int count = 25)
         {
             if (YouTubeMusic.regexMatchYTVideoLink.IsMatch(linkOrKeyword))
             {
-                string videoID = YouTubeMusic.regexMatchYTVideoLink.Match(linkOrKeyword).Groups[5].Value;
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(YouTubeMusic.getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(videoID)));
-                JToken videoResource = JObject.Parse(json)["items"][0];
+                Video video = YouTubeMusic.ytClient.Videos.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
                 return new List<SearchResult>()
                 {
-                    new SearchResult($"https://www.youtube.com/watch?v={videoResource["id"]}", $"{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}", $"{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}", $"https://www.youtube.com/channel/{videoResource["snippet"]["channelId"]}", videoResource["snippet"]["thumbnails"]["high"]["url"].ToString())
+                    new SearchResult(video.Url, video.Title, video.Author.ChannelTitle, video.Author.ChannelUrl, video.Thumbnails.TryGetWithHighestResolution().Url)
                 };
             }
-            JObject searchResult = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&maxResults={count}&key={Config.GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"));
-            return searchResult["items"].Select(sR => new SearchResult($"https://www.youtube.com/watch?v={sR["id"]["videoId"]}", WebUtility.HtmlDecode(sR["snippet"]["title"].ToString()), $"{WebUtility.HtmlDecode(sR["snippet"]["channelTitle"].ToString())}", $"https://www.youtube.com/channel/{sR["snippet"]["channelId"]}", sR["snippet"]["thumbnails"]["high"]["url"].ToString())).ToList();
+            IReadOnlyList<VideoSearchResult> videoSearchResults = YouTubeMusic.ytClient.Search.GetVideosAsync(linkOrKeyword).GetAwaiter().GetResult();
+            List<SearchResult> videos = new List<SearchResult>();
+            for (int i = 0; i < count; i++)
+            {
+                videos.Add(new SearchResult(videoSearchResults[i].Url, videoSearchResults[i].Title, videoSearchResults[i].Author.ChannelTitle, videoSearchResults[i].Author.ChannelUrl, videoSearchResults[i].Thumbnails.TryGetWithHighestResolution().Url));
+            }
+            return videos;
         }
     }
 }

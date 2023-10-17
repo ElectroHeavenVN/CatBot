@@ -1,14 +1,11 @@
-﻿using System.Net.NetworkInformation;
-using System.Threading.Tasks;
-using CatBot.Admin;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using static System.Net.Mime.MediaTypeNames;
-using TagLib.Mpeg4;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Threading.Tasks;
+using CatBot.Admin;
 using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 
 namespace CatBot.Instance
 {
@@ -58,7 +55,7 @@ namespace CatBot.Instance
                 $"### Made with {DiscordEmoji.FromName(DiscordBotMain.botClient, ":hearts:")} by <@!650357286526648350>\r\n" +
                 "Chức năng:\r\n" +
                 $"- Phát SFX (lệnh {speakFile} | {prefix}s)\r\n" +
-                $"- Text to speech (cung cấp bởi [Zalo AI](https://zalo.ai/products/text-to-audio-converter)) (lệnh {speak} | {prefix}tts)\r\n" +
+                //$"- Text to speech (cung cấp bởi [Zalo AI](https://zalo.ai/products/text-to-audio-converter)) (lệnh {speak} | {prefix}tts)\r\n" +
                 $"- Phát nhạc từ các nền tảng âm nhạc online (lệnh {play} | {nextup}):\r\n" +
                 $"  - [YouTube](https://www.youtube.com/) và [YouTube Music](https://music.youtube.com/) (cung cấp bởi [yt-dlp](https://github.com/yt-dlp/yt-dlp)) (lệnh {youtube} | {nextup_yt})\r\n" +
                 $"  - [NhacCuaTui](https://www.nhaccuatui.com/) (lệnh {nhaccuatui} | {nextup_nct})\r\n" +
@@ -76,7 +73,7 @@ namespace CatBot.Instance
         {
             slashCommandMentions = (await DiscordBotMain.botClient.GetGlobalApplicationCommandsAsync()).Select(c => c.Mention).ToList();
             speakFile = slashCommandMentions.First(s => s.Contains("</speak-file:"));
-            speak = slashCommandMentions.First(s => s.Contains("</speak:"));
+            //speak = slashCommandMentions.First(s => s.Contains("</speak:"));
             play = slashCommandMentions.First(s => s.Contains("</play:"));
             nextup = slashCommandMentions.First(s => s.Contains("</nextup:"));
             youtube = slashCommandMentions.First(s => s.Contains("</youtube:"));

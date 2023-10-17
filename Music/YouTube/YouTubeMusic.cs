@@ -1,5 +1,6 @@
 ﻿using CatBot.Instance;
 using CatBot.Music.SponsorBlock;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,7 +14,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 using System.Xml;
+using YoutubeExplode;
+using YoutubeExplode.Common;
+using YoutubeExplode.Search;
+using YoutubeExplode.Videos;
 
 namespace CatBot.Music.YouTube
 {
@@ -21,8 +27,6 @@ namespace CatBot.Music.YouTube
     {
         internal static readonly string youTubeIconLink = "https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png";
         internal static readonly string youTubeMusicIconLink = "https://www.gstatic.com/youtube/media/ytm/images/applauncher/music_icon_144x144.png";
-        internal static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&key={0}&q={1}";
-        internal static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&key={0}&id={1}";
         internal static readonly string sponsorBlockSegmentsAPI = "https://sponsor.ajay.app/api/skipSegments";
         internal static Regex regexMatchYTVideoLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu\\.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/|shorts\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         internal static Regex regexMatchYTMusicLink = new Regex("^((?:https?:)?\\/\\/)?((?:music\\.youtube\\.com))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
@@ -40,6 +44,7 @@ namespace CatBot.Music.YouTube
         bool _disposed;
         bool isYouTubeMusicVideo;
         SponsorBlockOptions sponsorBlockOptions;
+        internal static YoutubeClient ytClient = new YoutubeClient();
         bool hasSponsorBlockSegment;
         string videoID;
         SponsorBlockSkipSegment[] sponsorBlockSkipSegments = new SponsorBlockSkipSegment[0];
@@ -51,31 +56,29 @@ namespace CatBot.Music.YouTube
             if (regexMatchYTVideoLink.IsMatch(linkOrKeyword))
             {
                 isYouTubeMusicVideo = regexMatchYTMusicLink.IsMatch(linkOrKeyword);
-                videoID = regexMatchYTVideoLink.Match(linkOrKeyword).Groups[5].Value;
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(videoID)));
                 try
                 {
-                    JToken videoResource = JObject.Parse(json)["items"][0];
-                    videoID = videoResource["id"].ToString();
-                    link = $"https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/watch?v={videoResource["id"]}";
-                    title = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["title"].ToString())}]({link})";
-                    artists = $"[{WebUtility.HtmlDecode(videoResource["snippet"]["channelTitle"].ToString())}](https://{(isYouTubeMusicVideo ? "music" : "www")}.youtube.com/channel/{videoResource["snippet"]["channelId"]})";
-                    albumThumbnailLink = videoResource["snippet"]["thumbnails"]["high"]["url"].ToString();
-                    durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
+                    Video video = ytClient.Videos.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                    videoID = video.Id;
+                    link = video.Url;
+                    if (isYouTubeMusicVideo)
+                        link = link.Replace("www.youtube.com", "music.youtube.com");
+                    title = Formatter.MaskedUrl(video.Title, new Uri(link));
+                    artists = Formatter.MaskedUrl(video.Author.ChannelTitle, new Uri(video.Author.ChannelUrl));
+                    albumThumbnailLink = video.Thumbnails.TryGetWithHighestResolution().Url;
+                    durationBeforeSponsorBlock = video.Duration.Value;
                 }
                 catch (Exception) { throw new MusicException(MusicType.YouTube, "video not found"); }
             }
             else
             {
-                JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(searchVideoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(linkOrKeyword))))["items"][0];
-                videoID = searchResource["id"]["videoId"].ToString();
-                link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
-                title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
-                artists = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]})";
-                albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
-                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.GoogleAPIKey, Uri.EscapeUriString(searchResource["id"]["videoId"].ToString())));
-                JToken videoResource = JObject.Parse(json)["items"][0];
-                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
+                VideoSearchResult videoSearchResult = ytClient.Search.GetVideosAsync(linkOrKeyword).GetAwaiter().GetResult()[0];
+                videoID = videoSearchResult.Id;
+                link = videoSearchResult.Url;
+                title = Formatter.MaskedUrl(videoSearchResult.Title, new Uri(link));
+                artists = Formatter.MaskedUrl(videoSearchResult.Author.ChannelTitle, new Uri(videoSearchResult.Author.ChannelUrl));
+                albumThumbnailLink = videoSearchResult.Thumbnails.TryGetWithHighestResolution().Url;
+                durationBeforeSponsorBlock = videoSearchResult.Duration.Value;
             }
         }
 

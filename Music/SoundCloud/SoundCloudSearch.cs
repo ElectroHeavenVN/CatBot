@@ -22,7 +22,7 @@ namespace CatBot.Music.SoundCloud
                 }
                 return new List<SearchResult>()
                 {
-                    new SearchResult(track.PermalinkUrl.AbsoluteUri, track.Title, track.User.Username, track.User.PermalinkUrl.AbsoluteUri, track.ArtworkUrl.AbsoluteUri) 
+                    new SearchResult(track.PermalinkUrl.AbsoluteUri, track.Title, track.User.Username, track.User.PermalinkUrl.AbsoluteUri, track.ArtworkUrl == null ? "" : track.ArtworkUrl.AbsoluteUri) 
                 };
             }
             List<TrackSearchResult> searchResult = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword, 0, count).ToListAsync().GetAwaiter().GetResult();

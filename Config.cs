@@ -95,7 +95,7 @@ namespace CatBot
         /// <summary>
         /// API key Google
         /// </summary>
-        internal static string GoogleAPIKey => GetConfigValue<string>("GoogleAPIKey");
+        //internal static string GoogleAPIKey => GetConfigValue<string>("GoogleAPIKey");
         #endregion
 
         #region Zalo AI

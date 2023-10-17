@@ -50,11 +50,7 @@ namespace CatBot.Music.Spotify
                 linkOrKeyword = result[0].Url;
             }
             if (linkOrKeyword.Contains("spotify.link"))
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, linkOrKeyword);
-                var response = new HttpClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
-                linkOrKeyword = response.RequestMessage.RequestUri.ToString();
-            }
+                linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult().RequestMessage.RequestUri.ToString();
             link = linkOrKeyword;
             track = spClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
             title = $"[{track.Title}]({track.Url})";

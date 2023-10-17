@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 
 namespace CatBot.Music
@@ -10,12 +6,13 @@ namespace CatBot.Music
     internal interface IPlaylist
     {
         bool isLinkMatch(string link);
-        List<IMusic> Tracks { get; }
+        long TracksCount { get; }
         string Title { get; }
         string Description { get; }
         string Author { get; }
         string ThumbnailLink { get; }
         DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed);
         string GetPlaylistDesc();
+        void SetSponsorBlockOptions(SponsorBlockOptions sponsorBlockOptions);
     }
 }

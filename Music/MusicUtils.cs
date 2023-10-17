@@ -69,7 +69,7 @@ namespace CatBot.Music
             return false;
         }
 
-        internal static bool TryCreateMusicPlaylistInstance(string link, out IPlaylist playlist)
+        internal static bool TryCreateMusicPlaylistInstance(string link, MusicQueue musicQueue, out IPlaylist playlist)
         {
             playlist = null;
             Type[] musicPlaylistTypes = typeof(IPlaylist).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPlaylist))).ToArray();
@@ -80,7 +80,7 @@ namespace CatBot.Music
                 {
                     try
                     {
-                        playlist = (IPlaylist)Activator.CreateInstance(musicPlaylistType, link);
+                        playlist = (IPlaylist)Activator.CreateInstance(musicPlaylistType, link, musicQueue);
                     }
                     catch (TargetInvocationException ex) 
                     {

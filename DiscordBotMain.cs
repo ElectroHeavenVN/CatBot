@@ -74,14 +74,19 @@ namespace CatBot
                 {
                     StringPrefixes = new string[] { Config.Prefix },
                 });
-                commandNext.RegisterCommands(typeof(DiscordBotMain).Assembly);
+                commandNext.RegisterCommands<AdminBaseCommand>();
+                //commandNext.RegisterCommands<EmojiReplyBaseCommands>();
+                commandNext.RegisterCommands<GlobalBaseCommands>();
+                commandNext.RegisterCommands<MusicPlayerBaseCommands>();
+                //commandNext.RegisterCommands<TTSBaseCommands>();
+                commandNext.RegisterCommands<VoiceChannelSFXBaseCommands>();
                 commandNext.SetHelpFormatter<HelpFormatter>();
             }
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
 
             slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
             //slashCommand.RegisterCommands<EmojiReplySlashCommands>();
-            slashCommand.RegisterCommands<TTSSlashCommands>();
+            //slashCommand.RegisterCommands<TTSSlashCommands>();
             slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
             slashCommand.RegisterCommands<GlobalSlashCommands>();
             slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
