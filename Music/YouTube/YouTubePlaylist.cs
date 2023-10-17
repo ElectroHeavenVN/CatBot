@@ -38,12 +38,12 @@ namespace CatBot.Music.YouTube
             {
                 musicQueue = queue;
                 isYouTubeMusicPlaylist = link.Contains("music.youtube.com");
-                if (link.Contains('@') || link.Contains("channel/"))
+                if (link.Contains("@") || link.Contains("channel/"))
                 {
                     try
                     {
                         Channel channel;
-                        if (link.Contains('@'))
+                        if (link.Contains("@"))
                         {
                             channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(link).GetAwaiter().GetResult();
                             link = channel.Url;
