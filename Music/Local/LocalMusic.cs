@@ -30,7 +30,7 @@ namespace CatBot.Music.Local
 
         public LocalMusic(string path)
         {
-            path = Path.Combine(Config.MusicFolder, path.EndsWith(".mp3") ? path : (path + ".mp3"));
+            path = Path.Combine(Config.gI().MusicFolder, path.EndsWith(".mp3") ? path : (path + ".mp3"));
             this.path = path;
             try
             {
@@ -71,7 +71,7 @@ namespace CatBot.Music.Local
                 if (albumThumbnailData == null)
                     return "";
                 DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"image.{albumThumbnailExt}", new MemoryStream(albumThumbnailData));
-                lastCacheImageMessage = Config.cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
+                lastCacheImageMessage = Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder).GetAwaiter().GetResult();
                 return lastCacheImageMessage.Attachments[0].Url;
             }
         }
@@ -97,11 +97,11 @@ namespace CatBot.Music.Local
         {
             if (string.IsNullOrWhiteSpace(Title))
                 return null;
-            string jsonLyric = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(Config.LyricAPI + Title + "/" + artists));
+            string jsonLyric = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(Config.gI().LyricAPI + Title + "/" + artists));
             JObject lyricData = JObject.Parse(jsonLyric);
             if (!lyricData.ContainsKey("lyrics"))
             {
-                string jsonLyricWithoutArtists = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(Config.LyricAPI + Title));
+                string jsonLyricWithoutArtists = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(Config.gI().LyricAPI + Title));
                 lyricData = JObject.Parse(jsonLyricWithoutArtists);
             }
             if (!lyricData.ContainsKey("lyrics"))
@@ -141,7 +141,7 @@ namespace CatBot.Music.Local
 
         public string[] GetFilesInUse() => new string[] { pcmFile };
 
-        public string GetIcon() => Config.LocalMusicIcon;
+        public string GetIcon() => Config.gI().LocalMusicIcon;
 
         public void Dispose()
         {

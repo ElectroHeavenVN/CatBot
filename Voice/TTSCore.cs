@@ -113,8 +113,8 @@ namespace CatBot.Voice
             webRequest.Method = "POST";
             webRequest.ContentType = "application/x-www-form-urlencoded";
             webRequest.ContentLength = data.Length;
-            webRequest.SetCookie(Config.ZaloAICookie, "/", ".zalo.ai");
-            webRequest.UserAgent = Config.UserAgent;
+            webRequest.SetCookie(Config.gI().ZaloAICookie, "/", ".zalo.ai");
+            webRequest.UserAgent = Config.gI().UserAgent;
             webRequest.Referer = "https://zalo.ai/products/text-to-audio-converter";
             webRequest.Headers.Add("authority", "zalo.ai");
             webRequest.Headers.Add("path", "/api/demo/v1/tts/synthesize");

@@ -13,7 +13,7 @@ namespace CatBot.Emoji
         internal static async Task onMessageReceived(DiscordMessage message)
         {
             //bool botAuthor = false;
-            //if (Config.botAuthorsID.Contains(message.Author.Id))
+            //if (Config.gI().botAuthorsID.Contains(message.Author.Id))
             //    botAuthor = true;
             //if (!botAuthor)
             //    return;
@@ -48,7 +48,7 @@ namespace CatBot.Emoji
                     {
                         foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
                         {
-                            if (server == Config.adminServer && !Config.adminServer.Members.Keys.Contains(obj.TryGetUser().Id))
+                            if (server == Config.gI().adminServer && !Config.gI().adminServer.Members.Keys.Contains(obj.TryGetUser().Id))
                                 continue;
                             bool foundEmoji = false;
                             foreach (DiscordEmoji emoji2 in server.Emojis.Values)

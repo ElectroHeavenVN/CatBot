@@ -143,7 +143,7 @@ namespace CatBot.Music.ZingMP3
 
         public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
 
-        public string GetIcon() => Config.ZingMP3Icon;
+        public string GetIcon() => Config.gI().ZingMP3Icon;
 
         public bool isLinkMatch(string link) => link.StartsWith(zingMP3Link);
 
@@ -191,8 +191,8 @@ namespace CatBot.Music.ZingMP3
         {
             HttpRequest http = MusicUtils.GetHttpRequestWithCookie();
             string ctime = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            string secretKey = Config.ZingMP3SecretKey;
-            string apiKey = Config.ZingMP3APIKey;
+            string secretKey = Config.gI().ZingMP3SecretKey;
+            string apiKey = Config.gI().ZingMP3APIKey;
             List<string> listParameters = parameters.ToList();
             listParameters.Add($"ctime={ctime}");
             listParameters.Add($"version={zingMP3Version}");

@@ -14,7 +14,7 @@ namespace CatBot.Music.Local
         public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
         {
             List<DiscordAutoCompleteChoice> choices = new List<DiscordAutoCompleteChoice>();
-            List<FileInfo> musicFiles = new DirectoryInfo(Config.MusicFolder).GetFiles().ToList();
+            List<FileInfo> musicFiles = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().ToList();
             musicFiles.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
             foreach (FileInfo musicFile in musicFiles.Where(f => f.Extension == ".mp3"))
             {

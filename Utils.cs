@@ -27,7 +27,7 @@ namespace CatBot
 
         public static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
 
-        public static bool isInAdminServer(this DiscordMember member) => Config.adminServer.Members.Keys.Contains(member.Id);
+        public static bool isInAdminServer(this DiscordMember member) => Config.gI().adminServer.Members.Keys.Contains(member.Id);
 
         public static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
         {
@@ -140,7 +140,7 @@ namespace CatBot
             try
             {
                 if (reportException)
-                    Config.exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```");
+                    Config.gI().exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```");
             }
             catch (Exception ex2) { Console.WriteLine(ex2); }
         }
@@ -187,6 +187,8 @@ namespace CatBot
                 return text;
             return string.Concat(text.Substring(0, pos), replace, text.Substring(pos + search.Length));
         }
+
+        public static bool IsBotOwner(ulong userId) => Config.gI().BotOwnersID.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
 
         //internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
         //{

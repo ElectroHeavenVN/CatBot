@@ -244,7 +244,7 @@ namespace CatBot.Music
 
                 await ctx.DeferAsync();
                 Random random = new Random();
-                FileInfo[] musicFiles = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToArray();
+                FileInfo[] musicFiles = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToArray();
                 IMusic music = null;
                 for (int i = 0; i < count; i++)
                 {
@@ -272,7 +272,7 @@ namespace CatBot.Music
                 if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                     return;
                 await ctx.DeferAsync();
-                List<FileInfo> musicFiles2 = new DirectoryInfo(Config.MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
+                List<FileInfo> musicFiles2 = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
                 musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
                 foreach (FileInfo musicFile in musicFiles2)
                     serverInstance.musicPlayer.musicQueue.Enqueue(MusicUtils.CreateMusicInstance(musicFile.Name, MusicType.Local));
@@ -303,7 +303,7 @@ namespace CatBot.Music
                     serverInstance.musicPlayer.currentlyPlayingSong.AddFooter(embed);
                     string albumThumbnailLink = serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink;
                     DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong));
-                    DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
+                    DiscordMessage cacheWaveformMessage = await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder);
                     embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
                     if (!string.IsNullOrEmpty(albumThumbnailLink))
                     {
@@ -737,7 +737,7 @@ namespace CatBot.Music
                 }
                 else
                 {
-                    string apiEndpoint = Config.LyricAPI + songName;
+                    string apiEndpoint = Config.gI().LyricAPI + songName;
                     if (!string.IsNullOrWhiteSpace(artistsName))
                         apiEndpoint += "/" + artistsName;
                     jsonLyric = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(Uri.EscapeUriString(apiEndpoint));
@@ -965,7 +965,7 @@ namespace CatBot.Music
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
             currentlyPlayingSong.AddFooter(embed);
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
-            DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
+            DiscordMessage cacheWaveformMessage = await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder);
             embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
             IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
             DiscordEmbed messageEmbed = string.IsNullOrEmpty(albumThumbnailLink) ? embed.Build() : embed.WithThumbnail(albumThumbnailLink).Build();

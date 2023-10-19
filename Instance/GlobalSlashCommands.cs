@@ -50,7 +50,7 @@ namespace CatBot.Instance
         [SlashCommand("about", "Xem thông tin về bot")]
         public async Task About(InteractionContext ctx)
         {
-            string prefix = Config.Prefix;
+            string prefix = Config.gI().DefaultPrefix;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle(DiscordBotMain.botClient.CurrentUser.Username + "#" + DiscordBotMain.botClient.CurrentUser.Discriminator).WithDescription(
                 $"### Made with {DiscordEmoji.FromName(DiscordBotMain.botClient, ":hearts:")} by <@!650357286526648350>\r\n" +
                 "Chức năng:\r\n" +

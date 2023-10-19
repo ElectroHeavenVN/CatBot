@@ -127,7 +127,7 @@ namespace CatBot.Music
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "Zotify\\Zotify",
-                    Arguments = $"--username {Config.SpotifyUsername} --password {Config.SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output ..tmp {link}",
+                    Arguments = $"--username {Config.gI().SpotifyUsername} --password {Config.gI().SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output ..tmp {link}",
                     WorkingDirectory = tempFolder,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
@@ -234,7 +234,7 @@ namespace CatBot.Music
 
         internal static string GetLocalSongTitle(string musicFileName)
         {
-            TagLib.File taglibMusicFile = TagLib.File.Create(Path.Combine(Config.MusicFolder, musicFileName + ".mp3"));
+            TagLib.File taglibMusicFile = TagLib.File.Create(Path.Combine(Config.gI().MusicFolder, musicFileName + ".mp3"));
             string str = string.IsNullOrWhiteSpace(taglibMusicFile.Tag.Title) ? musicFileName : taglibMusicFile.Tag.Title;
             string artists = string.Join(", ", taglibMusicFile.Tag.Performers);
             if (!string.IsNullOrWhiteSpace(artists))
@@ -281,8 +281,8 @@ namespace CatBot.Music
             {
                 CheckZingMP3Version();
                 httpRequestWithCookie = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                SetCookie(httpRequestWithCookie, string.Format(Config.ZingMP3Cookie, ZingMP3Music.zingMP3Version.Replace(".", "")));
-                httpRequestWithCookie.UserAgent = Config.UserAgent;
+                SetCookie(httpRequestWithCookie, $"zmp3_app_version.1={ZingMP3Music.zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
+                httpRequestWithCookie.UserAgent = Config.gI().UserAgent;
                 httpRequestWithCookie.AcceptEncoding = "gzip, deflate, br";
                 httpRequestWithCookie.Referer = ZingMP3Music.zingMP3Link;
                 httpRequestWithCookie.AddHeader(HttpHeader.Accept, "*/*");
@@ -298,7 +298,7 @@ namespace CatBot.Music
             if ((DateTime.Now - lastTimeCheckZingMP3Version).TotalHours > 12)
             {
                 HttpRequest http = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                http.UserAgent = Config.UserAgent;
+                http.UserAgent = Config.gI().UserAgent;
                 http.AcceptEncoding = "gzip, deflate, br";
                 http.Referer = ZingMP3Music.zingMP3Link;
                 http.AddHeader(HttpHeader.Accept, "*/*");

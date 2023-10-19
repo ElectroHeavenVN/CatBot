@@ -37,7 +37,7 @@ namespace CatBot.Voice
         public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
         {
             List<DiscordAutoCompleteChoice> choices = new List<DiscordAutoCompleteChoice>();
-            List<FileInfo> sfxFiles = new DirectoryInfo(Config.SFXFolder).GetFiles().Concat(new DirectoryInfo(Config.SFXFolderSpecial).GetFiles()).ToList();
+            List<FileInfo> sfxFiles = new DirectoryInfo(Config.gI().SFXFolder).GetFiles().Concat(new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles()).ToList();
             sfxFiles.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
             string userInput = ctx.FocusedOption.Value.ToString();
             string[] fileNamesUserInput = userInput.Split(' ');

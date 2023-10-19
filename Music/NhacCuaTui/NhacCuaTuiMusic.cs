@@ -168,7 +168,7 @@ namespace CatBot.Music.NhacCuaTui
 
         public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
 
-        public string GetIcon() => Config.NCTIcon;
+        public string GetIcon() => Config.gI().NCTIcon;
 
         public bool isLinkMatch(string link) => link.StartsWith(nhacCuaTuiLink);
 

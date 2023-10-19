@@ -7,6 +7,8 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Interactivity;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
@@ -25,41 +27,52 @@ namespace CatBot
 {
     internal class DiscordBotMain
     {
-        internal static DiscordClient botClient = new DiscordClient(new DiscordConfiguration()
-        {
-            TokenType = TokenType.Bot,
-            Token = Config.BotToken,
-            Intents = DiscordIntents.All,
-            MinimumLogLevel = LogLevel.Information,
-        });
+        internal static DiscordClient botClient;
 
         //internal static DiscordRestClient botRESTClient = new DiscordRestClient(new DiscordConfiguration()
         //{
         //    TokenType = TokenType.Bot,
-        //    Token = Config.BotToken,
+        //    Token = Config.gI().BotToken,
         //    Intents = DiscordIntents.All,
         //    MinimumLogLevel = LogLevel.Information
         //});
 
         internal static DiscordActivity activity;
 
-        static DiscordBotMain()
-        {
-            botClient.MessageCreated += BotClient_MessageCreated; 
-            botClient.GuildDownloadCompleted += BotClient_GuildDownloadCompleted;
-            botClient.VoiceStateUpdated += BotClient_VoiceStateUpdated;
-        }
-
         internal static void Main()
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            Console.OutputEncoding = Encoding.Unicode;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
+            string configPath = $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName)}_config.json";
+            try
+            {
+                Config.ImportConfig(configPath);
+            }
+            catch
+            {
+                if (!File.Exists(configPath))
+                    Console.WriteLine("Config file not found, creating one...");
+                else
+                    Console.WriteLine("Config file corrupted, creating new one...");
+                Config.ExportConfig(configPath);
+                Process.Start(Path.GetFullPath(configPath));
+                Program.system("pause");
+                Environment.Exit(1);
+            }
+            botClient = new DiscordClient(new DiscordConfiguration()
+            {
+                TokenType = TokenType.Bot,
+                Token = Config.gI().BotToken,
+                Intents = DiscordIntents.All,
+                MinimumLogLevel = LogLevel.Information,
+            });
+            botClient.MessageCreated += BotClient_MessageCreated;
+            botClient.GuildDownloadCompleted += BotClient_GuildDownloadCompleted;
+            botClient.VoiceStateUpdated += BotClient_VoiceStateUpdated;
             try
             {
                 new Harmony("Hook").PatchAll();
             }
-            catch (Exception ex) { Utils.LogException(ex); }
+            catch (Exception ex) { Utils.LogException(ex, false); }
             new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
             new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
             new Thread(UpdateYTDlp) { IsBackground = true, Name = nameof(UpdateYTDlp) }.Start();
@@ -68,11 +81,13 @@ namespace CatBot
 
         public static async Task MainAsync()
         {
-            if (Config.EnableCommandsNext)
+            if (Config.gI().EnableCommandsNext)
             {
                 CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
                 {
-                    StringPrefixes = new string[] { Config.Prefix },
+                    StringPrefixes = new string[] { Config.gI().DefaultPrefix },
+                    CaseSensitive = true,
+                    EnableDms = false,
                 });
                 commandNext.RegisterCommands<AdminBaseCommand>();
                 //commandNext.RegisterCommands<EmojiReplyBaseCommands>();
@@ -89,9 +104,14 @@ namespace CatBot
             //slashCommand.RegisterCommands<TTSSlashCommands>();
             slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
             slashCommand.RegisterCommands<GlobalSlashCommands>();
-            slashCommand.RegisterCommands<AdminSlashCommands>(Config.MainServerID);
+            slashCommand.RegisterCommands<AdminSlashCommands>(Config.gI().MainServerID);
 
-            botClient.UseVoiceNext();
+            botClient.UseVoiceNext(new VoiceNextConfiguration());
+
+            botClient.UseInteractivity(new InteractivityConfiguration
+            {
+                Timeout = TimeSpan.FromMinutes(5.0),
+            });
 
             //await botRESTClient.InitializeAsync();
             await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
@@ -119,12 +139,6 @@ namespace CatBot
                 Console.WriteLine("--------------End of yt-dlp Console output--------------");
                 Thread.Sleep(1000 * 60 * 60 * 24);
             }
-        }
-
-        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Console.WriteLine(e.ExceptionObject);
-            Console.ReadLine();
         }
 
         static void GCThread()
@@ -159,11 +173,11 @@ namespace CatBot
         {
             await Task.Run(() =>
             {
-                Config.mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.MainServerID).Value;
-                Config.adminServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.AdminServerID).Value;
-                Config.cacheImageChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.CacheImageChannelID);
-                Config.exceptionReportChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.ExceptionReportChannelID);
-                Config.debugChannel = Config.mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.DebugChannelID);
+                Config.gI().mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().MainServerID).Value;
+                Config.gI().adminServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().AdminServerID).Value;
+                Config.gI().cacheImageChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID);
+                Config.gI().exceptionReportChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID);
+                Config.gI().debugChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID);
             });
             await GlobalSlashCommands.GetMentionStrings();
             new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();

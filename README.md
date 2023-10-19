@@ -13,8 +13,8 @@
 - Tìm lời bài hát (cung cấp bởi [Lyrist](https://lyrist.vercel.app/))
 ## Setup
 - Biên dịch dự án hoặc tải tệp thực thi từ [Release](../../releases) và chạy file DiscordBot.exe lần đầu tiên
-- Sao chép nội dung trong file [Config_template.txt](Files/Config_template.txt) vào file Config.txt vừa được mở
-- Thay đổi các thông số trong file Config.txt:
+- Sao chép nội dung trong file [Config_template.txt](Files/Config_template.txt) vào file Config.gI().txt vừa được mở
+- Thay đổi các thông số trong file Config.gI().txt:
    + MainServerID: ID server chính dùng để quản lý bot (Sử dụng lệnh /admin, báo lỗi, cache ảnh cho [LocalMusic](Music/Local/LocalMusic.cs))
    + AdminServerID: ID server chứa các thành viên được sử dụng SFX đặc biệt và được sử dụng lệnh /emoji với emoji trong server này
    + CacheImageChannelID: ID kênh dùng để cache ảnh album của [LocalMusic](Music/Local/LocalMusic.cs) (Kênh này nằm trong server chính dùng để quản lý bot)

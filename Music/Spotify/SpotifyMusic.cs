@@ -134,15 +134,15 @@ namespace CatBot.Music.Spotify
 
         public LyricData GetLyric()
         {
-            if (string.IsNullOrWhiteSpace(Config.SpotifyCookie))
+            if (string.IsNullOrWhiteSpace(Config.gI().SpotifyCookie))
                 return new LyricData("Không tìm thấy cookie của Spotify!");
             if (string.IsNullOrEmpty(token) || tokenExpireTime < DateTime.Now)
             {
                 string url = "https://open.spotify.com/get_access_token";
                 Leaf.xNet.HttpRequest httpClient = new Leaf.xNet.HttpRequest();
-                httpClient.AddHeader("User-Agent", Config.UserAgent);
-                httpClient.AddHeader("Cookie", Config.SpotifyCookie);
-                MusicUtils.SetCookie(httpClient, Config.SpotifyCookie);
+                httpClient.AddHeader("User-Agent", Config.gI().UserAgent);
+                httpClient.AddHeader("Cookie", Config.gI().SpotifyCookie);
+                MusicUtils.SetCookie(httpClient, Config.gI().SpotifyCookie);
                 JObject responseContent =JObject.Parse(httpClient.Get(url).ToString());
                 token = responseContent["accessToken"].ToString();
                 tokenExpireTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(double.Parse(responseContent["accessTokenExpirationTimestampMs"].ToString())).ToLocalTime();
@@ -174,7 +174,7 @@ namespace CatBot.Music.Spotify
 
         public string[] GetFilesInUse() => new string[] { audioFilePath, pcmFile };
 
-        public string GetIcon() => Config.SpotifyIcon;
+        public string GetIcon() => Config.gI().SpotifyIcon;
 
         public string GetSongDesc(bool hasTimeStamp = false)
         {
@@ -214,7 +214,7 @@ namespace CatBot.Music.Spotify
         {
             string url = $"https://api.spotifydown.com/download/{trackID}";
             HttpClient httpClient = new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }) { Timeout = TimeSpan.FromSeconds(10) };
-            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
             httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
             httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com/");
             HttpResponseMessage response;

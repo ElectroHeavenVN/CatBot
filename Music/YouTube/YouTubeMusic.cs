@@ -174,7 +174,7 @@ namespace CatBot.Music.YouTube
 
         public string[] GetFilesInUse() => new string[] { webmFilePath, pcmFile };
 
-        public string GetIcon() => isYouTubeMusicVideo ? Config.YouTubeMusicIcon : Config.YouTubeIcon;
+        public string GetIcon() => isYouTubeMusicVideo ? Config.gI().YouTubeMusicIcon : Config.gI().YouTubeIcon;
 
         public bool isLinkMatch(string link) => regexMatchYTVideoLink.IsMatch(link);
 

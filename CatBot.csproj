@@ -26,6 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Deterministic>False</Deterministic>
+    <DocumentationFile>bin\Debug\CatBot.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -309,6 +310,13 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy $(ProjectDir)Files\* $(TargetDir) /y /s | echo</PostBuildEvent>
+    <PostBuildEvent>xcopy /y /c /s $(ProjectDir)Files\* $(TargetDir)
+move /y *.dll Lib\
+move /y *.xml Lib\
+move /y *.pdb Lib\
+move /y Lib\libopus.dll libopus.dll
+move /y Lib\libsodium.dll libsodium.dll
+move /y Lib\$(TargetName).xml $(TargetName).xml
+move /y Lib\$(TargetName).pdb $(TargetName).pdb | echo</PostBuildEvent>
   </PropertyGroup>
 </Project>

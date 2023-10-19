@@ -19,7 +19,7 @@ namespace CatBot.Admin
         internal static async Task JoinVoiceChannel(InteractionContext ctx, string channelIDstr)
         {
             await ctx.DeferAsync(true);
-            if (!Config.BotAuthorsID.Contains(ctx.Member.Id))
+            if (!Utils.IsBotOwner(ctx.Member.Id))
             {
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
@@ -51,7 +51,7 @@ namespace CatBot.Admin
         internal static async Task LeaveVoiceChannel(InteractionContext ctx, string serverIDstr)
         {
             await ctx.DeferAsync(true);
-            if (!Config.BotAuthorsID.Contains(ctx.Member.Id))
+            if (!Utils.IsBotOwner(ctx.Member.Id))
             {
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
@@ -73,7 +73,7 @@ namespace CatBot.Admin
 
         internal static async Task AddSFX(DiscordMessage message, string sfxName, bool isSpecial)
         {
-            if (!Config.BotAuthorsID.Contains(message.Author.Id))
+            if (!Utils.IsBotOwner(message.Author.Id))
             {
                 await message.RespondAsync("Bạn không có quyền sử dụng lệnh này!");
                 return;
@@ -91,9 +91,9 @@ namespace CatBot.Admin
             foreach (DiscordAttachment attachment in message.Attachments)
             {
                 string sfxUrl = attachment.Url;
-                string path = Config.SFXFolder;
+                string path = Config.gI().SFXFolder;
                 if (isSpecial)
-                    path = Config.SFXFolderSpecial;
+                    path = Config.gI().SFXFolderSpecial;
                 try
                 {
                     string tempPath = Path.GetTempFileName();
@@ -118,14 +118,14 @@ namespace CatBot.Admin
 
         internal static async Task DeleteSFX(DiscordMessage message, string sfxName, string isSpecialStr)
         {
-            if (!Config.BotAuthorsID.Contains(message.Author.Id))
+            if (!Utils.IsBotOwner(message.Author.Id))
             {
                 await message.RespondAsync("Bạn không có quyền sử dụng lệnh này!");
                 return;
             }
-            string path = Config.SFXFolder;
+            string path = Config.gI().SFXFolder;
             if (isSpecialStr.Equals("special", StringComparison.InvariantCultureIgnoreCase))
-                path = Config.SFXFolderSpecial;
+                path = Config.gI().SFXFolderSpecial;
             if (File.Exists(Path.Combine(path, sfxName + ".pcm")))
             {
                 File.Delete(Path.Combine(path, sfxName + ".pcm"));
@@ -137,7 +137,7 @@ namespace CatBot.Admin
 
         internal static async Task DownloadMusic(DiscordMessage message)
         {
-            if (!Config.BotAuthorsID.Contains(message.Author.Id))
+            if (!Utils.IsBotOwner(message.Author.Id))
             {
                 await message.RespondAsync("Bạn không có quyền sử dụng lệnh này!");
                 return;
@@ -149,13 +149,13 @@ namespace CatBot.Admin
             }
             WebClient webClient = new WebClient();
             foreach (DiscordAttachment attachment in message.Attachments.Where(a => Path.GetExtension(a.FileName) == ".mp3"))
-                webClient.DownloadFile(new Uri(attachment.Url), Path.Combine(Config.MusicFolder, attachment.FileName));
+                webClient.DownloadFile(new Uri(attachment.Url), Path.Combine(Config.gI().MusicFolder, attachment.FileName));
             await message.RespondAsync("Đã tải nhạc về bộ nhớ!");
         }
 
         internal static async Task ResetBotServerInstance(InteractionContext ctx, string serverIDstr)
         {
-            if (serverIDstr != "this" && !Config.BotAuthorsID.Contains(ctx.Member.Id))
+            if (serverIDstr != "this" && !Utils.IsBotOwner(ctx.Member.Id))
             {
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
@@ -176,14 +176,14 @@ namespace CatBot.Admin
 
         internal static async Task GetFieldValue(DiscordMessage message)
         {
-            if (message.Channel != Config.debugChannel)
+            if (message.Channel != Config.gI().debugChannel)
                 return;
             
         }
 
         internal static async Task SetBotStatus(InteractionContext ctx, string name, ActivityType activityType)
         {
-            if (!Config.BotAuthorsID.Contains(ctx.Member.Id))
+            if (!Utils.IsBotOwner(ctx.Member.Id))
             {
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;

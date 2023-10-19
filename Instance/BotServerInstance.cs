@@ -141,7 +141,7 @@ namespace CatBot.Instance
             double volume = serverInstance.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
             if (member != null)
             {
-                if (Config.BotAuthorsID.Contains(member.Id))
+                if (Utils.IsBotOwner(member.Id))
                 {
                     if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild))
                         return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild).currentVoiceNextConnection;

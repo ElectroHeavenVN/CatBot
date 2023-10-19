@@ -99,7 +99,7 @@ namespace CatBot.Music.SoundCloud
 
         public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
 
-        public string GetIcon() => Config.SoundCloudIcon;
+        public string GetIcon() => Config.gI().SoundCloudIcon;
 
         public LyricData GetLyric() => new LyricData("SoundCloud không lưu trữ lời bài hát!");
 
