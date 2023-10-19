@@ -311,6 +311,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y /c /s $(ProjectDir)Files\* $(TargetDir)
+mkdir $(TargetDir)Lib | echo
 move /y $(TargetDir)*.dll $(TargetDir)Lib\
 move /y $(TargetDir)*.xml $(TargetDir)Lib\
 move /y $(TargetDir)*.pdb $(TargetDir)Lib\
