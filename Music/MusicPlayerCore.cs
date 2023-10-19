@@ -924,7 +924,16 @@ namespace CatBot.Music
                             if (token.IsCancellationRequested)
                                 goto exit;
                             sentOutOfTrack = true;
-                            await lastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build());
+                            IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
+                            DiscordEmbed embed = new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build();
+                            if (lastNowPlayingMessage == null || lastMessage[0] != lastNowPlayingMessage)
+                            {
+                                if (lastNowPlayingMessage != null)
+                                    await lastNowPlayingMessage.DeleteAsync();
+                                lastNowPlayingMessage = await lastChannel.SendMessageAsync(embed);
+                            }
+                            else
+                                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(embed);
                         }
                         while (sfxData.Count != 0)
                         {
@@ -952,23 +961,22 @@ namespace CatBot.Music
         async Task SendCurrentlyPlayingSong(BotServerInstance serverInstance)
         {
             string musicDesc = currentlyPlayingSong.GetSongDesc();
+            string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Hiện đang phát").WithDescription(musicDesc).WithColor(DiscordColor.Green);
             currentlyPlayingSong.AddFooter(embed);
-            string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
             DiscordMessage cacheWaveformMessage = await Config.cacheImageChannel.SendMessageAsync(messageBuilder);
             embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
             IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
             DiscordEmbed messageEmbed = string.IsNullOrEmpty(albumThumbnailLink) ? embed.Build() : embed.WithThumbnail(albumThumbnailLink).Build();
-            if (lastNowPlayingMessage != null)
+            if (lastNowPlayingMessage == null || lastMessage[0] != lastNowPlayingMessage)
             {
-                if (lastMessage[0] != lastNowPlayingMessage)
+                if (lastNowPlayingMessage != null)
                     await lastNowPlayingMessage.DeleteAsync();
-                if (lastNowPlayingMessage == lastMessage[0])
-                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(messageEmbed);
-            }
-            if (lastNowPlayingMessage == null || lastNowPlayingMessage != lastMessage[0])
                 lastNowPlayingMessage = await lastChannel.SendMessageAsync(messageEmbed);
+            }
+            else
+                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(messageEmbed);
             if (currentlyPlayingSong is LocalMusic localMusic)
                 await localMusic.lastCacheImageMessage.ModifyAsync(lastNowPlayingMessage.JumpLink.AbsoluteUri);
         }

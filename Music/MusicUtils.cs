@@ -153,7 +153,7 @@ namespace CatBot.Music
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "spotdl\\spotdl",
-                    Arguments = $"--ffmpeg ../ffmpeg/ffmpeg.exe --audio slider-kz --audio soundcloud --audio bandcamp --audio piped --audio youtube --audio youtube-music --output {tempFolder} {link}",
+                    Arguments = $"--ffmpeg ../ffmpeg/ffmpeg.exe --threads 1 --ffmpeg-args \"-threads:a 1\" --audio slider-kz --audio soundcloud --audio bandcamp --audio piped --audio youtube --audio youtube-music --output {tempFolder} {link}",
                     WorkingDirectory = "spotdl",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,

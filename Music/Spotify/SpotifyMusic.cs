@@ -29,7 +29,7 @@ namespace CatBot.Music.Spotify
         string trackID = "";
         internal static SpotifyClient spClient = new SpotifyClient();
         Stream musicPCMDataStream;
-        string mp3OrWEBMFilePath;
+        string audioFilePath;
         Track track;
         bool canGetStream;
         bool _disposed;
@@ -68,7 +68,7 @@ namespace CatBot.Music.Spotify
         public void Download()
         {
             string mimeType;
-            mp3OrWEBMFilePath = Path.GetTempFileName();
+            audioFilePath = Path.GetTempFileName();
             try
             {
                 DownloadTrackUsingZotify();
@@ -85,21 +85,21 @@ namespace CatBot.Music.Spotify
                 {
                     try
                     {
-                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), mp3OrWEBMFilePath);
+                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), audioFilePath);
                         mimeType = "taglib/mp3";
                     }
                     catch { throw new MusicException(MusicType.Spotify, "not found"); }
                 }
             }
-            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, mimeType, TagLib.ReadStyle.Average);
+            TagLib.File mp3OrWEBMFile = TagLib.File.Create(audioFilePath, mimeType, TagLib.ReadStyle.Average);
             duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
             if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
                 throw new MusicException("not found");
             canGetStream = true;
-            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3OrWEBMFilePath, ref pcmFile));
-            File.Delete(mp3OrWEBMFilePath);
-            mp3OrWEBMFilePath = null;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(audioFilePath, ref pcmFile));
+            File.Delete(audioFilePath);
+            audioFilePath = null;
         }
 
         public MusicType MusicType => MusicType.Spotify;
@@ -172,7 +172,7 @@ namespace CatBot.Music.Spotify
 
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by Spotify", spotifyIconLink);
 
-        public string[] GetFilesInUse() => new string[] { mp3OrWEBMFilePath, pcmFile };
+        public string[] GetFilesInUse() => new string[] { audioFilePath, pcmFile };
 
         public string GetIcon() => Config.SpotifyIcon;
 
@@ -192,8 +192,8 @@ namespace CatBot.Music.Spotify
 
         void DownloadTrackUsingZotify()
         {
-            MusicUtils.DownloadOGGFromSpotify(link, ref mp3OrWEBMFilePath);
-            TagLib.File oggFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/ogg", TagLib.ReadStyle.Average);
+            MusicUtils.DownloadOGGFromSpotify(link, ref audioFilePath);
+            TagLib.File oggFile = TagLib.File.Create(audioFilePath, "taglib/ogg", TagLib.ReadStyle.Average);
             TimeSpan duration = oggFile.Properties.Duration;
             oggFile.Dispose();
             if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
@@ -202,8 +202,8 @@ namespace CatBot.Music.Spotify
 
         void GetTrackFromSpotdl()
         {
-            MusicUtils.DownloadTrackUsingSpotdl(link, ref mp3OrWEBMFilePath);
-            TagLib.File mp3OrWEBMFile = TagLib.File.Create(mp3OrWEBMFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
+            MusicUtils.DownloadTrackUsingSpotdl(link, ref audioFilePath);
+            TagLib.File mp3OrWEBMFile = TagLib.File.Create(audioFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
             TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
             if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
@@ -264,7 +264,7 @@ namespace CatBot.Music.Spotify
                 DeletePCMFile();
                 try
                 {
-                    File.Delete(mp3OrWEBMFilePath);
+                    File.Delete(audioFilePath);
                 }
                 catch (Exception) { }
             }

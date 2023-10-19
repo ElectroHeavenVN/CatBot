@@ -42,6 +42,7 @@ namespace CatBot.Instance
         internal bool isVoicePlaying;
         DiscordMember botMember;
         private int lastNumberOfUsersInVC;
+        DiscordMessage lastNoOneInVCMessage;
 
         internal BotServerInstance() 
         {
@@ -565,12 +566,18 @@ namespace CatBot.Instance
             canSpeak = result;
             if (!result && lastNumberOfUsersInVC >= 2)
             {
-                string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
-                if (currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
-                    message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
-                DiscordChannel discordChannel = GetLastChannel();
-                if (discordChannel != null)
-                    await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
+                IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
+                if (lastNoOneInVCMessage == null || lastNoOneInVCMessage != lastMessage[0])
+                {
+                    if (lastNoOneInVCMessage != null)
+                        await lastNoOneInVCMessage.DeleteAsync();
+                    string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
+                    if (currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                        message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
+                    DiscordChannel discordChannel = GetLastChannel();
+                    if (discordChannel != null)
+                        lastNoOneInVCMessage = await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
+                }
             }
             lastNumberOfUsersInVC = userCount;
         }
