@@ -311,12 +311,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y /c /s $(ProjectDir)Files\* $(TargetDir)
-move /y *.dll Lib\
-move /y *.xml Lib\
-move /y *.pdb Lib\
-move /y Lib\libopus.dll libopus.dll
-move /y Lib\libsodium.dll libsodium.dll
-move /y Lib\$(TargetName).xml $(TargetName).xml
-move /y Lib\$(TargetName).pdb $(TargetName).pdb | echo</PostBuildEvent>
+move /y $(TargetDir)*.dll $(TargetDir)Lib\
+move /y $(TargetDir)*.xml $(TargetDir)Lib\
+move /y $(TargetDir)*.pdb $(TargetDir)Lib\
+move /y $(TargetDir)Lib\libopus.dll $(TargetDir)libopus.dll
+move /y $(TargetDir)Lib\libsodium.dll $(TargetDir)libsodium.dll
+move /y $(TargetDir)Lib\$(TargetName).xml $(TargetDir)$(TargetName).xml
+move /y $(TargetDir)Lib\$(TargetName).pdb $(TargetDir)$(TargetName).pdb | echo</PostBuildEvent>
   </PropertyGroup>
 </Project>
