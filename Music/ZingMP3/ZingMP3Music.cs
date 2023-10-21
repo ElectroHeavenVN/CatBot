@@ -1,5 +1,6 @@
 ﻿using CatBot.Music.SponsorBlock;
 using CatBot.Voice;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
 using Leaf.xNet;
@@ -57,17 +58,17 @@ namespace CatBot.Music.ZingMP3
                 songDesc = GetSongInfo(FindSongID(linkOrKeyword));
                 link = zingMP3Link.TrimEnd('/') + songDesc["link"];
             }
-            title = $"[{songDesc["title"]}]({link})";
+            title = Formatter.MaskedUrl(songDesc["title"].ToString(), new Uri(link));
             if (songDesc["artists"] != null)
             {
                 foreach (JToken artist in songDesc["artists"])
-                    artists += $"[{artist["name"]}]({zingMP3Link.TrimEnd('/') + artist["link"]}), ";
+                    artists += Formatter.MaskedUrl(artist["name"].ToString(), new Uri(zingMP3Link.TrimEnd('/') + artist["link"])) + ", ";
                 artists = artists.TrimEnd(" ,".ToCharArray());
             }
             else
                 artists += songDesc["artistsNames"];
             if (songDesc["album"] != null)
-                album = $"[{songDesc["album"]["title"]}]({zingMP3Link.TrimEnd('/') + songDesc["album"]["link"]})";
+                album = Formatter.MaskedUrl(songDesc["album"]["title"].ToString(), new Uri(zingMP3Link.TrimEnd('/') + songDesc["album"]["link"]));
             albumThumbnailLink = songDesc["thumbnailM"].ToString();
         }
 

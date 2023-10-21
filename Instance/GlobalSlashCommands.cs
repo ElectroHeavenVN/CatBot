@@ -55,13 +55,13 @@ namespace CatBot.Instance
                 $"### Made with {DiscordEmoji.FromName(DiscordBotMain.botClient, ":hearts:")} by <@!650357286526648350>\r\n" +
                 "Chức năng:\r\n" +
                 $"- Phát SFX (lệnh {speakFile} | {prefix}s)\r\n" +
-                //$"- Text to speech (cung cấp bởi [Zalo AI](https://zalo.ai/products/text-to-audio-converter)) (lệnh {speak} | {prefix}tts)\r\n" +
+                //$"- Text to speech (cung cấp bởi {Formatter.MaskedUrl("Zalo AI", new Uri("https://zalo.ai/products/text-to-audio-converter"))}) (lệnh {speak} | {prefix}tts)\r\n" +
                 $"- Phát nhạc từ các nền tảng âm nhạc online (lệnh {play} | {nextup}):\r\n" +
-                $"  - [YouTube](https://www.youtube.com/) và [YouTube Music](https://music.youtube.com/) (cung cấp bởi [yt-dlp](https://github.com/yt-dlp/yt-dlp)) (lệnh {youtube} | {nextup_yt})\r\n" +
-                $"  - [NhacCuaTui](https://www.nhaccuatui.com/) (lệnh {nhaccuatui} | {nextup_nct})\r\n" +
-                $"  - [Zing MP3](https://zingmp3.vn/) (lệnh {zingmp3} | {nextup_zing})\r\n" +
-                $"  - [SoundCloud](https://soundcloud.com/) (cung cấp bởi [SoundCloudExplode](https://github.com/jerry08/SoundCloudExplode)) (lệnh {soundcloud} | {nextup_sc})\r\n" +
-                $"  - [Spotify](https://spotify.com/) (cung cấp bởi [SpotifyExplode](https://github.com/jerry08/SpotifyExplode) và [SpotifyDown](https://spotifydown.com/)) (lệnh {spotify} | {nextup_sp})\r\n" +
+                $"  - {Formatter.MaskedUrl("YouTube", new Uri("https://www.youtube.com/"))} và {Formatter.MaskedUrl("YouTube Music", new Uri("https://music.youtube.com/"))} (cung cấp bởi {Formatter.MaskedUrl("yt-dlp", new Uri("https://github.com/yt-dlp/yt-dlp"))}) (lệnh {youtube} | {nextup_yt})\r\n" +
+                $"  - {Formatter.MaskedUrl("NhacCuaTui", new Uri("https://www.nhaccuatui.com/"))} (lệnh {nhaccuatui} | {nextup_nct})\r\n" +
+                $"  - {Formatter.MaskedUrl("Zing MP3", new Uri("https://zingmp3.vn/"))} (lệnh {zingmp3} | {nextup_zing})\r\n" +
+                $"  - {Formatter.MaskedUrl("SoundCloud", new Uri("https://soundcloud.com/"))} (cung cấp bởi {Formatter.MaskedUrl("SoundCloudExplode", new Uri("https://github.com/jerry08/SoundCloudExplode"))}) (lệnh {soundcloud} | {nextup_sc})\r\n" +
+                $"  - {Formatter.MaskedUrl("Spotify", new Uri("https://spotify.com/"))} (cung cấp bởi {Formatter.MaskedUrl("SpotifyExplode", new Uri("https://github.com/jerry08/SpotifyExplode"))} và {Formatter.MaskedUrl("SpotifyDown", new Uri("https://spotifydown.com/"))}) (lệnh {spotify} | {nextup_sp})\r\n" +
                 $"- Phát nhạc lưu trong bộ nhớ (lệnh {play_local} | {play_local_all} | {nextup_local})\r\n" +
                 $"Sử dụng lệnh {help} | {prefix}help để xem danh sách lệnh.\r\n" +
                 Formatter.Bold($"Bot bị lỗi? Dùng lệnh {reset} nếu bạn có quyền quản trị viên hoặc liên hệ <@!650357286526648350>!")

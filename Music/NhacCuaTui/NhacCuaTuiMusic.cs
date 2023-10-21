@@ -1,4 +1,5 @@
 ﻿using CatBot.Music.SponsorBlock;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using System;
@@ -46,15 +47,15 @@ namespace CatBot.Music.NhacCuaTui
             {
                 JToken obj = FindSongInfo(linkOrKeyword);
                 link = obj["url"].ToString();
-                title = $"[{obj["name"]}]({obj["url"]})";
+                title = Formatter.MaskedUrl(obj["name"].ToString(), new Uri(obj["url"].ToString()));
                 foreach (JToken singer in obj["singer"])
-                    artists += $"[{singer["name"]}]({singer["url"]})";
+                    artists += Formatter.MaskedUrl(singer["name"].ToString(), new Uri(singer["url"].ToString())) + ", ";
             }
             XmlDocument xmlDoc = GetXML(link);
             if (linkOrKeyword.StartsWith("ID: "))
                 link = xmlDoc.DocumentElement["track"].SelectSingleNode("info").InnerText;
             if (string.IsNullOrWhiteSpace(title))
-                title = $"[{xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText}]({link})";
+                title = Formatter.MaskedUrl(xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText, new Uri(link));
             if (string.IsNullOrWhiteSpace(artists))
             {
                 string[] array = xmlDoc.DocumentElement["track"].SelectSingleNode("creator").InnerText.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
@@ -63,10 +64,10 @@ namespace CatBot.Music.NhacCuaTui
                     if (i == 0)
                     {
                         string firstArtistsLink = xmlDoc.DocumentElement["track"].SelectSingleNode("newtab").InnerText;
-                        artists += $"[{array[i].Trim()}]({firstArtistsLink}), ";
+                        artists += Formatter.MaskedUrl(array[i].Trim(), new Uri(firstArtistsLink)) + ", ";
                     }
                     else
-                        artists += $"[{array[i].Trim()}]({findArtistLink + Uri.EscapeUriString(array[i].Trim())}), ";
+                        artists += Formatter.MaskedUrl(array[i].Trim(), new Uri(findArtistLink + Uri.EscapeUriString(array[i].Trim()))) + ", ";
                 }
                 artists = artists.TrimEnd(", ".ToCharArray());
             }

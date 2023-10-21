@@ -6,6 +6,7 @@ using System.Threading;
 using AngleSharp.Text;
 using CatBot.Extension;
 using CatBot.Music.SponsorBlock;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using HtmlAgilityPack;
 using SpotifyExplode.Albums;
@@ -43,8 +44,8 @@ namespace CatBot.Music.Spotify
                         album = SpotifyMusic.spClient.Albums.GetAsync(id).GetAwaiter().GetResult();
                     }
                     catch (Exception) { throw new MusicException("album not found"); }
-                    title = $"[{album.Name}]({album.Url})";
-                    author = string.Join(", ", album.Artists.Select(artist => $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id})"));
+                    title = Formatter.MaskedUrl(album.Name, new Uri(album.Url));
+                    author = string.Join(", ", album.Artists.Select(artist => Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}"))));
                     thumbnailLink = album.Images.Aggregate((i1, i2) => i1.Width * i1.Height > i2.Width * i2.Height ? i1 : i2).Url;
                     songCount = album.TotalTracks;
                 }
@@ -57,7 +58,7 @@ namespace CatBot.Music.Spotify
                     }
                     catch (Exception) { throw new MusicException("playlist not found"); }
                     string[] imageLinks = SpotifyMusic.spClient.Playlists.GetImagesAsync(id).GetAwaiter().GetResult();
-                    title = $"[{playlist.Name}](https://open.spotify.com/playlist/{playlist.Id})";
+                    title = Formatter.MaskedUrl(playlist.Name, new Uri($"https://open.spotify.com/playlist/{playlist.Id}"));
                     description = playlist.Description;
                     HtmlDocument doc = new HtmlDocument();
                     doc.LoadHtml(description);
@@ -65,7 +66,7 @@ namespace CatBot.Music.Spotify
                     if (links != null)
                         foreach (HtmlNode tb in links)
                             description = description.ReplaceFirst(tb.OuterHtml, tb.InnerText);
-                    author = $"[{playlist.Owner.DisplayName}](https://open.spotify.com/user/{playlist.Owner.Id})";
+                    author = Formatter.MaskedUrl(playlist.Owner.DisplayName, new Uri($"https://open.spotify.com/user/{playlist.Owner.Id}"));
                     thumbnailLink = imageLinks.First(s => !string.IsNullOrWhiteSpace(s));
                     songCount = playlist.Items.Count;
                 }
@@ -77,8 +78,8 @@ namespace CatBot.Music.Spotify
                         artist = SpotifyMusic.spClient.Artists.GetAsync(id).GetAwaiter().GetResult();
                     }
                     catch (Exception) { throw new MusicException("artist not found"); }
-                    title = $"Nhạc phổ biến của [{artist.Name}](https://open.spotify.com/artist/{artist.Id})";
-                    author = $"[{artist.Name}](https://open.spotify.com/artist/{artist.Id})";
+                    title = "Nhạc phổ biến của " + Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}"));
+                    author = Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}"));
                     thumbnailLink = artist.Images.Aggregate((i1, i2) => i1.Width * i1.Height > i2.Width * i2.Height ? i1 : i2).Url;
                 }
                 new Thread(() => AddTracks(id)) { IsBackground = true }.Start();

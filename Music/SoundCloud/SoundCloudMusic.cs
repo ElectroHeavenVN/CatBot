@@ -1,4 +1,5 @@
 ﻿using CatBot.Music.SponsorBlock;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using SoundCloudExplode;
 using SoundCloudExplode.Search;
@@ -44,8 +45,8 @@ namespace CatBot.Music.SoundCloud
             }
             link = linkOrKeyword;
             track = scClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
-            title = $"[{track.Title}]({track.PermalinkUrl})";
-            artists = $"[{track.User.Username}]({track.User.PermalinkUrl})";
+            title = Formatter.MaskedUrl(track.Title, track.PermalinkUrl);
+            artists = Formatter.MaskedUrl(track.User.Username, track.User.PermalinkUrl);
             if (track.ArtworkUrl != null)
                 albumThumbnailLink = track.ArtworkUrl.AbsoluteUri;
         }
