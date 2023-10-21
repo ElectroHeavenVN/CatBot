@@ -309,7 +309,7 @@ namespace CatBot.Music
                     {
                         DiscordMessage message = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.WithThumbnail(albumThumbnailLink).Build()));
                         if (serverInstance.musicPlayer.currentlyPlayingSong is LocalMusic localMusic)
-                            await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.ToString());
+                            await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.AbsoluteUri);
                     }
                     else
                         await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()));
@@ -977,8 +977,8 @@ namespace CatBot.Music
             }
             else
                 lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(messageEmbed);
-            if (currentlyPlayingSong is LocalMusic localMusic)
-                await localMusic.lastCacheImageMessage.ModifyAsync(lastNowPlayingMessage.JumpLink.AbsoluteUri);
+            //if (currentlyPlayingSong is LocalMusic localMusic)
+            //    await localMusic.lastCacheImageMessage.ModifyAsync(lastNowPlayingMessage.JumpLink.AbsoluteUri);
         }
 
         void PrepareNextSong()

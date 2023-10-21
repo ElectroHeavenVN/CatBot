@@ -181,6 +181,8 @@ namespace CatBot.Music.NhacCuaTui
             {
                 if (html.Contains("Sorry, this content is currently not available in your country"))
                     throw new MusicException(MusicType.NhacCuaTui, "not available");
+                if (html.Contains("bài hát này dành riêng cho người dùng VIP. Mời bạn nâng cấp để thưởng thức."))
+                    throw new MusicException(MusicType.NhacCuaTui, "VIP only");
                 throw new MusicException("not found");
             }
             string xml = MusicUtils.GetHttpRequestWithCookie().Get(linkContainInfo).ToString();

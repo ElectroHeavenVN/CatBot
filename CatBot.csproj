@@ -27,6 +27,7 @@
     <WarningLevel>4</WarningLevel>
     <Deterministic>False</Deterministic>
     <DocumentationFile>bin\Debug\CatBot.xml</DocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -200,8 +201,8 @@
     <Reference Include="TagLibSharp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
       <HintPath>packages\TagLibSharp.2.3.0\lib\net462\TagLibSharp.dll</HintPath>
     </Reference>
-    <Reference Include="YoutubeExplode, Version=6.3.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\YoutubeExplode.6.3.5\lib\net461\YoutubeExplode.dll</HintPath>
+    <Reference Include="YoutubeExplode, Version=6.3.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\YoutubeExplode.6.3.6\lib\net461\YoutubeExplode.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

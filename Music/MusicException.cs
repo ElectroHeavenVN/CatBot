@@ -24,6 +24,8 @@ namespace CatBot.Music
                 content = $"Bài này bị Zing MP3 chặn ở quốc gia đặt máy chủ của bot!";
             else if (MusicType == MusicType.NhacCuaTui && Message == "not available")
                 content = "Bài này bị NhacCuaTui chặn ở quốc gia đặt máy chủ của bot!";
+            else if (MusicType == MusicType.NhacCuaTui && Message == "VIP only")
+                content = "Bài này yêu cầu tìa khoản VIP!";
             else if (MusicType == MusicType.YouTube && Message == "video not found")
                 content = "Không tìm thấy video này!";
             else if (MusicType == MusicType.YouTube && Message == "channel not found")

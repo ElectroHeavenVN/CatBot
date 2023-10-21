@@ -171,7 +171,7 @@ namespace CatBot.Admin
             else if (serverIDstr == "this")
                 await BotServerInstance.RemoveBotServerInstance(ctx.Guild.Id);
             BotServerInstance.GetBotServerInstance(ctx.Guild);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại instance bot của server!").AsEphemeral());
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại bot!").AsEphemeral());
         }
 
         internal static async Task GetFieldValue(DiscordMessage message)

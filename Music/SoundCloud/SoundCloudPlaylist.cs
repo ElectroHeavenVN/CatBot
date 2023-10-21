@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CatBot.Music.SponsorBlock;
+using CatBot.SoundCloudExplodeExtension;
 using DSharpPlus.Entities;
 using SoundCloudExplode.Playlists;
 using SoundCloudExplode.Tracks;
@@ -15,7 +16,7 @@ namespace CatBot.Music.SoundCloud
 {
     internal class SoundCloudPlaylist : IPlaylist
     {
-        internal static readonly Regex regexMatchSoundCloudPlaylistLink = new Regex("^(?:https?:\\/\\/)?((?:(?:m|on)\\.)?soundcloud\\.com)\\/([\\w-]*)(?:(?:\\/?(?:sets\\/)((?:[\\w-]*)|)\\??.*)|(?:\\/(likes|tracks|popular-tracks|reposts)))?$", RegexOptions.Compiled);
+        internal static readonly Regex regexMatchSoundCloudPlaylistLink = new Regex("^(?:https?:\\/\\/)?((?:(?:m|on)\\.)?soundcloud\\.com)\\/([\\w-]*)\\/?(?:(?:\\/?(?:sets\\/)((?:[\\w-]*))\\??.*)|(?:(likes|tracks|popular-tracks|reposts)))?$", RegexOptions.Compiled);
         string title;
         string description;
         string author;
@@ -76,24 +77,22 @@ namespace CatBot.Music.SoundCloud
                         if (user.AvatarUrl != null)
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
-                    //else if (type == "likes")
-                    //{
-                    //    tracks = SoundCloudMusic.scClient.Users.GetLikedTracksAsync(link, 0, 200).GetAwaiter().GetResult();
-                    //    user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
-                    //    title = $"[Nhạc đã thích]({link}/{type}) của [{user.Username}]({user.PermalinkUrl})";
-                    //    author = $"[{user.Username}]({user.PermalinkUrl})";
-                    //    if (user.AvatarUrl != null)
-                    //        thumbnailLink = user.AvatarUrl.AbsoluteUri;
-                    //}
-                    //else if (type == "reposts")
-                    //{
-                    //    tracks = SoundCloudMusic.scClient.Users.GetRepostTracksAsync(link, 0, 200).GetAwaiter().GetResult();
-                    //    user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
-                    //    title = $"[Nhạc repost]({link}/{type}) của [{user.Username}]({user.PermalinkUrl})";
-                    //    author = $"[{user.Username}]({user.PermalinkUrl})";
-                    //    if (user.AvatarUrl != null)
-                    //        thumbnailLink = user.AvatarUrl.AbsoluteUri;
-                    //}
+                    else if (type == "likes")
+                    {
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        title = $"[Nhạc đã thích]({link}/{type}) của [{user.Username}]({user.PermalinkUrl})";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl != null)
+                            thumbnailLink = user.AvatarUrl.AbsoluteUri;
+                    }
+                    else if (type == "reposts")
+                    {
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        title = $"[Nhạc repost]({link}/{type}) của [{user.Username}]({user.PermalinkUrl})";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl != null)
+                            thumbnailLink = user.AvatarUrl.AbsoluteUri;
+                    }
                 }
                 new Thread(() => AddTracks(link)) { IsBackground = true }.Start();
             }
@@ -132,6 +131,10 @@ namespace CatBot.Music.SoundCloud
                 tracks = await SoundCloudMusic.scClient.Users.GetPopularTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "set")
                 tracks = await SoundCloudMusic.scClient.Playlists.GetTracksAsync(link, 0, 200).ToListAsync();
+            else if (type == "likes")
+                tracks = (await SoundCloudMusic.scClient.Users.GetLikedItemsAsync(link, 0, 200)).Select(i => i.Track);
+            else if (type == "reposts")
+                tracks = (await SoundCloudMusic.scClient.Users.GetRepostItemsAsync(link, 0, 200)).Select(i => i.Track);
             await Task.Run(() =>
             {
                 foreach (Track track in tracks)

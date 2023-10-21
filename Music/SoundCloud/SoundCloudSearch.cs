@@ -24,12 +24,12 @@ namespace CatBot.Music.SoundCloud
                         linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult().RequestMessage.RequestUri.ToString();
                     if (linkOrKeyword.Contains("/sets/"))
                         type = "set";
+                    linkOrKeyword = linkOrKeyword.ReplaceFirst(type, "").TrimEnd('/');
                     if (string.IsNullOrEmpty(type))
                         type = "tracks";
                     if (type == "tracks")
                     {
                         User user = SoundCloudMusic.scClient.Users.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
-                        linkOrKeyword = linkOrKeyword.ReplaceFirst(type, "");
                         return new List<SearchResult>()
                         {
                             new SearchResult(user.PermalinkUrl.AbsoluteUri, "Nhạc đã tải lên", user.Username, user.PermalinkUrl.AbsoluteUri, user.AvatarUrl?.AbsoluteUri)
@@ -40,7 +40,23 @@ namespace CatBot.Music.SoundCloud
                         User user = SoundCloudMusic.scClient.Users.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
                         return new List<SearchResult>()
                         {
-                            new SearchResult(user.PermalinkUrl.AbsoluteUri, "Nhạc nổi bật", user.Username, user.PermalinkUrl.AbsoluteUri, user.AvatarUrl?.AbsoluteUri)
+                            new SearchResult(user.PermalinkUrl.AbsoluteUri + "/popular-tracks", "Nhạc nổi bật", user.Username, user.PermalinkUrl.AbsoluteUri, user.AvatarUrl?.AbsoluteUri)
+                        };
+                    }
+                    else if (type == "likes")
+                    {
+                        User user = SoundCloudMusic.scClient.Users.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                        return new List<SearchResult>()
+                        {
+                            new SearchResult(user.PermalinkUrl.AbsoluteUri + "/likes", "Nhạc đã thích", user.Username, user.PermalinkUrl.AbsoluteUri, user.AvatarUrl?.AbsoluteUri)
+                        };
+                    }
+                    else if (type == "reposts")
+                    {
+                        User user = SoundCloudMusic.scClient.Users.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                        return new List<SearchResult>()
+                        {
+                            new SearchResult(user.PermalinkUrl.AbsoluteUri + "/reposts", "Nhạc repost", user.Username, user.PermalinkUrl.AbsoluteUri, user.AvatarUrl?.AbsoluteUri)
                         };
                     }
                     else if (type == "set")
@@ -74,7 +90,7 @@ namespace CatBot.Music.SoundCloud
                 };
             }
             List<TrackSearchResult> searchResult = SoundCloudMusic.scClient.Search.GetTracksAsync(linkOrKeyword, 0, count).ToListAsync().GetAwaiter().GetResult();
-            return searchResult.Select(sR => new SearchResult(sR.PermalinkUrl.AbsoluteUri, sR.Title, sR.User.Username, sR.User.PermalinkUrl.AbsoluteUri, (sR.ArtworkUrl == null ? "" : sR.ArtworkUrl.AbsoluteUri))).ToList();
+            return searchResult.Select(sR => new SearchResult(sR.PermalinkUrl.AbsoluteUri, sR.Title, sR.User.Username, sR.User.PermalinkUrl.AbsoluteUri, sR.ArtworkUrl == null ? "" : sR.ArtworkUrl.AbsoluteUri)).ToList();
         }
     }
 }
