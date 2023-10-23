@@ -25,23 +25,17 @@ namespace CatBot.Music
         static DateTime lastTimeCheckZingMP3Version = DateTime.Now.Subtract(new TimeSpan(12, 1, 0));
         private static HttpRequest httpRequestWithCookie;
 
-        internal static IMusic CreateMusicInstance(string linkOrKeywordOrPath, MusicType musicType)
+        internal static IMusic CreateMusicInstance(string keywordOrPath, MusicType musicType)
         {
             if (musicType == 0)
                 throw new NullReferenceException();
             Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
             foreach (Type type in musicTypes)
             {
-                IMusic singletonInstance = (IMusic)Activator.CreateInstance(type, true);
+                ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
                 if (singletonInstance.MusicType == musicType)
-                    try
-                    {
-                        return (IMusic)Activator.CreateInstance(type, linkOrKeywordOrPath);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        throw ex.InnerException;
-                    }
+                    return (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { keywordOrPath });
             }
             throw new ArgumentOutOfRangeException();
         }
@@ -52,17 +46,11 @@ namespace CatBot.Music
             Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
             foreach (Type musicType in musicTypes)
             {
-                IMusic singletonInstance = (IMusic)Activator.CreateInstance(musicType, true);
+                ConstructorInfo[] constructors = musicType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
                 if (singletonInstance.isLinkMatch(link))
                 {
-                    try
-                    {
-                        music = (IMusic)Activator.CreateInstance(musicType, link);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        throw ex.InnerException;
-                    }
+                    music = (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { link });
                     return true;
                 }
             }
@@ -75,19 +63,18 @@ namespace CatBot.Music
             Type[] musicPlaylistTypes = typeof(IPlaylist).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPlaylist))).ToArray();
             foreach (Type musicPlaylistType in musicPlaylistTypes)
             {
-                IPlaylist singletonInstance = (IPlaylist)Activator.CreateInstance(musicPlaylistType, true);
+                ConstructorInfo[] constructors = musicPlaylistType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                IPlaylist singletonInstance = (IPlaylist)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
                 if (singletonInstance.isLinkMatch(link))
                 {
                     try
                     {
-                        playlist = (IPlaylist)Activator.CreateInstance(musicPlaylistType, link, musicQueue);
+                        playlist = (IPlaylist)constructors.First(c => c.GetParameters().Length == 2).Invoke(new object[] { link, musicQueue });
                     }
                     catch (TargetInvocationException ex) 
                     {
                         if (ex.InnerException is NotAPlaylistException)
                             continue;
-                        if (ex.InnerException is MusicException)
-                        throw ex.InnerException;
                     }
                     return true;
                 }

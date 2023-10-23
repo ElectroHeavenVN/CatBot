@@ -81,7 +81,7 @@ namespace CatBot.Instance
 						self.musicPlayer.musicQueue.Clear();
 						self.musicPlayer.isPlaying = false;
 						self.isDisconnect = true;
-						self.musicPlayer.isThreadAlive = false;
+						self.musicPlayer.isMainPlayRunning = false;
 						self.musicPlayer.sentOutOfTrack = true;
 						self.musicPlayer.cts.Cancel();
 						self.musicPlayer.cts = new CancellationTokenSource();
@@ -412,7 +412,7 @@ namespace CatBot.Instance
                             serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
                         serverInstance.musicPlayer.musicQueue.Clear();
                         serverInstance.isDisconnect = true;
-                        serverInstance.musicPlayer.isThreadAlive = false;
+                        serverInstance.musicPlayer.isMainPlayRunning = false;
                         serverInstance.musicPlayer.sentOutOfTrack = true;
                         serverInstance.musicPlayer.cts.Cancel();
                         serverInstance.musicPlayer.cts = new CancellationTokenSource();
@@ -564,7 +564,7 @@ namespace CatBot.Instance
             int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot).Count() + 1;
             bool result = userCount >= 2;
             canSpeak = result;
-            if (!result && lastNumberOfUsersInVC >= 2)
+            if (!result && lastNumberOfUsersInVC >= 2 && (musicPlayer.isPlaying || isVoicePlaying))
             {
                 IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
                 if (lastNoOneInVCMessage == null || lastNoOneInVCMessage != lastMessage[0])

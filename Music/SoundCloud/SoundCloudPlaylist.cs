@@ -25,6 +25,7 @@ namespace CatBot.Music.SoundCloud
         string type;
         long songsCount;
         MusicQueue musicQueue;
+        Thread addSongsThread;
 
         public SoundCloudPlaylist() { }
         public SoundCloudPlaylist(string link, MusicQueue queue) 
@@ -95,7 +96,8 @@ namespace CatBot.Music.SoundCloud
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
                 }
-                new Thread(() => AddTracks(link)) { IsBackground = true }.Start();
+                addSongsThread = new Thread(() => AddTracks(link)) { IsBackground = true };
+                addSongsThread.Start();
             }
             else
                 throw new NotAPlaylistException();
@@ -110,6 +112,8 @@ namespace CatBot.Music.SoundCloud
         public string Author => author;
 
         public string ThumbnailLink => thumbnailLink;
+
+        public Thread AddSongsInPlaylistThread => addSongsThread;
 
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by SoundCloud", SoundCloudMusic.soundCloudIconLink);
 

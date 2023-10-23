@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using CatBot.Instance;
 using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
-using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
@@ -35,7 +34,7 @@ namespace CatBot.Music
             }
         }
         internal long lastTimeSetLastChannel;
-        internal bool isThreadAlive;
+        internal bool isMainPlayRunning;
         internal IMusic currentlyPlayingSong;
         internal bool isPreparingNextSong;
         internal bool isPlaying;
@@ -50,6 +49,7 @@ namespace CatBot.Music
         Random random = new Random();
         bool isFirstTimeDequeue;
         DiscordMessage lastNowPlayingMessage;
+        Thread addSongsThread;
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
         {
@@ -89,6 +89,7 @@ namespace CatBot.Music
                     if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
                         playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
+                        serverInstance.musicPlayer.addSongsThread = playlist.AddSongsInPlaylistThread;
                         serverInstance.musicPlayer.isStopped = false;
                         serverInstance.isDisconnect = false;
                         serverInstance.musicPlayer.InitMainPlay();
@@ -144,6 +145,7 @@ namespace CatBot.Music
                     if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
                         playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
+                        serverInstance.musicPlayer.addSongsThread = playlist.AddSongsInPlaylistThread;
                         embed = new DiscordEmbedBuilder().WithDescription($"Đã thêm danh sách phát {playlist.Title} vào hàng đợi!");
                         DiscordEmbedBuilder embed2 = new DiscordEmbedBuilder().WithTitle("Thêm danh sách phát").WithDescription(playlist.GetPlaylistDesc()).WithThumbnail(playlist.ThumbnailLink).WithColor(DiscordColor.Green);
                         playlist.AddFooter(embed2);
@@ -193,6 +195,7 @@ namespace CatBot.Music
                     if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
                     {
                         playlist.SetSponsorBlockOptions(serverInstance.musicPlayer.sponsorBlockOptions);
+                        serverInstance.musicPlayer.addSongsThread = playlist.AddSongsInPlaylistThread;
                         serverInstance.musicPlayer.isStopped = false;
                         serverInstance.isDisconnect = false;
                         serverInstance.musicPlayer.InitMainPlay();
@@ -305,14 +308,12 @@ namespace CatBot.Music
                     DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong));
                     DiscordMessage cacheWaveformMessage = await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder);
                     embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
+                    IReadOnlyList<DiscordMessage> lastMessage = await serverInstance.musicPlayer.lastChannel.GetMessagesAsync(1);
+                    if (serverInstance.musicPlayer.lastNowPlayingMessage != null && lastMessage[0] != serverInstance.musicPlayer.lastNowPlayingMessage)
+                        await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
                     if (!string.IsNullOrEmpty(albumThumbnailLink))
-                    {
-                        DiscordMessage message = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.WithThumbnail(albumThumbnailLink).Build()));
-                        if (serverInstance.musicPlayer.currentlyPlayingSong is LocalMusic localMusic)
-                            await localMusic.lastCacheImageMessage.ModifyAsync(message.JumpLink.AbsoluteUri);
-                    }
-                    else
-                        await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()));
+                        embed = embed.WithThumbnail(albumThumbnailLink);
+                    serverInstance.musicPlayer.lastNowPlayingMessage = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()));
                 }
             }
             catch (Exception ex) { Utils.LogException(ex); }
@@ -910,7 +911,11 @@ namespace CatBot.Music
                             await Task.Delay(500);
                         }
                         if (isStopped)
+                        {
+                            if (addSongsThread != null && !addSongsThread.IsAlive)
+                                addSongsThread.Abort();
                             await Task.Delay(500);
+                        }
                         if (serverInstance.currentVoiceNextConnection.isDisposed())
                             sentOutOfTrack = true;
                     }
@@ -955,7 +960,7 @@ namespace CatBot.Music
         exit:;
             currentlyPlayingSong?.Dispose();
             isPlaying = false;
-            isThreadAlive = false;
+            isMainPlayRunning = false;
         }
 
         async Task SendCurrentlyPlayingSong(BotServerInstance serverInstance)
@@ -967,8 +972,8 @@ namespace CatBot.Music
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"waveform.png", MusicUtils.GetMusicWaveform(serverInstance.musicPlayer.currentlyPlayingSong, true));
             DiscordMessage cacheWaveformMessage = await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder);
             embed = embed.WithImageUrl(cacheWaveformMessage.Attachments[0].Url);
-            IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
             DiscordEmbed messageEmbed = string.IsNullOrEmpty(albumThumbnailLink) ? embed.Build() : embed.WithThumbnail(albumThumbnailLink).Build();
+            IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
             if (lastNowPlayingMessage == null || lastMessage[0] != lastNowPlayingMessage)
             {
                 if (lastNowPlayingMessage != null)
@@ -1005,9 +1010,9 @@ namespace CatBot.Music
 
         void InitMainPlay()
         {
-            if (!isThreadAlive)
+            if (!isMainPlayRunning)
             {
-                isThreadAlive = true;
+                isMainPlayRunning = true;
                 new Thread(async() => await MainPlay(cts.Token)) { IsBackground = true }.Start();
             }
         }

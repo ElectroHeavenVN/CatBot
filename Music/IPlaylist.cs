@@ -1,4 +1,5 @@
-﻿using CatBot.Music.SponsorBlock;
+﻿using System.Threading;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
 
 namespace CatBot.Music
@@ -11,6 +12,7 @@ namespace CatBot.Music
         string Description { get; }
         string Author { get; }
         string ThumbnailLink { get; }
+        Thread AddSongsInPlaylistThread { get; }
         DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed);
         string GetPlaylistDesc();
         void SetSponsorBlockOptions(SponsorBlockOptions sponsorBlockOptions);

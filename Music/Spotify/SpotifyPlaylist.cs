@@ -26,6 +26,7 @@ namespace CatBot.Music.Spotify
         string type;
         MusicQueue musicQueue;
         int songCount;
+        Thread addSongsThread;
 
         public SpotifyPlaylist() { }
         public SpotifyPlaylist(string link, MusicQueue queue)
@@ -82,7 +83,8 @@ namespace CatBot.Music.Spotify
                     author = Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}"));
                     thumbnailLink = artist.Images.Aggregate((i1, i2) => i1.Width * i1.Height > i2.Width * i2.Height ? i1 : i2).Url;
                 }
-                new Thread(() => AddTracks(id)) { IsBackground = true }.Start();
+                addSongsThread = new Thread(() => AddTracks(id)) { IsBackground = true };
+                addSongsThread.Start();
             }
             else
                 throw new NotAPlaylistException();
@@ -97,6 +99,8 @@ namespace CatBot.Music.Spotify
         public string ThumbnailLink => thumbnailLink;
 
         public long TracksCount => songCount;
+
+        public Thread AddSongsInPlaylistThread => addSongsThread;
 
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by Spotify", SpotifyMusic.spotifyIconLink);
 

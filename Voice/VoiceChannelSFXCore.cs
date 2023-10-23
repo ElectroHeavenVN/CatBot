@@ -291,7 +291,7 @@ namespace CatBot.Voice
                     serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
                 serverInstance.musicPlayer.musicQueue.Clear();
                 serverInstance.isDisconnect = true;
-                serverInstance.musicPlayer.isThreadAlive = false;
+                serverInstance.musicPlayer.isMainPlayRunning = false;
                 serverInstance.musicPlayer.sentOutOfTrack = true;
                 serverInstance.musicPlayer.cts.Cancel();
                 serverInstance.musicPlayer.cts = new CancellationTokenSource();
