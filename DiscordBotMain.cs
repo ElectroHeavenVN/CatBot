@@ -22,6 +22,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus.SlashCommands.EventArgs;
 
 namespace CatBot
 {
@@ -65,7 +66,6 @@ namespace CatBot
                 Intents = DiscordIntents.All,
                 MinimumLogLevel = LogLevel.Information,
             });
-            botClient.MessageCreated += BotClient_MessageCreated;
             botClient.GuildDownloadCompleted += BotClient_GuildDownloadCompleted;
             botClient.VoiceStateUpdated += BotClient_VoiceStateUpdated;
             try
@@ -89,22 +89,23 @@ namespace CatBot
                     CaseSensitive = true,
                     EnableDms = false,
                 });
+                commandNext.CommandErrored += (_, args) => LogException(args.Exception);
                 commandNext.RegisterCommands<AdminBaseCommand>();
-                //commandNext.RegisterCommands<EmojiReplyBaseCommands>();
                 commandNext.RegisterCommands<GlobalBaseCommands>();
                 commandNext.RegisterCommands<MusicPlayerBaseCommands>();
-                //commandNext.RegisterCommands<TTSBaseCommands>();
                 commandNext.RegisterCommands<VoiceChannelSFXBaseCommands>();
+                //commandNext.RegisterCommands<TTSBaseCommands>();
+                //commandNext.RegisterCommands<EmojiReplyBaseCommands>();
                 commandNext.SetHelpFormatter<HelpFormatter>();
             }
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
-
+            slashCommand.SlashCommandErrored += (_, args) => LogException(args.Exception);
             slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
-            //slashCommand.RegisterCommands<EmojiReplySlashCommands>();
-            //slashCommand.RegisterCommands<TTSSlashCommands>();
             slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
             slashCommand.RegisterCommands<GlobalSlashCommands>();
             slashCommand.RegisterCommands<AdminSlashCommands>(Config.gI().MainServerID);
+            //slashCommand.RegisterCommands<EmojiReplySlashCommands>();
+            //slashCommand.RegisterCommands<TTSSlashCommands>();
 
             botClient.UseVoiceNext(new VoiceNextConfiguration());
 
@@ -118,7 +119,7 @@ namespace CatBot
             await Task.Delay(Timeout.Infinite);
         }
 
-        private static void UpdateYTDlp()
+        static void UpdateYTDlp()
         {
             while (true)
             {
@@ -169,7 +170,7 @@ namespace CatBot
             }
         }
 
-        private static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
+        static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
         {
             await Task.Run(() =>
             {
@@ -183,7 +184,7 @@ namespace CatBot
             new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();
         }
 
-        private static async Task ChangeStatus()
+        static async Task ChangeStatus()
         {
             int count = 0;
             while (true)
@@ -228,13 +229,12 @@ namespace CatBot
             }
         }
 
-        private static async Task BotClient_MessageCreated(DiscordClient sender, MessageCreateEventArgs args)
-        {
-            if (args.Message.Author.Id == botClient.CurrentUser.Id)
-                return;
-            await EmojiReplyCore.onMessageReceived(args.Message);
-        }
+        static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.OnVoiceStateUpdated(args);
 
-        private static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.OnVoiceStateUpdated(args);
+        static Task LogException(Exception ex)
+        {
+            Utils.LogException(ex);
+            return Task.CompletedTask;
+        }
     }
 }

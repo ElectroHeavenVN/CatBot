@@ -21,12 +21,11 @@ namespace CatBot.Music.NhacCuaTui
         internal static readonly string nhacCuaTuiLink = "https://www.nhaccuatui.com/";
         internal static Regex regexMatchIDSong = new Regex(".*-\\.([a-zA-Z0-9]*)\\.html", RegexOptions.Compiled);
         static readonly string findArtistLink = "https://www.nhaccuatui.com/tim-kiem?b=singer&q=";
-        static readonly string nhacCuaTuiIconLink = "https://cdn.discordapp.com/emojis/1124397223359299725.webp?quality=lossless";  //You may need to change this
+        static readonly string nhacCuaTuiIconLink = "https://cdn.discordapp.com/emojis/1124397223359299725.webp?quality=lossless";  
         string link;
         TimeSpan duration;
         string title = "";
         string artists = "";
-        string album;
         string albumThumbnailLink;
         string mp3FilePath;
         string pcmFile;
@@ -103,7 +102,7 @@ namespace CatBot.Music.NhacCuaTui
 
         public string Artists => artists;
 
-        public string Album => album;
+        public string Album => null;
 
         public string AlbumThumbnailLink => albumThumbnailLink;
 
@@ -158,8 +157,6 @@ namespace CatBot.Music.NhacCuaTui
                 Thread.Sleep(500);
             string musicDesc = $"Bài hát: {title}" + Environment.NewLine;
             musicDesc += $"Nghệ sĩ: {artists}" + Environment.NewLine;
-            if (!string.IsNullOrWhiteSpace(album))
-                musicDesc += $"Album: {album}" + Environment.NewLine;
             if (hasTimeStamp)
                 musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else

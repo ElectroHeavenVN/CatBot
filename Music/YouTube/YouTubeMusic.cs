@@ -35,7 +35,6 @@ namespace CatBot.Music.YouTube
         TimeSpan durationBeforeSponsorBlock;
         string title = "";
         string artists = "";
-        string album;
         string albumThumbnailLink;
         string webmFilePath;
         string pcmFile;
@@ -84,27 +83,23 @@ namespace CatBot.Music.YouTube
 
         public void Download()
         {
+            while (sponsorBlockOptions == null)
+                Thread.Sleep(100);
             try
             {
-                while (sponsorBlockOptions == null)
-                    Thread.Sleep(100);
-                try
-                {
-                    string sponsorBlockJSON = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}");
-                    sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
-                    hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
-                }
-                catch (WebException) { }
-                MusicUtils.DownloadWEBMFromYouTube(link, ref webmFilePath);
-                TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
-                duration = webmFile.Properties.Duration;
-                webmFile.Dispose();
-                canGetStream = true;
-                musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
-                File.Delete(webmFilePath);
-                webmFilePath = null;
+                string sponsorBlockJSON = new WebClient().DownloadString($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join(",", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}");
+                sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
+                hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
             }
-            catch (Exception ex) { Utils.LogException(ex); }
+            catch (WebException) { }
+            MusicUtils.DownloadWEBMFromYouTube(link, ref webmFilePath);
+            TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
+            duration = webmFile.Properties.Duration;
+            webmFile.Dispose();
+            canGetStream = true;
+            musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
+            File.Delete(webmFilePath);
+            webmFilePath = null;
         }
 
         ~YouTubeMusic() => Dispose(false);
@@ -119,7 +114,7 @@ namespace CatBot.Music.YouTube
 
         public string Artists => artists;
 
-        public string Album => album;
+        public string Album => null;
 
         public string AlbumThumbnailLink => albumThumbnailLink;
 

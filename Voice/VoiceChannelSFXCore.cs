@@ -78,64 +78,60 @@ namespace CatBot.Voice
 
         internal static async Task Dictionary(SnowflakeObject messageToReply)
         {
-            try
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
+            serverInstance.lastChannel = messageToReply.TryGetChannel();
+            FileInfo[] sfxs = new DirectoryInfo(Config.gI().SFXFolder).GetFiles();
+            List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+            string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
+            embeds[0].Title = $"Danh sách file ({sfxs.Length} file, {totalSize})";
+            for (int i = 0; i < sfxs.Length; i++)
             {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
-                serverInstance.lastChannel = messageToReply.TryGetChannel();
-                FileInfo[] sfxs = new DirectoryInfo(Config.gI().SFXFolder).GetFiles();
-                List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
-                string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
-                embeds[0].Title = $"Danh sách file ({sfxs.Length} file, {totalSize})";
-                for (int i = 0; i < sfxs.Length; i++)
+                string description = embeds.Last().Description + Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                if (description.Length > 2048 - 38 + Config.gI().DefaultPrefix.Length)
                 {
-                    string description = embeds.Last().Description + Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                    embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+                    embeds.Add(new DiscordEmbedBuilder());
+                    description = Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                }
+                embeds.Last().Description = description;
+            }
+            embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+            if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+                embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
+            if (messageToReply is DiscordMessage message)
+                await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
+            else if (messageToReply is DiscordInteraction interaction)
+                await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
+            foreach (DiscordEmbedBuilder embed in embeds.Skip(1))
+            {
+                await Task.Delay(200);
+                await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
+            }
+            if (((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+            {
+                List<FileInfo> sfxSpecials = new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles().ToList();
+                List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+                sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
+                string totalSizeSpecial = Utils.GetMemorySize((ulong)sfxSpecials.Select(f => f.Length).Sum());
+                embeds2[0].Title = $"Danh sách file đặc biệt ({sfxSpecials.Count} file, {totalSizeSpecial})";
+                for (int i = 0; i < sfxSpecials.Count; i++)
+                {
+                    string description = embeds2.Last().Description + Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                     if (description.Length > 2048 - 38 + Config.gI().DefaultPrefix.Length)
                     {
-                        embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
-                        embeds.Add(new DiscordEmbedBuilder());
-                        description = Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
+                        embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ');
+                        embeds2.Add(new DiscordEmbedBuilder());
+                        description = Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                     }
-                    embeds.Last().Description = description;
+                    embeds2.Last().Description = description;
                 }
-                embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
-                if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
-                    embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
-                if (messageToReply is DiscordMessage message)
-                    await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
-                else if (messageToReply is DiscordInteraction interaction)
-                    await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
-                foreach (DiscordEmbedBuilder embed in embeds.Skip(1))
+                embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
+                foreach (DiscordEmbedBuilder embed in embeds2)
                 {
                     await Task.Delay(200);
                     await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
                 }
-                if (((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
-                {
-                    List<FileInfo> sfxSpecials = new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles().ToList();
-                    List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
-                    sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
-                    string totalSizeSpecial = Utils.GetMemorySize((ulong)sfxSpecials.Select(f => f.Length).Sum());
-                    embeds2[0].Title = $"Danh sách file đặc biệt ({sfxSpecials.Count} file, {totalSizeSpecial})";
-                    for (int i = 0; i < sfxSpecials.Count; i++)
-                    {
-                        string description = embeds2.Last().Description + Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
-                        if (description.Length > 2048 - 38 + Config.gI().DefaultPrefix.Length)
-                        {
-                            embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ');
-                            embeds2.Add(new DiscordEmbedBuilder());
-                            description = Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
-                        }
-                        embeds2.Last().Description = description;
-                    }
-                    embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
-                    foreach (DiscordEmbedBuilder embed in embeds2)
-                    {
-                        await Task.Delay(200);
-                        await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
-                    }
-                }
             }
-            catch (Exception ex) { Utils.LogException(ex); }
         }
 
         internal static async Task Disconnect(SnowflakeObject messageToReact)

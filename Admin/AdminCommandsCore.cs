@@ -29,17 +29,7 @@ namespace CatBot.Admin
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Dữ liệu nhập vào không hợp lệ!").AsEphemeral());
                 return;
             }
-            KeyValuePair<DiscordChannel, VoiceNextConnection> keyValuePair;
-            try
-            {
-                keyValuePair = await BotServerInstance.JoinVoiceChannel(channelID);
-            }
-            catch (Exception ex)
-            {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"```\r\n{ex}\r\n```").AsEphemeral());
-                Utils.LogException(ex);
-                return;
-            }
+            KeyValuePair<DiscordChannel, VoiceNextConnection> keyValuePair = await BotServerInstance.JoinVoiceChannel(channelID);
             if (keyValuePair.Key == null)
                 await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy kênh thoại với ID {channelID}!").AsEphemeral());
             else if (keyValuePair.Value == null)
@@ -110,7 +100,7 @@ namespace CatBot.Admin
                 catch (Exception ex)
                 {
                     await message.RespondAsync($"Có lỗi xảy ra khi thêm SFX {Path.GetFileNameWithoutExtension(attachment.FileName)}!");
-                    Utils.LogException(ex);
+                    throw;
                 }
             }
             await message.RespondAsync($"Đã thêm {message.Attachments.Count} SFX thành công!");
@@ -174,12 +164,12 @@ namespace CatBot.Admin
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại bot!").AsEphemeral());
         }
 
-        internal static async Task GetFieldValue(DiscordMessage message)
-        {
-            if (message.Channel != Config.gI().debugChannel)
-                return;
+        //internal static async Task GetFieldValue(DiscordMessage message)
+        //{
+        //    if (message.Channel != Config.gI().debugChannel)
+        //        return;
             
-        }
+        //}
 
         internal static async Task SetBotStatus(InteractionContext ctx, string name, ActivityType activityType)
         {

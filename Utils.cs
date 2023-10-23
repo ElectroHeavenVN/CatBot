@@ -140,7 +140,7 @@ namespace CatBot
             try
             {
                 if (reportException)
-                    Config.gI().exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```");
+                    Config.gI().exceptionReportChannel?.SendMessageAsync("```\r\n" + exceptionMessage + "\r\n```").GetAwaiter().GetResult();
             }
             catch (Exception ex2) { Console.WriteLine(ex2); }
         }

@@ -21,7 +21,7 @@ namespace CatBot.Voice
             serverInstance.lastChannel = message.TryGetChannel();
             if (serverInstance.isVoicePlaying)
             {
-                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Có người đang dùng lệnh rồi!").WithColor(DiscordColor.Yellow).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  //You may need to change this
+                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Có người đang dùng lệnh rồi!").WithColor(DiscordColor.Yellow).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  
                 return;
             }
             if (Enum.TryParse(voiceIDStr, true, out VoiceID voiceID))
@@ -32,28 +32,24 @@ namespace CatBot.Voice
                 }) { IsBackground = true }.Start();
             }
             else
-                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Giọng nói không hợp lệ!").WithColor(DiscordColor.Red).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  //You may need to change this
+                await message.TryRespondAsync(new DiscordEmbedBuilder().WithTitle("Giọng nói không hợp lệ!").WithColor(DiscordColor.Red).WithFooter("Powered by Zalo AI", "https://cdn.discordapp.com/emojis/1124415235961393193.webp?quality=lossless").Build());  
         }
 
         internal static async Task SetVolume(SnowflakeObject obj, long volume)
         {
-            try
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
+            if (volume == -1)
             {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
-                if (volume == -1)
-                {
-                    await obj.TryRespondAsync("Âm lượng TTS hiện tại: " + (int)(serverInstance.textToSpeech.volume * 100));
-                    return;
-                }
-                if (volume < 0 || volume > 250)
-                {
-                    await obj.TryRespondAsync("Âm lượng không hợp lệ!");
-                    return;
-                }
-                serverInstance.textToSpeech.volume = volume / 100d;
-                await obj.TryRespondAsync("Điều chỉnh âm lượng TTS thành: " + volume + "%!");
+                await obj.TryRespondAsync("Âm lượng TTS hiện tại: " + (int)(serverInstance.textToSpeech.volume * 100));
+                return;
             }
-            catch (Exception ex) { Utils.LogException(ex); }
+            if (volume < 0 || volume > 250)
+            {
+                await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                return;
+            }
+            serverInstance.textToSpeech.volume = volume / 100d;
+            await obj.TryRespondAsync("Điều chỉnh âm lượng TTS thành: " + volume + "%!");
         }
 
         async Task InternalSpeakTTS(SnowflakeObject message, string tts, VoiceID voiceId)
@@ -66,43 +62,35 @@ namespace CatBot.Voice
             MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(message.TryGetChannel().Guild);
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
-            try
+            MemoryStream ttsStream = await GetTTSPCMStream(tts, voiceId);
+            ttsStream.Position = 0;
+            if (musicPlayer.isPlaying)
             {
-                MemoryStream ttsStream = await GetTTSPCMStream(tts, voiceId);
-                ttsStream.Position = 0;
-                if (musicPlayer.isPlaying)
-                {
-                    byte[] data = new byte[ttsStream.Length + ttsStream.Length % 2];
-                    ttsStream.Read(data, 0, (int)ttsStream.Length);
-                    for (int i = 0; i < data.Length; i += 2)
-                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(data, i) * volume)), 0, data, i, sizeof(short));
-                    musicPlayer.sfxData.AddRange(data);
-                    while (musicPlayer.sfxData.Count != 0)
-                        await Task.Delay(100);
-                }
-                else
-                {
-                    while (ttsStream.Read(buffer, 0, buffer.Length) != 0)
-                    {
-                        if (serverInstance.voiceChannelSFX.isStop)
-                            break;
-                        while (!serverInstance.canSpeak)
-                            await Task.Delay(500);
-                        for (int i = 0; i < buffer.Length; i += 2)
-                            Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
-                        await serverInstance.WriteTransmitData(buffer);
-                    }
-                }
-                if (serverInstance.voiceChannelSFX.isStop)
-                    serverInstance.voiceChannelSFX.isStop = false;
-                if (message is DiscordInteraction interaction2)
-                    await interaction2.DeleteOriginalResponseAsync();
+                byte[] data = new byte[ttsStream.Length + ttsStream.Length % 2];
+                ttsStream.Read(data, 0, (int)ttsStream.Length);
+                for (int i = 0; i < data.Length; i += 2)
+                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(data, i) * volume)), 0, data, i, sizeof(short));
+                musicPlayer.sfxData.AddRange(data);
+                while (musicPlayer.sfxData.Count != 0)
+                    await Task.Delay(100);
             }
-            catch (Exception ex)
+            else
             {
-                Utils.LogException(ex);
-                await message.TryRespondAsync("```" + Environment.NewLine + ex + Environment.NewLine + "```");
+                while (ttsStream.Read(buffer, 0, buffer.Length) != 0)
+                {
+                    if (serverInstance.voiceChannelSFX.isStop)
+                        break;
+                    while (!serverInstance.canSpeak)
+                        await Task.Delay(500);
+                    for (int i = 0; i < buffer.Length; i += 2)
+                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                    await serverInstance.WriteTransmitData(buffer);
+                }
             }
+            if (serverInstance.voiceChannelSFX.isStop)
+                serverInstance.voiceChannelSFX.isStop = false;
+            if (message is DiscordInteraction interaction2)
+                await interaction2.DeleteOriginalResponseAsync();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
         }
 

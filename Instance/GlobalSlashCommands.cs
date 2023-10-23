@@ -12,7 +12,7 @@ namespace CatBot.Instance
     public class GlobalSlashCommands : ApplicationCommandModule
     {
         static string speakFile;
-        static string speak;
+        //static string speak;
         static string nextup;
         static string play;
         static string youtube;

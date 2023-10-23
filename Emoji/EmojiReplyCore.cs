@@ -10,27 +10,6 @@ namespace CatBot.Emoji
 {
     public class EmojiReplyCore
     {
-        internal static async Task onMessageReceived(DiscordMessage message)
-        {
-            //bool botAuthor = false;
-            //if (Config.gI().botAuthorsID.Contains(message.Author.Id))
-            //    botAuthor = true;
-            //if (!botAuthor)
-            //    return;
-            //if (message.Content.ToLower().Contains("khiêm lợn"))
-            //    await message.RespondAsync("<:khiem_1:1116025526063210567>" + DiscordEmoji.FromName(DiscordBotMain.botClient, ":pig:", true));
-            //if (message.Content.ToLower().Contains("lợn khiêm"))
-            //    await message.RespondAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":pig:", true) + "<:khiem_1:1116025526063210567>");
-            //if (message.Content.ToLower().Contains("khiêm ăn cứt"))
-            //    await message.RespondAsync("<:khiem_1:1116025526063210567>" + DiscordEmoji.FromName(DiscordBotMain.botClient, ":yum:", true) + DiscordEmoji.FromName(DiscordBotMain.botClient, ":poop:", true)); 
-            //if (message.Content.ToLower().Contains("cứt ăn khiêm"))
-            //    await message.RespondAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":poop:", true) + DiscordEmoji.FromName(DiscordBotMain.botClient, ":yum:", true) + "<:khiem_1:1116025526063210567>");
-            //if (message.Content.ToLower().Contains("khiêm gà"))
-            //    await message.RespondAsync("<:khiem_1:1116025526063210567>" + DiscordEmoji.FromName(DiscordBotMain.botClient, ":chicken:", true));
-            //if (message.Content.ToLower().Contains("khiêm sẽ gầy") || message.Content.Contains("khiem gay") || message.Content.Contains("khiêm gay"))
-            //    await message.RespondAsync("<:khiem_1:1116025526063210567>" + DiscordEmoji.FromName(DiscordBotMain.botClient, ":rainbow_flag:", true));
-        }
-
         public static async Task ReplyWithEmoji(SnowflakeObject obj, params string[] emojiNames)
         {
             string replyMessage1 = "";
