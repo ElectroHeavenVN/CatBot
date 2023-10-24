@@ -99,7 +99,7 @@ namespace CatBot.Admin
                 }
                 catch (Exception ex)
                 {
-                    await message.RespondAsync($"Có lỗi xảy ra khi thêm SFX {Path.GetFileNameWithoutExtension(attachment.FileName)}!");
+                    await message.RespondAsync($"Có lỗi xảy ra khi thêm SFX {Path.GetFileNameWithoutExtension(attachment.FileName)}!\r\n" + Formatter.BlockCode(ex.ToString()));
                     throw;
                 }
             }

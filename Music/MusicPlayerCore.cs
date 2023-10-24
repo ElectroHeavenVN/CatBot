@@ -67,12 +67,14 @@ namespace CatBot.Music
         DiscordMessage browseQueueMessage;
         bool isDeleteBrowseQueueButtonThreadRunning;
 
-        internal MusicPlayerCore() { }
+        internal MusicPlayerCore() 
+        {
+            DiscordBotMain.botClient.ComponentInteractionCreated += ButtonPressed;
+        }
 
-        internal MusicPlayerCore(BotServerInstance serverInstance)
+        internal MusicPlayerCore(BotServerInstance serverInstance) : this()
         {
             this.serverInstance = serverInstance;
-            DiscordBotMain.botClient.ComponentInteractionCreated += ButtonPressed;
         }
 
         internal static async Task Play(InteractionContext ctx, string input, MusicType musicType)
@@ -475,19 +477,18 @@ namespace CatBot.Music
                         serverInstance.musicPlayer.currentIndex = 0;
                 }
             }
-            else 
-            for (int i = 0; i < count - 1; i++)
+            else for (int i = 0; i < count - 1; i++)
+            {
+                int index = serverInstance.musicPlayer.currentIndex;
+                if (index >= serverInstance.musicPlayer.musicQueue.Count)
                 {
-                    int index = serverInstance.musicPlayer.currentIndex;
-                    if (index >= serverInstance.musicPlayer.musicQueue.Count)
-                    {
-                        serverInstance.musicPlayer.currentIndex = 0;
-                        break;
-                    }
-                    IMusic music = serverInstance.musicPlayer.musicQueue.DequeueAt(index);
-                    if (music != serverInstance.musicPlayer.currentlyPlayingSong)
-                        music.Dispose();
+                    serverInstance.musicPlayer.currentIndex = 0;
+                    break;
                 }
+                IMusic music = serverInstance.musicPlayer.musicQueue.DequeueAt(index);
+                if (music != serverInstance.musicPlayer.currentlyPlayingSong)
+                    music.Dispose();
+            }
             await ctx.CreateResponseAsync($"Đã bỏ qua {(count > 1 ? (count.ToString() + " bài nhạc") : "bài nhạc hiện tại")}!");
         }
 
@@ -818,7 +819,7 @@ namespace CatBot.Music
                                 }
                             }
                         }
-                        catch(ObjectDisposedException ex) { }
+                        catch(ObjectDisposedException) { }
                         if (token.IsCancellationRequested)
                             goto exit;
                         if (isSkipThisSong)
@@ -1148,10 +1149,10 @@ namespace CatBot.Music
             return embed;
         }
 
-        DiscordComponent[] GetMusicControlButtons(int rows)
+        DiscordButtonComponent[] GetMusicControlButtons(int rows)
         {
             if (rows == 1)
-                return new DiscordComponent[]
+                return new DiscordButtonComponent[]
                 {
                     new DiscordButtonComponent(ButtonStyle.Primary, "previous_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", !playMode.isLoopQueue, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":track_previous:"))),
                     new DiscordButtonComponent(ButtonStyle.Primary, "rewind_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":rewind:"))),
@@ -1160,7 +1161,7 @@ namespace CatBot.Music
                     new DiscordButtonComponent(ButtonStyle.Primary, "next_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", musicQueue.Count <= 0, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":track_next:")))
                 };
             if (rows == 2)
-                return new DiscordComponent[]
+                return new DiscordButtonComponent[]
                 {
                     new DiscordButtonComponent(ButtonStyle.Secondary, "volume-_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", volume <= 0.0, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":sound:"))),
                     new DiscordButtonComponent(ButtonStyle.Secondary, "lyric_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", lyricsShown, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":page_facing_up:"))),
@@ -1168,12 +1169,12 @@ namespace CatBot.Music
                     new DiscordButtonComponent(ButtonStyle.Secondary, "refresh_" + uniqueID + "_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":arrows_counterclockwise:"))),
                     new DiscordButtonComponent(ButtonStyle.Secondary, "volume+_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", volume >= 2.5, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":loud_sound:")))
                 };
-            return new DiscordComponent[0];
+            return new DiscordButtonComponent[0];
         }
 
-        DiscordComponent[] GetBrowseQueueButtons()
+        DiscordButtonComponent[] GetBrowseQueueButtons()
         {
-            return new DiscordComponent[]
+            return new DiscordButtonComponent[]
             {
                 new DiscordButtonComponent(ButtonStyle.Primary, "firstpage_" + uniqueID + "_browse_music_queue_" + serverInstance.server.Id, "", currentQueuePage == 1, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":rewind:"))),
                 new DiscordButtonComponent(ButtonStyle.Primary, "previouspage_" + uniqueID + "_browse_music_queue_" + serverInstance.server.Id, "", currentQueuePage == 1, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":arrow_backward:"))),
@@ -1244,16 +1245,23 @@ namespace CatBot.Music
 
         IMusic GetCurrentSong()
         {
-            if (nextIndex != -1)
+            if (nextIndex != -1 && !isPrevious)
                 currentIndex = nextIndex;
-            else
-            if (playMode.isRandom)
-                                RandomIndex();
-                            else if (playMode.isLoopQueue && !playMode.isLoopASong && !isFirstTimeDequeue)
-                                currentIndex++;
+            else if (playMode.isRandom)
+                RandomIndex();
+            else if (playMode.isLoopQueue && !playMode.isLoopASong && !isFirstTimeDequeue)
+            {
+                if (isPrevious)
+                    currentIndex--;
+                else
+                    currentIndex++;
+            }
+            isPrevious = false;
             isFirstTimeDequeue = false;
             if (currentIndex >= musicQueue.Count)
                 currentIndex = 0;
+            if (currentIndex < 0)
+                currentIndex = musicQueue.Count - 1;
             if (!playMode.isLoopQueue && !playMode.isLoopASong)
                 return musicQueue.DequeueAt(currentIndex);
             return musicQueue[currentIndex];
