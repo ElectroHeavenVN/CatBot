@@ -190,19 +190,21 @@ namespace CatBot
 
         public static bool IsBotOwner(ulong userId) => Config.gI().BotOwnersID.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
 
-        //internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
-        //{
-        //    List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder>();
-        //    string description = embed.Description;
-        //    while (description.Length > 4096)
-        //    {
-        //        DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
-        //        embedBuilder.Description = description.Substring(0, 4096);
-        //        description = description.Substring(4096);
-        //        embeds.Add(embedBuilder);
-        //    }
-        //    embeds[0] = embed.WithDescription(embeds[0].Description);
-        //    return embeds;
-        //}
+        internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
+        {
+            List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder>();
+            string description = embed.Description;
+            do
+            {
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder();
+                embedBuilder.Description = description.Length > 2000 ? description.Substring(0, 2000) : description;
+                description = description.Length > 2000 ? description.Substring(2000) : "";
+                embeds.Add(embedBuilder);
+            }
+            while (description.Length > 0);
+            embeds[embeds.Count - 1].Footer = embed.Footer;
+            embeds[0] = embed.WithDescription(embeds[0].Description).WithFooter();
+            return embeds;
+        }
     }
 }

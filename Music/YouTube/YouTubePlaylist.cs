@@ -30,7 +30,7 @@ namespace CatBot.Music.YouTube
         int hiddenVideos;
         SponsorBlockOptions sponsorBlockOptions;
         MusicQueue musicQueue;
-        Thread addSongsThread;
+        CancellationTokenSource addSongsInPlaylistCTS;
 
         public YouTubePlaylist() { }
         public YouTubePlaylist(string link, MusicQueue queue) 
@@ -70,8 +70,7 @@ namespace CatBot.Music.YouTube
                     }
                     catch (Exception) { throw new MusicException("playlist not found"); }
                 }
-                addSongsThread = new Thread(() => AddVideos(link)) { IsBackground = true };
-                addSongsThread.Start();
+                new Thread(() => AddVideos(link)) { IsBackground = true }.Start();
             }
             else
                 throw new NotAPlaylistException();
@@ -87,8 +86,11 @@ namespace CatBot.Music.YouTube
 
         public long TracksCount => 0;
 
-        public Thread AddSongsInPlaylistThread => addSongsThread;
-
+        public CancellationTokenSource AddSongsInPlaylistCTS
+        {
+            get => addSongsInPlaylistCTS;
+            set => addSongsInPlaylistCTS = value;
+        }
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicPlaylist ? " Music" : ""), isYouTubeMusicPlaylist ? YouTubeMusic.youTubeMusicIconLink : YouTubeMusic.youTubeIconLink);
 
         public string GetPlaylistDesc()

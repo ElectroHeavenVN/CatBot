@@ -21,7 +21,7 @@ namespace CatBot.Instance
         DateTime lastTimeCheckVoiceChannel = DateTime.Now;
         Thread checkVoiceChannelThread;
         internal static List<BotServerInstance> serverInstances = new List<BotServerInstance>();
-        internal MusicPlayerCore musicPlayer = new MusicPlayerCore();
+        internal MusicPlayerCore musicPlayer;
         internal DiscordGuild server;
         internal VoiceNextConnection currentVoiceNextConnection;
         internal bool isDisconnect;
@@ -46,6 +46,7 @@ namespace CatBot.Instance
 
         internal BotServerInstance() 
         {
+            musicPlayer = new MusicPlayerCore(this);
             checkVoiceChannelThread = new Thread(() => CheckVoiceChannel(this));
         }
 

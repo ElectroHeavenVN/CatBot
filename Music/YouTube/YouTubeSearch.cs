@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
@@ -44,7 +45,7 @@ namespace CatBot.Music.YouTube
             }
             IReadOnlyList<VideoSearchResult> videoSearchResults = YouTubeMusic.ytClient.Search.GetVideosAsync(linkOrKeyword).GetAwaiter().GetResult();
             List<SearchResult> videos = new List<SearchResult>();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < Math.Min(videoSearchResults.Count, count); i++)
             {
                 videos.Add(new SearchResult(videoSearchResults[i].Url, videoSearchResults[i].Title, videoSearchResults[i].Author.ChannelTitle, videoSearchResults[i].Author.ChannelUrl, videoSearchResults[i].Thumbnails.TryGetWithHighestResolution().Url));
             }
