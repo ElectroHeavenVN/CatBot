@@ -28,6 +28,9 @@ namespace CatBot.Music.YouTube
         internal static readonly string youTubeIconLink = "https://www.gstatic.com/youtube/img/branding/favicon/favicon_144x144.png";
         internal static readonly string youTubeMusicIconLink = "https://www.gstatic.com/youtube/media/ytm/images/applauncher/music_icon_144x144.png";
         internal static readonly string sponsorBlockSegmentsAPI = "https://sponsor.ajay.app/api/skipSegments";
+        internal static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=video&key={0}&q={1}";
+        internal static readonly string getVideoInfoAPI = "https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails&key={0}&id={1}";
+
         internal static Regex regexMatchYTVideoLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu\\.be))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/|shorts\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         internal static Regex regexMatchYTMusicLink = new Regex("^((?:https?:)?\\/\\/)?((?:music\\.youtube\\.com))(\\/(?:[\\w\\-]+\\?v=|embed\\/|v\\/)?)([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
         string link;
@@ -71,13 +74,15 @@ namespace CatBot.Music.YouTube
             }
             else
             {
-                VideoSearchResult videoSearchResult = ytClient.Search.GetVideosAsync(linkOrKeyword).GetAwaiter().GetResult()[0];
-                videoID = videoSearchResult.Id;
-                link = videoSearchResult.Url;
-                title = Formatter.MaskedUrl(videoSearchResult.Title, new Uri(link));
-                artists = Formatter.MaskedUrl(videoSearchResult.Author.ChannelTitle, new Uri(videoSearchResult.Author.ChannelUrl));
-                albumThumbnailLink = videoSearchResult.Thumbnails.TryGetWithHighestResolution().Url;
-                durationBeforeSponsorBlock = videoSearchResult.Duration.Value;
+                JToken searchResource = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(searchVideoAPI, Config.gI().GoogleAPIKey, Uri.EscapeUriString(linkOrKeyword))))["items"][0];
+                videoID = searchResource["id"]["videoId"].ToString();
+                link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
+                title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
+                artists = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())}](https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]})";
+                albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
+                string json = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(string.Format(getVideoInfoAPI, Config.gI().GoogleAPIKey, Uri.EscapeUriString(searchResource["id"]["videoId"].ToString())));
+                JToken videoResource = JObject.Parse(json)["items"][0];
+                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
             }
         }
 

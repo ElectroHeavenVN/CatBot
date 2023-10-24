@@ -1,15 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using System.Net;
+using System.Text;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Search;
 using YoutubeExplode.Videos;
+using System.Linq;
 
 namespace CatBot.Music.YouTube
 {
     internal static class YouTubeSearch
     {
+        private static readonly string searchVideoAPI = "https://youtube.googleapis.com/youtube/v3/search?part=snippet&type=video";
+
         internal static List<SearchResult> Search(string linkOrKeyword, int count = 25)
         {
             if (YouTubePlaylist.regexMatchYTPlaylistLink.IsMatch(linkOrKeyword))
@@ -43,13 +49,8 @@ namespace CatBot.Music.YouTube
                     new SearchResult(video.Url, video.Title, video.Author.ChannelTitle, video.Author.ChannelUrl, video.Thumbnails.TryGetWithHighestResolution().Url)
                 };
             }
-            IReadOnlyList<VideoSearchResult> videoSearchResults = YouTubeMusic.ytClient.Search.GetVideosAsync(linkOrKeyword).GetAwaiter().GetResult();
-            List<SearchResult> videos = new List<SearchResult>();
-            for (int i = 0; i < Math.Min(videoSearchResults.Count, count); i++)
-            {
-                videos.Add(new SearchResult(videoSearchResults[i].Url, videoSearchResults[i].Title, videoSearchResults[i].Author.ChannelTitle, videoSearchResults[i].Author.ChannelUrl, videoSearchResults[i].Thumbnails.TryGetWithHighestResolution().Url));
-            }
-            return videos;
+            JObject searchResult = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&maxResults={count}&key={Config.gI().GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"));
+            return searchResult["items"].Select(sR => new SearchResult($"https://www.youtube.com/watch?v={sR["id"]["videoId"]}", WebUtility.HtmlDecode(sR["snippet"]["title"].ToString()), $"{WebUtility.HtmlDecode(sR["snippet"]["channelTitle"].ToString())}", $"https://www.youtube.com/channel/{sR["snippet"]["channelId"]}", sR["snippet"]["thumbnails"]["high"]["url"].ToString())).ToList();
         }
     }
 }
