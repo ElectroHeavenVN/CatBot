@@ -56,7 +56,7 @@ namespace CatBot.Music.Spotify
             track = spClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
             title = Formatter.MaskedUrl(track.Title, new Uri(track.Url));
             foreach (Artist artist in track.Artists)
-                artists += Formatter.MaskedUrl(artist.Name, new Uri("https://open.spotify.com/artist/{artist.Id}")) + ", ";
+                artists += Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}")) + ", ";
             artists = artists.TrimEnd(", ".ToCharArray());
             album = Formatter.MaskedUrl(track.Album.Name, new Uri($"https://open.spotify.com/album/{track.Album.Id}"));
             if (track.Album.Images.Count != 0)

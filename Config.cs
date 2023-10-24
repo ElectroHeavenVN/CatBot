@@ -146,8 +146,6 @@ namespace CatBot
         [JsonProperty("LyricAPI")]
         internal string LyricAPI { get; set; } = "https://lyrist.vercel.app/api/";
 
-        [JsonProperty("LocalMusicIcon")]
-        internal string LocalMusicIcon { get; set; } = "";
         [JsonProperty("NCTIcon")]
         internal string NCTIcon { get; set; } = "";
         [JsonProperty("ZingMP3Icon")]

@@ -141,7 +141,7 @@ namespace CatBot.Music.Local
 
         public string[] GetFilesInUse() => new string[] { pcmFile };
 
-        public string GetIcon() => Config.gI().LocalMusicIcon;
+        public string GetIcon() => "\ud83d\udcc1";
 
         public void Dispose()
         {
