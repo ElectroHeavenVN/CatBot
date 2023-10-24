@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using System.Linq;
 using System.Net;
 using System.Text;
+using Newtonsoft.Json.Linq;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
-using YoutubeExplode.Search;
 using YoutubeExplode.Videos;
-using System.Linq;
 
 namespace CatBot.Music.YouTube
 {

@@ -14,6 +14,7 @@ using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json.Linq;
 
@@ -310,7 +311,11 @@ namespace CatBot.Music
             DiscordEmbedBuilder embed = await serverInstance.musicPlayer.GetCurrentlyPlayingEmbed(hasTimeStamp: true);
             IReadOnlyList<DiscordMessage> lastMessage = await serverInstance.musicPlayer.lastChannel.GetMessagesAsync(1);
             if (serverInstance.musicPlayer.lastNowPlayingMessage != null && lastMessage[0] != serverInstance.musicPlayer.lastNowPlayingMessage)
-                await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                try
+                {
+                    await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                }
+                catch (NotFoundException) { }
             MusicPlayerCore musicPlayer = serverInstance.musicPlayer;
             musicPlayer.lastNowPlayingMessage = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(1)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(2)));
         }
@@ -835,11 +840,22 @@ namespace CatBot.Music
                             if (lastNowPlayingMessage == null || lastMessage[0] != lastNowPlayingMessage)
                             {
                                 if (lastNowPlayingMessage != null)
-                                    await lastNowPlayingMessage.DeleteAsync();
+                                    try
+                                    {
+                                        await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                                    }
+                                    catch (NotFoundException) { }
                                 lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
                             }
                             else
-                                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                                try
+                                {
+                                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                                }
+                                catch (NotFoundException)
+                                {
+                                    lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                                }
                         }
                         if (addSongsInPlaylistCTS.IsCancellationRequested)
                             addSongsInPlaylistCTS = new CancellationTokenSource();
@@ -873,11 +889,22 @@ namespace CatBot.Music
             if (lastNowPlayingMessage == null || lastMessage[0] != lastNowPlayingMessage)
             {
                 if (lastNowPlayingMessage != null)
-                await lastNowPlayingMessage.DeleteAsync();
+                    try
+                    {
+                        await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                    }
+                    catch (NotFoundException) { }
                 lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
             }
             else
-            lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                try
+                {
+                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                }
+                catch (NotFoundException)
+                {
+                    lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                }
         }
 
         async Task UpdateCurrentlyPlayingButtons()
@@ -886,7 +913,14 @@ namespace CatBot.Music
                 return;
             if (musicQueue.Count == 0 && currentlyPlayingSong == null)
                 return;
-            lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+            try
+            {
+                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+            }
+            catch (NotFoundException)
+            {
+                lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+            }
         }
 
         async Task<DiscordEmbedBuilder> GetCurrentlyPlayingEmbed(bool hasTimeStamp = false)
