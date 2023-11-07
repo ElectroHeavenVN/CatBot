@@ -1050,7 +1050,10 @@ namespace CatBot.Music
                     //row 2
                     else if (id == "volume-")
                     {
-                        volume -= 0.1;
+                        if (volume <= 0.1)
+                            volume -= 0.01;
+                        else 
+                            volume -= 0.1;
                         if (volume < 0.0)
                             volume = 0.0;
                         await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
@@ -1208,6 +1211,7 @@ namespace CatBot.Music
                 browseQueueMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbeds(browseQueueMessage.Embeds));
             }
             catch (NotFoundException) { }
+            isDeleteBrowseQueueButtonThreadRunning = false;
         }
 
         void PrepareNextSong()

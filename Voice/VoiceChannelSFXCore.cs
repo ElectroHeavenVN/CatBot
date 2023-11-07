@@ -190,7 +190,6 @@ namespace CatBot.Voice
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             string filesNotFound = "";
             string previousFileName = "";
-            List<byte> sfxData = new List<byte>();
             for (int i = 0; i < fileNames.Length; i++)
             {
                 string fileName = fileNames[i];
@@ -208,7 +207,7 @@ namespace CatBot.Voice
                 {
                     file = File.OpenRead(Path.Combine(Config.gI().SFXFolder, fileName.TrimEnd(',') + ".pcm"));
                 }
-                catch (FileNotFoundException ex)
+                catch (IOException)
                 {
                     if (message.TryGetUser() is DiscordMember member && member.isInAdminServer())
                     {
@@ -216,27 +215,29 @@ namespace CatBot.Voice
                         {
                             file = File.OpenRead(Path.Combine(Config.gI().SFXFolderSpecial, fileName.TrimEnd(',') + ".pcm"));
                         }
-                        catch (FileNotFoundException ex2)
+                        catch (IOException)
                         {
-                            filesNotFound += Path.GetFileNameWithoutExtension(ex2.FileName) + ", ";
+                            filesNotFound += fileName.Replace(".pcm", "") + ", ";
                             continue;
                         }
                     }
                     else
                     {
-                        filesNotFound += Path.GetFileNameWithoutExtension(ex.FileName) + ", ";
+                        filesNotFound += fileName.Replace(".pcm", "") + ", ";
                         continue;
                     }
                 }
-                if (musicPlayer.isPlaying)
+                if (musicPlayer.isPlaying && !musicPlayer.isPaused)
                 {
                     byte[] buffer = new byte[file.Length + file.Length % 2];
                     file.Read(buffer, 0, (int)file.Length);
                     for (int j = 0; j < buffer.Length; j += 2)
                         Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
                     for (int j = 0; j < repeatTimes - 1; j++)
-                        sfxData.AddRange(buffer);
-                    sfxData.AddRange(new byte[2 * 16 * 48000 / 8 / 1000 * delay]);
+                    {
+                        musicPlayer.sfxData.AddRange(buffer);
+                        musicPlayer.sfxData.AddRange(new byte[2 * 16 * 48000 / 8 / 1000 * delay]);
+                    }
                 }
                 else 
                 {
@@ -245,7 +246,7 @@ namespace CatBot.Voice
                         await TransmitData(file, transmitSink, serverInstance);
                         if (isStop)
                             break;
-                        await Task.Delay(delay);
+                        await TransmitDelayData(2 * 16 * 48000 / 8 / 1000 * delay * 3 / 2, transmitSink, serverInstance);
                     }
                     if (isStop)
                     {
@@ -255,8 +256,7 @@ namespace CatBot.Voice
                 }
                 file.Close();
             }
-            musicPlayer.sfxData.AddRange(sfxData);
-            while (musicPlayer.sfxData.Count != 0)
+            while (musicPlayer.isPlaying && !musicPlayer.isPaused && musicPlayer.sfxData.Count != 0)
                 await Task.Delay(100);
             filesNotFound = filesNotFound.TrimEnd(',', ' ');
             string response = "";
@@ -355,7 +355,7 @@ namespace CatBot.Voice
             byte[] buffer = new byte[transmitSink.SampleLength];
             while (file.Read(buffer, 0, buffer.Length) != 0)
             {
-                if (isStop)
+                if (isStop || (serverInstance.musicPlayer.isPlaying && !serverInstance.musicPlayer.isPaused))
                     break;
                 while (!serverInstance.canSpeak)
                     await Task.Delay(500);
@@ -364,6 +364,23 @@ namespace CatBot.Voice
                 await serverInstance.WriteTransmitData(buffer);
             }
             file.Position = 0;
+        }
+
+        async Task TransmitDelayData(int length, VoiceTransmitSink transmitSink, BotServerInstance serverInstance)
+        {
+            MemoryStream emptyData = new MemoryStream(new byte[length]);
+            byte[] buffer = new byte[transmitSink.SampleLength];
+            while (emptyData.Read(buffer, 0, buffer.Length) != 0)
+            {
+                if (isStop || (serverInstance.musicPlayer.isPlaying && !serverInstance.musicPlayer.isPaused))
+                    break;
+                while (!serverInstance.canSpeak)
+                    await Task.Delay(500);
+                for (int i = 0; i < buffer.Length; i += 2)
+                    Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                await serverInstance.WriteTransmitData(buffer);
+            }
+            emptyData.Close();
         }
     }
 }

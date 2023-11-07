@@ -253,17 +253,21 @@ namespace CatBot.Instance
             for (int i = 0; i < serverInstances.Count; i++)
                 if (serverInstances[i].server.Id == serverID)
                 {
-                    if (!serverInstances[i].currentVoiceNextConnection.isDisposed())
+                    try
                     {
-                        serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
-                        serverInstances[i].currentVoiceNextConnection.Disconnect();
-                        serverInstances[i].musicPlayer.playMode = new PlayMode();
-                        serverInstances[i].checkVoiceChannelThread.Abort();
-                        await Task.Delay(1000);
+                        if (!serverInstances[i].currentVoiceNextConnection.isDisposed())
+                        {
+                            serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
+                            serverInstances[i].currentVoiceNextConnection.Disconnect();
+                            serverInstances[i].musicPlayer.playMode = new PlayMode();
+                            serverInstances[i].checkVoiceChannelThread.Abort();
+                            await Task.Delay(1000);
+                        }
+                        serverInstances[i] = null;
+                        serverInstances.RemoveAt(i);
+                        return;
                     }
-                    serverInstances[i] = null;
-                    serverInstances.RemoveAt(i);
-                    return;
+                    catch { }
                 }                
         }
 

@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands.EventArgs;
+using DSharpPlus.CommandsNext.Exceptions;
 
 namespace CatBot
 {
@@ -89,7 +90,12 @@ namespace CatBot
                     CaseSensitive = true,
                     EnableDms = false,
                 });
-                commandNext.CommandErrored += (_, args) => LogException(args.Exception);
+                commandNext.CommandErrored += (_, args) => 
+                {
+                    if (args.Exception is CommandNotFoundException)
+                        return Task.CompletedTask;
+                    return LogException(args.Exception);
+                }; 
                 commandNext.RegisterCommands<AdminBaseCommand>();
                 commandNext.RegisterCommands<GlobalBaseCommands>();
                 commandNext.RegisterCommands<MusicPlayerBaseCommands>();
@@ -99,7 +105,12 @@ namespace CatBot
                 commandNext.SetHelpFormatter<HelpFormatter>();
             }
             SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
-            slashCommand.SlashCommandErrored += (_, args) => LogException(args.Exception);
+            slashCommand.SlashCommandErrored += (_, args) =>
+            {
+                if (args.Exception is CommandNotFoundException)
+                    return Task.CompletedTask;
+                return LogException(args.Exception);
+            };
             slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
             slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
             slashCommand.RegisterCommands<GlobalSlashCommands>();
