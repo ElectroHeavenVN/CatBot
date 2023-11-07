@@ -41,7 +41,7 @@ jobs:
       run: pip install -U pyinstaller
         
     - name: Install required libraries
-      run: pip install -r zotify/requirements.txt
+      run: pip install -r zotify/requirements.txt && pip install git+https://github.com/kokarare1212/librespot-python
     
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
