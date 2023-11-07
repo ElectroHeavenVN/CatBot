@@ -653,14 +653,7 @@ namespace CatBot.Music
             serverInstance.musicPlayer.isPreparingNextSong = false;
             if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
                 serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
-            {
-                Title = $"{Math.Min(10, serverInstance.musicPlayer.musicQueue.Count)} bài hát tiếp theo trong hàng đợi (tổng số: {serverInstance.musicPlayer.musicQueue.Count})",
-            };
-            for (int i = 0; i < Math.Min(10, serverInstance.musicPlayer.musicQueue.Count); i++)
-                embed.Description += $"{i + 1}. {serverInstance.musicPlayer.musicQueue.ElementAt(i).GetIcon()} {serverInstance.musicPlayer.musicQueue.ElementAt(i).Title} - {serverInstance.musicPlayer.musicQueue.ElementAt(i).Artists}{Environment.NewLine}";
-            embed.Build();
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã trộn danh sách nhạc trong hàng đợi!").AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã trộn danh sách nhạc trong hàng đợi!"));
         }
 
         internal static async Task Lyric(InteractionContext ctx, string songName, string artistsName)

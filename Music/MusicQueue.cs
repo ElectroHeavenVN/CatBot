@@ -109,7 +109,8 @@ namespace CatBot.Music
         public void Shuffle()
         {
             List<IMusic> newQueue = new List<IMusic>();
-            for (int i = 0; i < Count; i++)
+            int count = Count;
+            for (int i = 0; i < count; i++)
                 newQueue.Add(DequeueAt(random.Next(0, Count)));
             _items = newQueue;
         }
