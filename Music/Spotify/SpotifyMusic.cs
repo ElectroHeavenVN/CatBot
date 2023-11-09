@@ -144,7 +144,7 @@ namespace CatBot.Music.Spotify
                 httpClient.AddHeader("User-Agent", Config.gI().UserAgent);
                 httpClient.AddHeader("Cookie", Config.gI().SpotifyCookie);
                 MusicUtils.SetCookie(httpClient, Config.gI().SpotifyCookie);
-                JObject responseContent =JObject.Parse(httpClient.Get(url).ToString());
+                JObject responseContent = JObject.Parse(httpClient.Get(url).ToString());
                 token = responseContent["accessToken"].ToString();
                 tokenExpireTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(double.Parse(responseContent["accessTokenExpirationTimestampMs"].ToString())).ToLocalTime();
             }
@@ -154,6 +154,7 @@ namespace CatBot.Music.Spotify
                 Leaf.xNet.HttpRequest httpClient = new Leaf.xNet.HttpRequest();
                 httpClient.AddHeader("app-platform", "WebPlayer");
                 httpClient.Authorization = $"Bearer {token}";
+                httpClient.AddHeader("Accept-Language", "en");
                 try
                 {
                     JObject lyricData = JObject.Parse(httpClient.Get(url).ToString());
