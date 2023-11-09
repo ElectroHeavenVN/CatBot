@@ -29,13 +29,22 @@ namespace CatBot.Music
         {
             if (musicType == 0)
                 throw new NullReferenceException();
-            Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
-            foreach (Type type in musicTypes)
+            try
             {
-                ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
-                if (singletonInstance.MusicType == musicType)
-                    return (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { keywordOrPath });
+                Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
+                foreach (Type type in musicTypes)
+                {
+                    ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
+                    if (singletonInstance.MusicType == musicType)
+                        return (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { keywordOrPath });
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex is TargetInvocationException && ex.InnerException is MusicException)
+                    throw ex.InnerException;
+                throw new MusicException("not found");
             }
             throw new ArgumentOutOfRangeException();
         }
