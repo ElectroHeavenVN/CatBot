@@ -84,6 +84,8 @@ namespace CatBot.Music
                     {
                         if (ex.InnerException is NotAPlaylistException)
                             continue;
+                        if (ex.InnerException is MusicException)
+                            throw;
                     }
                     return true;
                 }
@@ -277,7 +279,7 @@ namespace CatBot.Music
             {
                 CheckZingMP3Version();
                 httpRequestWithCookie = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                SetCookie(httpRequestWithCookie, $"zmp3_app_version.1={ZingMP3Music.zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
+                httpRequestWithCookie.SetCookie($"zmp3_app_version.1={ZingMP3Music.zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
                 httpRequestWithCookie.UserAgent = Config.gI().UserAgent;
                 httpRequestWithCookie.AcceptEncoding = "gzip, deflate, br";
                 httpRequestWithCookie.Referer = ZingMP3Music.zingMP3Link;
@@ -341,7 +343,7 @@ namespace CatBot.Music
             return result;
         }
 
-        internal static void SetCookie(HttpRequest httpRequest, string cookies, bool RemoveOldCookie = true)
+        internal static void SetCookie(this HttpRequest httpRequest, string cookies, bool RemoveOldCookie = true)
         {
             cookies = cookies.Replace("Cookie: ", "");
             string[] array = cookies.Split(';');
@@ -360,10 +362,31 @@ namespace CatBot.Music
                 {
                     httpRequest.Cookies.Add(new Cookie(cookie[0].Trim(), value));
                 }
-                catch
-                {
-                }
+                catch { }
             }
+        }
+
+        internal static CookieContainer GetCookie(string domain, string cookies)
+        {
+            cookies = cookies.Replace("Cookie: ", "");
+            string[] array = cookies.Split(';');
+            CookieContainer result = new CookieContainer();
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (!array[i].Contains("="))
+                    continue;
+                string[] cookie = array[i].Split('=');
+                string value = "";
+                for (int j = 1; j < cookie.Length; j++)
+                    value += cookie[j].Trim() + "=";
+                value = value.Remove(value.Length - 1);
+                try
+                {
+                    result.Add(new Uri(domain), new Cookie(cookie[0].Trim(), value));
+                }
+                catch { }
+            }
+            return result;
         }
 
         internal static void SetCookie(this HttpWebRequest httpRequest, string cookies, string path, string domain, bool RemoveOldCookie = true)
@@ -381,9 +404,7 @@ namespace CatBot.Music
                 {
                     httpRequest.CookieContainer.Add(new Cookie(cookie[0].Trim(), cookie[1].Trim(), path, domain));
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }

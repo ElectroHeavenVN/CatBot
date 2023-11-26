@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using CatBot.Extension;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -28,7 +29,7 @@ namespace CatBot.Music.Spotify
         string album = "";
         string albumThumbnailLink = "";
         string trackID = "";
-        internal static SpotifyClient spClient = new SpotifyClient();
+        internal static SpotifyClient spClient;
         Stream musicPCMDataStream;
         string audioFilePath;
         Track track;
@@ -40,6 +41,13 @@ namespace CatBot.Music.Spotify
         static string token;
         static DateTime tokenExpireTime = DateTime.Now;
 
+        static SpotifyMusic()
+        {
+            if (!string.IsNullOrEmpty(Config.gI().SpotifyCookie))
+                spClient = new SpotifyClient(new HttpClient(new HttpClientHandler() { CookieContainer = MusicUtils.GetCookie("https://open.spotify.com", Config.gI().SpotifyCookie) }));
+            else
+                spClient = new SpotifyClient();
+        }
         public SpotifyMusic() { }
         public SpotifyMusic(string linkOrKeyword)
         {
@@ -143,7 +151,7 @@ namespace CatBot.Music.Spotify
                 Leaf.xNet.HttpRequest httpClient = new Leaf.xNet.HttpRequest();
                 httpClient.AddHeader("User-Agent", Config.gI().UserAgent);
                 httpClient.AddHeader("Cookie", Config.gI().SpotifyCookie);
-                MusicUtils.SetCookie(httpClient, Config.gI().SpotifyCookie);
+                httpClient.SetCookie(Config.gI().SpotifyCookie);
                 JObject responseContent = JObject.Parse(httpClient.Get(url).ToString());
                 token = responseContent["accessToken"].ToString();
                 tokenExpireTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(double.Parse(responseContent["accessTokenExpirationTimestampMs"].ToString())).ToLocalTime();
