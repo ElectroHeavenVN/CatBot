@@ -656,6 +656,24 @@ namespace CatBot.Music
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã trộn danh sách nhạc trong hàng đợi!"));
         }
 
+        internal static async Task ReverseQueue(InteractionContext ctx)
+        {
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.musicPlayer.lastChannel = ctx.Channel;
+            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                return;
+            if (serverInstance.musicPlayer.musicQueue.Count == 0)
+            {
+                await ctx.CreateResponseAsync("Không có nhạc trong hàng đợi!");
+                return;
+            }
+            serverInstance.musicPlayer.musicQueue.Reverse();
+            serverInstance.musicPlayer.isPreparingNextSong = false;
+            if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đảo danh sách nhạc trong hàng đợi!"));
+        }
+
         internal static async Task Lyric(InteractionContext ctx, string songName, string artistsName)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);

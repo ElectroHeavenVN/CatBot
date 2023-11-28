@@ -29,7 +29,21 @@ namespace CatBot.Music.Spotify
         string album = "";
         string albumThumbnailLink = "";
         string trackID = "";
-        internal static SpotifyClient spClient;
+        static SpotifyClient spClient;
+        internal static SpotifyClient SPClient
+        {
+            get
+            {
+                if (spClient == null)
+                {
+                    if (!string.IsNullOrEmpty(Config.gI().SpotifyCookie))
+                        spClient = new SpotifyClient(new HttpClient(new HttpClientHandler() { CookieContainer = MusicUtils.GetCookie(".spotify.com", Config.gI().SpotifyCookie), ServerCertificateCustomValidationCallback = delegate { return true; } }));
+                    else
+                        spClient = new SpotifyClient();
+                }
+                return spClient;
+            }
+        }
         Stream musicPCMDataStream;
         string audioFilePath;
         Track track;
@@ -41,19 +55,12 @@ namespace CatBot.Music.Spotify
         static string token;
         static DateTime tokenExpireTime = DateTime.Now;
 
-        static SpotifyMusic()
-        {
-            if (!string.IsNullOrEmpty(Config.gI().SpotifyCookie))
-                spClient = new SpotifyClient(new HttpClient(new HttpClientHandler() { CookieContainer = MusicUtils.GetCookie("https://open.spotify.com", Config.gI().SpotifyCookie) }));
-            else
-                spClient = new SpotifyClient();
-        }
         public SpotifyMusic() { }
         public SpotifyMusic(string linkOrKeyword)
         {
             if (!regexMatchSpotifyLink.IsMatch(linkOrKeyword))
             {
-                List<TrackSearchResult> result = spClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
+                List<TrackSearchResult> result = SPClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
                 if (result.Count == 0)
                     throw new MusicException("songs not found");
                 linkOrKeyword = result[0].Url;
@@ -61,7 +68,7 @@ namespace CatBot.Music.Spotify
             if (linkOrKeyword.Contains("spotify.link"))
                 linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult().RequestMessage.RequestUri.ToString();
             link = linkOrKeyword;
-            track = spClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+            track = SPClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
             title = Formatter.MaskedUrl(track.Title, new Uri(track.Url));
             foreach (Artist artist in track.Artists)
                 artists += Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}")) + ", ";

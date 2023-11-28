@@ -353,14 +353,10 @@ namespace CatBot.Music
             {
                 if (!array[i].Contains("="))
                     continue;
-                string[] cookie = array[i].Split('=');
-                string value = "";
-                for (int j = 1; j < cookie.Length; j++)
-                    value += cookie[j].Trim() + "=";
-                value = value.Remove(value.Length - 1);
+                string[] cookie = array[i].Trim().Split('=');
                 try
                 {
-                    httpRequest.Cookies.Add(new Cookie(cookie[0].Trim(), value));
+                    httpRequest.Cookies.Add(new Cookie(cookie[0], cookie[1]));
                 }
                 catch { }
             }
@@ -375,14 +371,10 @@ namespace CatBot.Music
             {
                 if (!array[i].Contains("="))
                     continue;
-                string[] cookie = array[i].Split('=');
-                string value = "";
-                for (int j = 1; j < cookie.Length; j++)
-                    value += cookie[j].Trim() + "=";
-                value = value.Remove(value.Length - 1);
+                string[] cookie = array[i].Trim().Split('=');
                 try
                 {
-                    result.Add(new Uri(domain), new Cookie(cookie[0].Trim(), value));
+                    result.Add(new Cookie(cookie[0], cookie[1], "/", domain));
                 }
                 catch { }
             }

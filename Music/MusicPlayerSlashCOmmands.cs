@@ -109,6 +109,9 @@ namespace CatBot.Music
         [SlashCommand("shuffle", "Trộn danh sách nhạc trong hàng đợi")]
         public async Task ShuffleQueue(InteractionContext ctx) => await MusicPlayerCore.ShuffleQueue(ctx);
 
+        [SlashCommand("reverse", "Đảo danh sách nhạc trong hàng đợi")]
+        public async Task ReverseQueue(InteractionContext ctx) => await MusicPlayerCore.ReverseQueue(ctx);
+
         [SlashCommand("lyric", "Tìm lời bài hát (mặc định tìm lời bài hát đang phát)")]
         public async Task Lyric(InteractionContext ctx, [Option("name", "Tên bài hát")] string name = "", [Option("artists", "Tên nghệ sĩ")] string artistsName = "") => await MusicPlayerCore.Lyric(ctx, name, artistsName);
 

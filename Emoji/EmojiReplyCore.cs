@@ -27,7 +27,7 @@ namespace CatBot.Emoji
                     {
                         foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
                         {
-                            if (server == Config.gI().adminServer && !Config.gI().adminServer.Members.Keys.Contains(obj.TryGetUser().Id))
+                            if (server == Config.gI().adminServer && !Utils.isInAdminServer(obj.TryGetUser()))
                                 continue;
                             bool foundEmoji = false;
                             foreach (DiscordEmoji emoji2 in server.Emojis.Values)

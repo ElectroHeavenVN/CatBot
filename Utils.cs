@@ -1,21 +1,15 @@
-﻿using CatBot.Instance;
-using CatBot.Music;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.VoiceNext;
-using Leaf.xNet;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Security.Authentication;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
+using CatBot.Instance;
+using CatBot.Music;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.VoiceNext;
 
 namespace CatBot
 {
@@ -27,7 +21,8 @@ namespace CatBot
 
         public static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
 
-        public static bool isInAdminServer(this DiscordMember member) => Config.gI().adminServer.Members.Keys.Contains(member.Id);
+        //public static bool isInAdminServer(this DiscordUser user) => Config.gI().adminServer.Members.Keys.Contains(user.Id);
+        public static bool isInAdminServer(this DiscordUser user) => false;
 
         public static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
         {

@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands.EventArgs;
 using DSharpPlus.CommandsNext.Exceptions;
+using System.Net.Security;
 
 namespace CatBot
 {
@@ -43,7 +44,9 @@ namespace CatBot
 
         internal static void Main()
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(delegate { return true; });
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             string configPath = $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName)}_config.json";
             try
             {
