@@ -22,7 +22,7 @@ namespace CatBot
         public static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
 
         //public static bool isInAdminServer(this DiscordUser user) => Config.gI().adminServer.Members.Keys.Contains(user.Id);
-        public static bool isInAdminServer(this DiscordUser user) => false;
+        public static bool isInAdminUser(this DiscordUser user) => Config.gI().AdminUsers.Contains(user.Id) || IsBotOwner(user.Id);
 
         public static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
         {

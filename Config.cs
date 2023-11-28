@@ -1,13 +1,8 @@
-﻿using DSharpPlus.Entities;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using Newtonsoft.Json;
 
 namespace CatBot
 {
@@ -26,11 +21,10 @@ namespace CatBot
         internal DiscordGuild mainServer;
 
         /// <summary>
-        /// ID server admin (Server chứa các thành viên được sử dụng SFX đặc biệt và được sử dụng lệnh /emoji với emoji trong server này)
+        ///  Danh sách các thành viên được sử dụng SFX đặc biệt
         /// </summary>
-        [JsonProperty("AdminServerID")] 
-        internal ulong AdminServerID { get; set; }
-        internal DiscordGuild adminServer;
+        [JsonProperty("AdminUsers")] 
+        internal ulong[] AdminUsers { get; set; }
 
         /// <summary>
         /// ID kênh cache ảnh

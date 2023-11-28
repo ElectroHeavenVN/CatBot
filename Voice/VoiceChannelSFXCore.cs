@@ -96,7 +96,7 @@ namespace CatBot.Voice
                 embeds.Last().Description = description;
             }
             embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
-            if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+            if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminUser())
                 embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
             if (messageToReply is DiscordMessage message)
                 await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
@@ -107,7 +107,7 @@ namespace CatBot.Voice
                 await Task.Delay(200);
                 await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
             }
-            if (((DiscordMember)messageToReply.TryGetUser()).isInAdminServer())
+            if (((DiscordMember)messageToReply.TryGetUser()).isInAdminUser())
             {
                 List<FileInfo> sfxSpecials = new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles().ToList();
                 List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
@@ -209,7 +209,7 @@ namespace CatBot.Voice
                 }
                 catch (IOException)
                 {
-                    if (message.TryGetUser() is DiscordMember member && member.isInAdminServer())
+                    if (message.TryGetUser() is DiscordMember member && member.isInAdminUser())
                     {
                         try
                         {

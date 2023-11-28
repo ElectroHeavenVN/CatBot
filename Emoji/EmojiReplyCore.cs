@@ -1,10 +1,7 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+﻿using System;
+using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CatBot.Emoji
 {
@@ -27,7 +24,7 @@ namespace CatBot.Emoji
                     {
                         foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
                         {
-                            if (server == Config.gI().adminServer && !Utils.isInAdminServer(obj.TryGetUser()))
+                            if (!obj.TryGetUser().isInAdminUser())
                                 continue;
                             bool foundEmoji = false;
                             foreach (DiscordEmoji emoji2 in server.Emojis.Values)

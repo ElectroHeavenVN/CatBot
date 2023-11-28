@@ -1,30 +1,27 @@
-﻿using CatBot.Admin;
-using CatBot.Emoji;
-using CatBot.Instance;
-using CatBot.Music;
-using CatBot.Voice;
-using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.Interactivity;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.VoiceNext;
-using HarmonyLib;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
-using DSharpPlus.SlashCommands.EventArgs;
+using CatBot.Admin;
+using CatBot.Instance;
+using CatBot.Music;
+using CatBot.Voice;
+using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
-using System.Net.Security;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.VoiceNext;
+using HarmonyLib;
+using Microsoft.Extensions.Logging;
 
 namespace CatBot
 {
@@ -189,7 +186,6 @@ namespace CatBot
             await Task.Run(() =>
             {
                 Config.gI().mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().MainServerID).Value;
-                Config.gI().adminServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().AdminServerID).Value;
                 Config.gI().cacheImageChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID);
                 Config.gI().exceptionReportChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID);
                 Config.gI().debugChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID);
