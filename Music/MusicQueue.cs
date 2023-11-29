@@ -106,7 +106,7 @@ namespace CatBot.Music
         public bool Remove(IMusic item) => _items.Remove(item);
         public void Remove(object value) => Remove((IMusic)value);
 
-        public MusicQueue Reverse() => new MusicQueue(this.Reverse<IMusic>());
+        public void Reverse() => _items = this.Reverse<IMusic>().ToList();
 
         public void Shuffle()
         {
