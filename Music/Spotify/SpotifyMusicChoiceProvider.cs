@@ -22,7 +22,7 @@ namespace CatBot.Music.Spotify
                     string name = sR.Title + " - " + sR.Author;
                     if (name.Length > 100)
                     {
-                        if (100 - 3 - sR.Author.Length - 3 < sR.Title.Length)
+                        if (sR.Author.Length <= sR.Title.Length)
                             name = sR.Title.Substring(0, 100 - 3 - sR.Author.Length - 3) + "..." + " - " + sR.Author;
                         else
                             name = name.Substring(0, 97) + "...";

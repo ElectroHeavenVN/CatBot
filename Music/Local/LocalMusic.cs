@@ -31,6 +31,8 @@ namespace CatBot.Music.Local
         public LocalMusic(string path)
         {
             path = Path.Combine(Config.gI().MusicFolder, path.EndsWith(".mp3") ? path : (path + ".mp3"));
+            if (!File.Exists(path))
+                path = new DirectoryInfo(Config.gI().MusicFolder).GetFiles(path + "*")[0].FullName;
             this.path = path;
             try
             {

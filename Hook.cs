@@ -1,11 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.Reflection;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
-using Newtonsoft.Json.Linq;
+using TagLib;
 
 namespace CatBot
 {
@@ -41,24 +38,23 @@ namespace CatBot
         {
             static bool Prefix(VoiceNextConnection __instance, ref bool speaking)
             {
-                if (__instance.TargetChannel.Type == DSharpPlus.ChannelType.Stage)
+                if (__instance.TargetChannel.Type == ChannelType.Stage)
                     speaking = true;
                 return true;
             }
         }
 
-        //[HarmonyPatch(typeof(JObject), "get_Item")]
-        //[HarmonyPatch(typeof(JObject), new Type[] { typeof(string) })]
-        internal class GetItemHook
+        [HarmonyPatch(typeof(Picture), nameof(Picture.GetExtensionFromMime))]
+        internal class GetExtensionFromMimeHook
         {
-            //fck VPS
-            static void Postfix(ref JToken __result, string propertyName)
+            static bool Prefix(string mime, ref string __result)
             {
-                MethodBase methodBase = new StackFrame(2).GetMethod();
-                if (propertyName == "op" && methodBase.Name == "MoveNext" && methodBase.DeclaringType.Name == "<HandleDispatch>d__222" && (int)__result == 18)
+                if (mime == "image/jpg")
                 {
-                    __result = 12;
+                    __result = "jpg";
+                    return false;
                 }
+                return true;
             }
         }
     }

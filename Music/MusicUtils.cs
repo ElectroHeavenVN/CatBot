@@ -230,16 +230,6 @@ namespace CatBot.Music
             File.WriteAllText(concatFile, concatFileContent);
         }
 
-        internal static string GetLocalSongTitle(string musicFileName)
-        {
-            TagLib.File taglibMusicFile = TagLib.File.Create(Path.Combine(Config.gI().MusicFolder, musicFileName + ".mp3"));
-            string str = string.IsNullOrWhiteSpace(taglibMusicFile.Tag.Title) ? musicFileName : taglibMusicFile.Tag.Title;
-            string artists = string.Join(", ", taglibMusicFile.Tag.Performers);
-            if (!string.IsNullOrWhiteSpace(artists))
-                str += " - " + artists;
-            return str;
-        }
-
         internal static byte[] TrimStartNullBytes(byte[] data)
         {
             if (data.Length == 0)

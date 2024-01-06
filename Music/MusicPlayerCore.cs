@@ -314,7 +314,7 @@ namespace CatBot.Music
                 return;
             }
             await ctx.DeferAsync();
-            DiscordEmbedBuilder embed = await serverInstance.musicPlayer.GetCurrentlyPlayingEmbed(hasTimeStamp: true);
+            DiscordEmbedBuilder embed = await serverInstance.musicPlayer.GetCurrentlyPlayingEmbed(true);
             IReadOnlyList<DiscordMessage> lastMessage = await serverInstance.musicPlayer.lastChannel.GetMessagesAsync(1);
             if (serverInstance.musicPlayer.lastNowPlayingMessage != null && lastMessage[0] != serverInstance.musicPlayer.lastNowPlayingMessage)
                 try
@@ -957,7 +957,7 @@ namespace CatBot.Music
             string albumThumbnailLink = currentlyPlayingSong.AlbumThumbnailLink;
             if (!string.IsNullOrEmpty(albumThumbnailLink))
                 embed2 = embed2.WithThumbnail(albumThumbnailLink);
-            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile("waveform.png", MusicUtils.GetMusicWaveform(currentlyPlayingSong));
+            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile("waveform.png", MusicUtils.GetMusicWaveform(currentlyPlayingSong, !hasTimeStamp));
             embed2 = lastCurrentlyPlayingEmbed = embed2.WithImageUrl((await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder)).Attachments[0].Url);
             lastStreamPosition = currentlyPlayingSong.MusicPCMDataStream.Position;
             return embed2;

@@ -17,14 +17,14 @@ namespace CatBot
     {
         static Random random = new Random();
 
-        public static bool isDisposed(this VoiceNextConnection connection) => (bool)typeof(VoiceNextConnection).GetProperty("IsDisposed", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(connection);
+        internal static bool isDisposed(this VoiceNextConnection connection) => (bool)typeof(VoiceNextConnection).GetProperty("IsDisposed", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(connection);
 
-        public static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
+        internal static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
 
         //public static bool isInAdminServer(this DiscordUser user) => Config.gI().adminServer.Members.Keys.Contains(user.Id);
-        public static bool isInAdminUser(this DiscordUser user) => Config.gI().AdminUsers.Contains(user.Id) || IsBotOwner(user.Id);
+        internal static bool isInAdminUser(this DiscordUser user) => Config.gI().AdminUsers.Contains(user.Id) || IsBotOwner(user.Id);
 
-        public static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
+        internal static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
         {
             bool result = true;
             if (obj is DiscordMessage message)
@@ -74,7 +74,7 @@ namespace CatBot
             return result;
         }
 
-        public static DiscordUser TryGetUser(this SnowflakeObject obj)
+        internal static DiscordUser TryGetUser(this SnowflakeObject obj)
         {
             if (obj is DiscordMessage message)
                 return message.Author;
@@ -83,8 +83,8 @@ namespace CatBot
             else 
                 return null;
         }
-        
-        public static DiscordChannel TryGetChannel(this SnowflakeObject obj)
+
+        internal static DiscordChannel TryGetChannel(this SnowflakeObject obj)
         {
             if (obj is DiscordMessage message)
                 return message.Channel;
@@ -175,7 +175,7 @@ namespace CatBot
             return num + suf[place];
         }
 
-        public static string ReplaceFirst(this string text, string search, string replace)
+        internal static string ReplaceFirst(this string text, string search, string replace)
         {
             int pos = text.IndexOf(search);
             if (pos < 0)
@@ -183,7 +183,7 @@ namespace CatBot
             return string.Concat(text.Substring(0, pos), replace, text.Substring(pos + search.Length));
         }
 
-        public static bool IsBotOwner(ulong userId) => Config.gI().BotOwnersID.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
+        internal static bool IsBotOwner(ulong userId) => Config.gI().BotOwnersID.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
 
         internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
         {
@@ -201,5 +201,7 @@ namespace CatBot
             embeds[0] = embed.WithDescription(embeds[0].Description).WithFooter();
             return embeds;
         }
+
+        internal static string Min(this string str, int length) => str.Length <= length ? str : str.Substring(0, length);
     }
 }
