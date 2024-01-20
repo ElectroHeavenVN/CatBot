@@ -49,32 +49,32 @@
     <Reference Include="0Harmony, Version=2.2.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Lib.Harmony.2.2.2\lib\net45\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="AngleSharp, Version=1.0.7.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>packages\AngleSharp.1.0.7\lib\net461\AngleSharp.dll</HintPath>
+    <Reference Include="AngleSharp, Version=1.1.0.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
+      <HintPath>packages\AngleSharp.1.1.0\lib\net461\AngleSharp.dll</HintPath>
     </Reference>
     <Reference Include="ConcurrentCollections, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\ConcurrentHashSet.1.3.0\lib\net461\ConcurrentCollections.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.4.4.3\lib\netstandard2.0\DSharpPlus.dll</HintPath>
+    <Reference Include="DSharpPlus, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.4.4.6\lib\netstandard2.0\DSharpPlus.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus.CommandsNext, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.CommandsNext.4.4.3\lib\netstandard2.0\DSharpPlus.CommandsNext.dll</HintPath>
+    <Reference Include="DSharpPlus.CommandsNext, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.CommandsNext.4.4.6\lib\netstandard2.0\DSharpPlus.CommandsNext.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus.Interactivity, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.Interactivity.4.4.3\lib\netstandard2.0\DSharpPlus.Interactivity.dll</HintPath>
+    <Reference Include="DSharpPlus.Interactivity, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.Interactivity.4.4.6\lib\netstandard2.0\DSharpPlus.Interactivity.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus.Rest, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.Rest.4.4.3\lib\netstandard2.0\DSharpPlus.Rest.dll</HintPath>
+    <Reference Include="DSharpPlus.Rest, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.Rest.4.4.6\lib\netstandard2.0\DSharpPlus.Rest.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus.SlashCommands, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.SlashCommands.4.4.3\lib\netstandard2.0\DSharpPlus.SlashCommands.dll</HintPath>
+    <Reference Include="DSharpPlus.SlashCommands, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.SlashCommands.4.4.6\lib\netstandard2.0\DSharpPlus.SlashCommands.dll</HintPath>
     </Reference>
-    <Reference Include="DSharpPlus.VoiceNext, Version=4.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.VoiceNext.4.4.3\lib\netstandard2.0\DSharpPlus.VoiceNext.dll</HintPath>
+    <Reference Include="DSharpPlus.VoiceNext, Version=4.4.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\DSharpPlus.VoiceNext.4.4.6\lib\netstandard2.0\DSharpPlus.VoiceNext.dll</HintPath>
     </Reference>
-    <Reference Include="HtmlAgilityPack, Version=1.11.54.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>packages\HtmlAgilityPack.1.11.54\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.11.57.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>packages\HtmlAgilityPack.1.11.57\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Leaf.xNet, Version=5.2.10.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Leaf.xNet.5.2.10\lib\net45\Leaf.xNet.dll</HintPath>
@@ -180,8 +180,8 @@
     <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Json.8.0.0\lib\net462\System.Text.Json.dll</HintPath>
+    <Reference Include="System.Text.Json, Version=8.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Text.Json.8.0.1\lib\net462\System.Text.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading.Channels, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Threading.Channels.8.0.0\lib\net462\System.Threading.Channels.dll</HintPath>
@@ -201,8 +201,8 @@
     <Reference Include="TagLibSharp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
       <HintPath>packages\TagLibSharp.2.3.0\lib\net462\TagLibSharp.dll</HintPath>
     </Reference>
-    <Reference Include="YoutubeExplode, Version=6.3.8.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\YoutubeExplode.6.3.8\lib\net461\YoutubeExplode.dll</HintPath>
+    <Reference Include="YoutubeExplode, Version=6.3.12.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\YoutubeExplode.6.3.12\lib\net461\YoutubeExplode.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
