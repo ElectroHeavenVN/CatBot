@@ -42,7 +42,7 @@
 		+ `SpotifyIcon`: Emoji dùng cho [SpotifyMusic](Music/Spotify/SpotifyMusic.cs)
 - Sau khi thay đổi các thông số phù hợp, chạy lại file CatBot.exe
 ## Lấy raw string của emoji
-Sau khi thêm các file [Local.png](Files/Images/Local.png),[YouTube.png](Files/Images/YouTube.png), [YouTubeMusic.png](Files/Images/YouTubeMusic.png),  [Spotify.png](Files/Images/Spotify.png),... vào danh sách emoji của server quản lý bot, chat `\` + emoji để lấy raw string như hình dưới.
+Sau khi thêm các file [Local.png](Files/Images/Local.png), [YouTube.png](Files/Images/YouTube.png), [YouTubeMusic.png](Files/Images/YouTubeMusic.png),  [Spotify.png](Files/Images/Spotify.png),... vào danh sách emoji của server quản lý bot, chat `\` + emoji để lấy raw string như hình dưới.
 
 ![image](ReadMeResources/raw_emoji_string.png)
 ## Lấy Zing MP3 API key và Secret key
