@@ -293,19 +293,17 @@
     <Content Include="Files\Images\SoundCloud.png" />
     <Content Include="Files\spotdl\spotdl.exe" />
     <Content Include="Files\Images\YouTubeMusic.png" />
-    <Content Include="Files\Images\YouTubeIcon.png" />
+    <Content Include="Files\Images\YouTube.png" />
     <Content Include="Files\Images\ZaloAI.png" />
     <Content Include="Files\Images\ZingMP3.png" />
     <Content Include="Files\Images\Spotify.png" />
+    <Content Include="ReadMeResources\cookie_1.png" />
     <Content Include="ReadMeResources\raw_emoji_string.png" />
-    <Content Include="ReadMeResources\sec_ch_ua_1.png" />
     <Content Include="ReadMeResources\user_agent_1.png" />
-    <Content Include="ReadMeResources\zalo_ai_cookie_1.png" />
     <Content Include="ReadMeResources\zing_mp3_api_key_1.png" />
     <Content Include="ReadMeResources\zing_mp3_api_key_2.png" />
     <Content Include="ReadMeResources\zing_mp3_api_key_3.png" />
     <Content Include="ReadMeResources\zing_mp3_api_key_4.png" />
-    <Content Include="ReadMeResources\zing_mp3_cookie_1.png" />
     <Content Include="ReadMeResources\zing_mp3_secret_key_1.png" />
     <Content Include="ReadMeResources\zing_mp3_secret_key_2.png" />
   </ItemGroup>
