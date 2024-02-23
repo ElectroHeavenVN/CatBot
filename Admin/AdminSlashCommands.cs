@@ -22,7 +22,7 @@ namespace CatBot.Admin
         [SlashCommand("reset-instance", "Đặt lại instance bot của server")]
         public async Task ResetBotServerInstance(InteractionContext ctx, [Option("serverID", "ID máy chủ")] string serverID = "this") => await AdminCommandsCore.ResetBotServerInstance(ctx, serverID);
 
-        [SlashCommand("set-status", "Đặt trạng thái bot")]
-        public async Task SetBotStatus(InteractionContext ctx, [Option("name", "tên trạng thái")] string name = "", [Option("activityType", "Loại trạng thái")] ActivityType activityType = ActivityType.Playing) => await AdminCommandsCore.SetBotStatus(ctx, name, activityType);
+        [SlashCommand("set-presence", "Đặt presence bot")]
+        public async Task SetBotStatus(InteractionContext ctx, [Option("name", "tên presence")] string name = "", [Option("activityType", "Loại presence")] ActivityType activityType = ActivityType.Playing, [Option("state", "trạng thái presence")] string state = "") => await AdminCommandsCore.SetBotStatus(ctx, activityType, name, state);
     }
 }

@@ -209,12 +209,14 @@
     <Compile Include="Admin\AdminBaseCommand.cs" />
     <Compile Include="Admin\AdminCommandsCore.cs" />
     <Compile Include="Admin\AdminSlashCommands.cs" />
+    <Compile Include="CustomDiscordActivity.cs" />
     <Compile Include="Emoji\CatNSoupEmoji.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="DiscordBotMain.cs" />
     <Compile Include="Emoji\EmojiReplyCore.cs" />
     <Compile Include="Emoji\EmojiReplyBaseCommands.cs" />
     <Compile Include="Emoji\EmojiReplySlashCommands.cs" />
+    <Compile Include="Extension\DSharpPlusExtensions.cs" />
     <Compile Include="Extension\SpotifyExplodeExtension.cs" />
     <Compile Include="HelpFormatter.cs" />
     <Compile Include="Hook.cs" />
@@ -281,7 +283,6 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Files\Config_template.txt" />
     <Content Include="Files\ffmpeg\ffmpeg.exe" />
     <Content Include="Files\ffmpeg\ffplay.exe" />
     <Content Include="Files\ffmpeg\ffprobe.exe" />

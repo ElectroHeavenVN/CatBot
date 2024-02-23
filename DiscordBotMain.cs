@@ -8,6 +8,7 @@ using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using CatBot.Admin;
+using CatBot.Extension;
 using CatBot.Instance;
 using CatBot.Music;
 using CatBot.Voice;
@@ -37,7 +38,7 @@ namespace CatBot
         //    MinimumLogLevel = LogLevel.Information
         //});
 
-        internal static DiscordActivity activity;
+        internal static CustomDiscordActivity activity;
 
         internal static void Main()
         {
@@ -126,7 +127,8 @@ namespace CatBot
             });
 
             //await botRESTClient.InitializeAsync();
-            await botClient.ConnectAsync(new DiscordActivity(), UserStatus.Online);
+            await botClient.ConnectAsync();
+
             await Task.Delay(Timeout.Infinite);
         }
 
@@ -201,20 +203,20 @@ namespace CatBot
             {
                 if (activity == null)
                 {
-                    DiscordActivity discordActivity = new DiscordActivity();
+                    CustomDiscordActivity discordActivity = new CustomDiscordActivity();
                     if (count == 0)
-                        discordActivity = new DiscordActivity("Zing MP3", ActivityType.ListeningTo);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "Zing MP3");
                     else if (count == 1)
-                        discordActivity = new DiscordActivity("NhacCuaTui", ActivityType.ListeningTo);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "NhacCuaTui");
                     else if (count == 2)
-                        discordActivity = new DiscordActivity("YouTube Music", ActivityType.ListeningTo);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "YouTube Music");
                     else if (count == 3)
-                        discordActivity = new DiscordActivity("SoundCloud", ActivityType.ListeningTo);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "SoundCloud");
                     else if (count == 4)
-                        discordActivity = new DiscordActivity("Spotify", ActivityType.ListeningTo);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "Spotify");
                     else if (count == 5)
                     {
-                        discordActivity = new DiscordActivity("YouTube", ActivityType.Watching);
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "YouTube");
                         count = -1;
                     }
                     count++;

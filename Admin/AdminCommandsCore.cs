@@ -171,7 +171,7 @@ namespace CatBot.Admin
             
         //}
 
-        internal static async Task SetBotStatus(InteractionContext ctx, string name, ActivityType activityType)
+        internal static async Task SetBotStatus(InteractionContext ctx, ActivityType activityType, string name, string state)
         {
             if (!Utils.IsBotOwner(ctx.Member.Id))
             {
@@ -185,7 +185,7 @@ namespace CatBot.Admin
             }
             else
             {
-                DiscordBotMain.activity = new DiscordActivity(name, activityType);
+                DiscordBotMain.activity = new CustomDiscordActivity(DiscordBotMain.botClient.CurrentApplication.Id, activityType, name, state);
                 await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt trạng thái bot!").AsEphemeral());
             }
         }
