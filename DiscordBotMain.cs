@@ -216,7 +216,7 @@ namespace CatBot
                         discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "Spotify");
                     else if (count == 5)
                     {
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "YouTube");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.Watching, "YouTube");
                         count = -1;
                     }
                     count++;
