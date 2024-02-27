@@ -11,6 +11,7 @@ using CatBot.Admin;
 using CatBot.Extension;
 using CatBot.Instance;
 using CatBot.Music;
+using CatBot.Music.Local;
 using CatBot.Voice;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -78,6 +79,7 @@ namespace CatBot
             new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
             new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
             new Thread(UpdateYTDlp) { IsBackground = true, Name = nameof(UpdateYTDlp) }.Start();
+            new Thread(LocalMusicChoiceProvider.UpdateCachedLocalMusic) { IsBackground = true, Name = nameof(LocalMusicChoiceProvider.UpdateCachedLocalMusic) }.Start();
             MainAsync().GetAwaiter().GetResult();
         }
 
