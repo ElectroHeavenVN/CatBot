@@ -92,13 +92,15 @@ namespace CatBot
                     StringPrefixes = new string[] { Config.gI().DefaultPrefix },
                     CaseSensitive = true,
                     EnableDms = false,
+                    UseDefaultCommandHandler = false,
                 });
+                botClient.MessageCreated += commandNext.HandleCommandsAsync;
                 commandNext.CommandErrored += (_, args) => 
                 {
                     if (args.Exception is CommandNotFoundException)
                         return Task.CompletedTask;
                     return LogException(args.Exception);
-                }; 
+                };
                 commandNext.RegisterCommands<AdminBaseCommand>();
                 commandNext.RegisterCommands<GlobalBaseCommands>();
                 commandNext.RegisterCommands<MusicPlayerBaseCommands>();

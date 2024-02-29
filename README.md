@@ -20,7 +20,7 @@
 	+ `LogExceptionChannel`: ID kênh dùng để báo lỗi khi bot chạy (Kênh này nằm trong server chính dùng để quản lý bot)
 	+ ~~`DebugChannel`: ID kênh dùng để debug~~
 	+ `BotOwners`: Danh sách ID chủ của bot (Người có quyền dùng lệnh `/admin`, `addsfx`, `delsfx`, `downloadmusic`)
-	+ `ExcludeBots`: Danh sách ID bot loại trừ (bot được coi như là người trong kênh thoại và kênh sân khấu)
+	+ `ExcludeBots`: Danh sách ID bot loại trừ (bot được coi như là người trong kênh thoại và kênh sân khấu, có thể sử dụng lệnh prefix)
 	+ `SFXFolder`: Đường dẫn lưu các tệp SFX, mặc định là `SFX`
 	+ `SFXFolderSpecial`: Đường dẫn lưu các tệp SFX đặc biệt, mặc định là `SFX\Special`
 	+ `LyricAPI`: API tìm lời bài hát, mặc định là `https://lyrist.vercel.app/api/`

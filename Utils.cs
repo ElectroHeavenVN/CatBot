@@ -204,6 +204,6 @@ namespace CatBot
 
         internal static string Min(this string str, int length) => str.Length <= length ? str : str.Substring(0, length);
 
-        internal static bool IsBotExcluded(this DiscordMember member) => member.IsBot && Config.gI().ExcludeBotIDs.Contains(member.Id);
+        internal static bool IsBotExcluded(this DiscordUser member) => member.IsBot && Config.gI().ExcludeBotIDs.Contains(member.Id);
     }
 }
