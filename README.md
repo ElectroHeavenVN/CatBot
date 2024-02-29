@@ -14,12 +14,13 @@
 ## Setup
 - Biên dịch dự án hoặc tải tệp thực thi từ [Build CatBot Action](../../actions/workflows/Build.yml) và chạy file CatBot.exe lần đầu tiên, file `CatBot_config.json` sẽ được tạo mới
 - Thay đổi các thông số trong file `CatBot_config.json`:
-	+ `MainServerID`: ID server chính dùng để quản lý bot (Sử dụng lệnh `/admin`, báo lỗi, cache ảnh cho [LocalMusic](Music/Local/LocalMusic.cs))
+	+ `MainServer`: ID server chính dùng để quản lý bot (Sử dụng lệnh `/admin`, báo lỗi, cache ảnh cho [LocalMusic](Music/Local/LocalMusic.cs))
 	+ `AdminUsers`: Mảng chứa ID người dùng được sử dụng SFX đặc biệt ~~và được sử dụng lệnh `/emoji` với emoji trong server này~~
-	+ `CacheImageChannelID`: ID kênh dùng để cache ảnh album của [LocalMusic](Music/Local/LocalMusic.cs) (Kênh này nằm trong server chính dùng để quản lý bot)
-	+ `LogExceptionChannelID`: ID kênh dùng để báo lỗi khi bot chạy (Kênh này nằm trong server chính dùng để quản lý bot)
-	+ ~~`DebugChannelID`: ID kênh dùng để debug~~
-	+ `BotOwnersID`: Danh sách ID chủ của bot (Người có quyền dùng lệnh `/admin`, `addsfx`, `delsfx`, `downloadmusic`)
+	+ `CacheImageChannel`: ID kênh dùng để cache ảnh album của [LocalMusic](Music/Local/LocalMusic.cs) (Kênh này nằm trong server chính dùng để quản lý bot)
+	+ `LogExceptionChannel`: ID kênh dùng để báo lỗi khi bot chạy (Kênh này nằm trong server chính dùng để quản lý bot)
+	+ ~~`DebugChannel`: ID kênh dùng để debug~~
+	+ `BotOwners`: Danh sách ID chủ của bot (Người có quyền dùng lệnh `/admin`, `addsfx`, `delsfx`, `downloadmusic`)
+	+ `ExcludeBots`: Danh sách ID bot loại trừ (bot được coi như là người trong kênh thoại và kênh sân khấu)
 	+ `SFXFolder`: Đường dẫn lưu các tệp SFX, mặc định là `SFX`
 	+ `SFXFolderSpecial`: Đường dẫn lưu các tệp SFX đặc biệt, mặc định là `SFX\Special`
 	+ `LyricAPI`: API tìm lời bài hát, mặc định là `https://lyrist.vercel.app/api/`

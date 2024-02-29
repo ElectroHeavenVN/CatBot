@@ -16,7 +16,7 @@ namespace CatBot
         /// <summary>
         /// ID Server chính dùng để điều khiển bot (dùng lệnh /admin, báo lỗi, cache ảnh cho <see cref="Music.Local.LocalMusic"/>)
         /// </summary>
-        [JsonProperty("MainServerID")] 
+        [JsonProperty("MainServer")] 
         internal ulong MainServerID { get; set; } 
         internal DiscordGuild mainServer;
 
@@ -24,34 +24,40 @@ namespace CatBot
         ///  Danh sách các thành viên được sử dụng SFX đặc biệt
         /// </summary>
         [JsonProperty("AdminUsers")] 
-        internal ulong[] AdminUsers { get; set; }
+        internal ulong[] AdminUserIDs { get; set; }
 
         /// <summary>
         /// ID kênh cache ảnh
         /// </summary>
-        [JsonProperty("CacheImageChannelID")] 
+        [JsonProperty("CacheImageChannel")] 
         internal ulong CacheImageChannelID { get; set; } 
         internal DiscordChannel cacheImageChannel;
 
         /// <summary>
         /// ID kênh báo lỗi bot
         /// </summary>
-        [JsonProperty("LogExceptionChannelID")] 
+        [JsonProperty("LogExceptionChannel")] 
         internal ulong LogExceptionChannelID { get; set; } 
         internal DiscordChannel exceptionReportChannel;
 
         /// <summary>
         /// Kênh log lỗi
         /// </summary>
-        [JsonProperty("DebugChannelID")]
+        [JsonProperty("DebugChannel")]
         internal ulong DebugChannelID { get; set; }
         internal DiscordChannel debugChannel;
 
         /// <summary>
         /// ID chủ của bot
         /// </summary>
-        [JsonProperty("BotOwnersID")]
-        internal ulong[] BotOwnersID { get; set; } = new ulong[0];
+        [JsonProperty("BotOwners")]
+        internal ulong[] BotOwnerIDs { get; set; } = new ulong[0];
+
+        /// <summary>
+        /// ID bot loại trừ
+        /// </summary>
+        [JsonProperty("ExcludeBots")]
+        internal ulong[] ExcludeBotIDs { get; set; } = new ulong[0];
 
         /// <summary>
         /// Đường dẫn tới thư mục chứa nhạc

@@ -22,7 +22,7 @@ namespace CatBot
         internal static void SetVolume(this VoiceNextConnection connection, double value) => connection.GetTransmitSink().VolumeModifier = value;
 
         //public static bool isInAdminServer(this DiscordUser user) => Config.gI().adminServer.Members.Keys.Contains(user.Id);
-        internal static bool isInAdminUser(this DiscordUser user) => Config.gI().AdminUsers.Contains(user.Id) || IsBotOwner(user.Id);
+        internal static bool isInAdminUser(this DiscordUser user) => Config.gI().AdminUserIDs.Contains(user.Id) || IsBotOwner(user.Id);
 
         internal static async Task<bool> TryRespondAsync(this SnowflakeObject obj, params object[] parameters)
         {
@@ -183,7 +183,7 @@ namespace CatBot
             return string.Concat(text.Substring(0, pos), replace, text.Substring(pos + search.Length));
         }
 
-        internal static bool IsBotOwner(ulong userId) => Config.gI().BotOwnersID.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
+        internal static bool IsBotOwner(ulong userId) => Config.gI().BotOwnerIDs.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
 
         internal static List<DiscordEmbedBuilder> SplitLongEmbed(this DiscordEmbedBuilder embed)
         {
@@ -203,5 +203,7 @@ namespace CatBot
         }
 
         internal static string Min(this string str, int length) => str.Length <= length ? str : str.Substring(0, length);
+
+        internal static bool IsBotExcluded(this DiscordMember member) => member.IsBot && Config.gI().ExcludeBotIDs.Contains(member.Id);
     }
 }

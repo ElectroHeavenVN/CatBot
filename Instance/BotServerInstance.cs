@@ -62,7 +62,7 @@ namespace CatBot.Instance
             {
                 if (self.currentVoiceNextConnection != null && !self.currentVoiceNextConnection.isDisposed())
                 {
-                    if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot))
+                    if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot || m.IsBotExcluded()))
                         self.lastTimeCheckVoiceChannel = DateTime.Now;
                     else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
                     {
@@ -566,7 +566,7 @@ namespace CatBot.Instance
                 return;
             if (currentVoiceNextConnection.isDisposed())
                 return;
-            int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot).Count() + 1;
+            int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot || u.IsBotExcluded()).Count() + 1;
             bool result = userCount >= 2;
             canSpeak = result;
             if (!result && lastNumberOfUsersInVC >= 2 && (musicPlayer.isPlaying || isVoicePlaying))
