@@ -11,7 +11,6 @@ using DSharpPlus.CommandsNext.Executors;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Net.Abstractions;
-using Newtonsoft.Json;
 using static CatBot.CustomDiscordActivity;
 
 namespace CatBot.Extension
@@ -38,14 +37,15 @@ namespace CatBot.Extension
                 Status = userStatus ?? UserStatus.Online,
                 
             };
-            string customStatusRawJSONData = JsonConvert.SerializeObject(new GatewayPayload
-            {
-                OpCode = GatewayOpCode.StatusUpdate,
-                Data = statusUpdate
-            });
-            //await discordClient.SendRawPayloadAsync(customStatusRawJSONData).ConfigureAwait(false);
-            Task sendCustomStatusTask = (Task)typeof(DiscordClient).GetMethod("SendRawPayloadAsync", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(discordClient, new object[] { customStatusRawJSONData });
-            await sendCustomStatusTask.ConfigureAwait(false);
+            await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate);
+
+            //string customStatusRawJSONData = JsonConvert.SerializeObject(new GatewayPayload
+            //{
+            //    OpCode = GatewayOpCode.StatusUpdate,
+            //    Data = statusUpdate
+            //});
+            //Task sendCustomStatusTask = (Task)typeof(DiscordClient).GetMethod("SendRawPayloadAsync", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(discordClient, new object[] { customStatusRawJSONData });
+            //await sendCustomStatusTask.ConfigureAwait(false);
         }
 
         internal static async Task HandleCommandsAsync(this CommandsNextExtension cne, DiscordClient sender, MessageCreateEventArgs e)

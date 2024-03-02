@@ -106,13 +106,13 @@ namespace CatBot
             public bool IsAFK { get; set; }
         }
 
-        internal class GatewayPayload
-        {
-            [JsonProperty("op")]
-            public GatewayOpCode OpCode { get; set; }
+        //internal class GatewayPayload
+        //{
+        //    [JsonProperty("op")]
+        //    public GatewayOpCode OpCode { get; set; }
 
-            [JsonProperty("d")]
-            public object Data { get; set; }
-        }
+        //    [JsonProperty("d")]
+        //    public object Data { get; set; }
+        //}
     }
 }
