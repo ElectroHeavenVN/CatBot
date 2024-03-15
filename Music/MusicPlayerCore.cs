@@ -962,9 +962,9 @@ namespace CatBot.Music
             if (currentlyPlayingSong != null)
             {
                 if (isPaused)
-                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":pause_button:") + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
+                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":pause_button:") + currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
                 else 
-                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":musical_note:") + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
+                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
             }
             else
                 await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync("");
