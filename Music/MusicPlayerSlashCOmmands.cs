@@ -123,5 +123,8 @@ namespace CatBot.Music
 
         [SlashCommand("artwork", "Xem ảnh album của bài đang phát")]
         public async Task ViewAlbumArtwork(InteractionContext ctx) => await MusicPlayerCore.ViewAlbumArtwork(ctx);
+
+        [SlashCommand("setvcstatus", "Bật/tắt tự động đặt trạng thái kênh thoại thành bài hát đang phát")]
+        public async Task SetAutoSetVoiceChannelStatus(InteractionContext ctx) => await MusicPlayerCore.SetAutoSetVoiceChannelStatus(ctx);
     }
 }

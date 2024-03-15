@@ -10,6 +10,7 @@ using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.CommandsNext.Executors;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Net;
 using DSharpPlus.Net.Abstractions;
 using static CatBot.CustomDiscordActivity;
 
@@ -101,5 +102,21 @@ namespace CatBot.Extension
             await ((ICommandExecutor)GetConfigProperty("CommandExecutor")).ExecuteAsync(ctx).ConfigureAwait(false);
         }
 
+        internal static Task<RestResponse> ModifyVoiceStatusAsync(this DiscordChannel discordChannel, string status)
+        {
+            string text = "/channels/:channel_id/voice-status";
+            string text2;
+            DiscordApiClient apiClient = (DiscordApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(DiscordBotMain.botClient);
+            object _rest = typeof(DiscordApiClient).GetProperty("_rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
+            BaseDiscordClient _discord = (BaseDiscordClient)typeof(DiscordApiClient).GetProperty("_discord", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
+
+            object[] parameters = new object[] { RestRequestMethod.PUT, text, new { channel_id = discordChannel.Id }, null };
+            object bucket = _rest.GetType().GetMethod("GetBucket", BindingFlags.Public | BindingFlags.Instance).Invoke(_rest, parameters);
+            text2 = (string)parameters[parameters.Length - 1];
+
+            Uri apiUriFor = (Uri)typeof(Utilities).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).First(m => m.Name == "GetApiUriFor" && m.GetParameters().Length == 1).Invoke(null, new object[] { text2 });
+            //Uri apiUriFor = new Uri("https://discord.com/api/v9" + text2);
+            return (Task<RestResponse>)typeof(DiscordApiClient).GetMethod("DoRequestAsync", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(apiClient, new object[] { _discord, bucket, apiUriFor, RestRequestMethod.PUT, text, new Dictionary<string, string>(), $"{{\"status\":\"{status}\"}}", null });
+        }
     }
 }
