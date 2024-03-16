@@ -81,8 +81,8 @@ namespace CatBot.Music.ZingMP3
             mp3File.Dispose();
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-            File.Delete(mp3FilePath);
-            mp3FilePath = null;
+            //File.Delete(mp3FilePath);
+            //mp3FilePath = null;
         }
 
         ~ZingMP3Music() => Dispose(false);
@@ -147,6 +147,8 @@ namespace CatBot.Music.ZingMP3
         public string GetIcon() => Config.gI().ZingMP3Icon;
 
         public bool isLinkMatch(string link) => link.StartsWith(zingMP3Link);
+
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload(".mp3", new FileStream(mp3FilePath, FileMode.Open, FileAccess.Read));
 
         internal static JToken GetSongInfo(string linkOrID)
         {

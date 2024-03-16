@@ -126,5 +126,8 @@ namespace CatBot.Music
 
         [SlashCommand("setvcstatus", "Bật/tắt tự động đặt trạng thái kênh thoại thành bài hát đang phát")]
         public async Task SetAutoSetVoiceChannelStatus(InteractionContext ctx) => await MusicPlayerCore.SetAutoSetVoiceChannelStatus(ctx);
+
+        [SlashCommand("download", "Tải bài hát hiện tại xuống")]
+        public async Task Download(InteractionContext ctx) => await MusicPlayerCore.Download(ctx);
     }
 }

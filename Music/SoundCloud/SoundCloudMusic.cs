@@ -62,8 +62,8 @@ namespace CatBot.Music.SoundCloud
             mp3File.Dispose();
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-            File.Delete(mp3FilePath);
-            mp3FilePath = null;
+            //File.Delete(mp3FilePath);
+            //mp3FilePath = null;
         }
 
         public MusicType MusicType => MusicType.SoundCloud;
@@ -118,6 +118,8 @@ namespace CatBot.Music.SoundCloud
         }
 
         public bool isLinkMatch(string link) => regexMatchSoundCloudLink.IsMatch(link);
+
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload(".mp3", new FileStream(mp3FilePath, FileMode.Open, FileAccess.Read));
 
         public string GetPCMFilePath() => pcmFile;
 

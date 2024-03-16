@@ -97,8 +97,8 @@ namespace CatBot.Music.YouTube
             webmFile.Dispose();
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(webmFilePath, ref pcmFile));
-            File.Delete(webmFilePath);
-            webmFilePath = null;
+            //File.Delete(webmFilePath);
+            //webmFilePath = null;
         }
 
         ~YouTubeMusic() => Dispose(false);
@@ -171,6 +171,8 @@ namespace CatBot.Music.YouTube
         public string GetIcon() => isYouTubeMusicVideo ? Config.gI().YouTubeMusicIcon : Config.gI().YouTubeIcon;
 
         public bool isLinkMatch(string link) => regexMatchYTVideoLink.IsMatch(link);
+
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload(".webm", new FileStream(webmFilePath, FileMode.Open, FileAccess.Read));
 
         public void Dispose()
         {

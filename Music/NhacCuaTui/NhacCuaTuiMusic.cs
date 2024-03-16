@@ -86,8 +86,8 @@ namespace CatBot.Music.NhacCuaTui
             mp3File.Dispose();
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(mp3FilePath, ref pcmFile));
-            File.Delete(mp3FilePath);
-            mp3FilePath = null;
+            //File.Delete(mp3FilePath);
+            //mp3FilePath = null;
         }
 
         ~NhacCuaTuiMusic() => Dispose(false);
@@ -169,6 +169,8 @@ namespace CatBot.Music.NhacCuaTui
         public string GetIcon() => Config.gI().NCTIcon;
 
         public bool isLinkMatch(string link) => link.StartsWith(nhacCuaTuiLink);
+
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload(".mp3", new FileStream(mp3FilePath, FileMode.Open, FileAccess.Read));
 
         internal static XmlDocument GetXML(string link)
         {

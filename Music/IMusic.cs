@@ -29,5 +29,6 @@ namespace CatBot.Music
         string GetIcon();
         bool isLinkMatch(string link);
         void Download();
+        MusicFileDownload GetDownloadFile();
     }
 }

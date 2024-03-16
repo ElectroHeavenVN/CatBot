@@ -68,6 +68,7 @@ namespace CatBot.Music
         DiscordMessage browseQueueMessage;
         bool isDeleteBrowseQueueButtonThreadRunning;
         bool isSetVCStatus;
+        bool isSongDownloaded;
 
         internal MusicPlayerCore() 
         {
@@ -325,7 +326,7 @@ namespace CatBot.Music
                 }
                 catch (NotFoundException) { }
             MusicPlayerCore musicPlayer = serverInstance.musicPlayer;
-            musicPlayer.lastNowPlayingMessage = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(1)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(2)));
+            musicPlayer.lastNowPlayingMessage = await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(1)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(2)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(3)));
         }
 
         internal static async Task Seek(InteractionContext ctx, long seconds)
@@ -753,6 +754,26 @@ namespace CatBot.Music
                 await ctx.CreateResponseAsync("Không đặt trạng thái kênh thoại thành bài hát đang phát!");
         }
 
+        internal static async Task Download(InteractionContext ctx)
+        {
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.musicPlayer.lastChannel = ctx.Channel;
+            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+                return;
+            if (serverInstance.musicPlayer.currentlyPlayingSong == null)
+            {
+                await ctx.CreateResponseAsync("Không có bài nào đang phát!");
+                return;
+            }
+            if (serverInstance.musicPlayer.currentlyPlayingSong.GetDownloadFile().Stream.Length > 25 * 1024 * 1024)
+            {
+                await ctx.CreateResponseAsync("Kích thước bài hát hiện tại lớn hơn 25MB!");
+                return;
+            }
+            await ctx.DeferAsync();
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddFile(MusicUtils.RemoveEmbedLink(serverInstance.musicPlayer.currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(serverInstance.musicPlayer.currentlyPlayingSong.Title) + serverInstance.musicPlayer.currentlyPlayingSong.GetDownloadFile().Extension, serverInstance.musicPlayer.currentlyPlayingSong.GetDownloadFile().Stream));
+        }
+
         async Task MainPlay(CancellationToken token)
         {
             try
@@ -779,6 +800,7 @@ namespace CatBot.Music
                                 await Task.Delay(200);
                             currentlyPlayingSong.MusicPCMDataStream.Position = 0;
                             lyricsShown = false;
+                            isSongDownloaded = false;
                         }
                         catch (MusicException ex)
                         {
@@ -942,16 +964,16 @@ namespace CatBot.Music
                         await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
                     }
                     catch (NotFoundException) { }
-                lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
             }
             else
                 try
                 {
-                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
                 }
                 catch (NotFoundException)
                 {
-                    lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                    lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
                 }
         }
 
@@ -959,15 +981,21 @@ namespace CatBot.Music
         {
             if (!isSetVCStatus)
                 return;
-            if (currentlyPlayingSong != null)
+            if (serverInstance.currentVoiceNextConnection.TargetChannel?.Type == ChannelType.Stage)
+                return;
+            try
             {
-                if (isPaused)
-                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":pause_button:") + currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
-                else 
-                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
+                if (currentlyPlayingSong != null)
+                {
+                    if (isPaused)
+                        await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":pause_button:") + currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
+                    else
+                        await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync(currentlyPlayingSong.GetIcon() + " " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title));
+                }
+                else
+                    await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync("");
             }
-            else
-                await serverInstance.currentVoiceNextConnection.TargetChannel?.ModifyVoiceStatusAsync("");
+            catch { }
         }
 
         async Task UpdateCurrentlyPlayingButtons()
@@ -978,11 +1006,11 @@ namespace CatBot.Music
                 return;
             try
             {
-                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
             }
             catch (NotFoundException)
             {
-                lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                lastNowPlayingMessage = await lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
             }
         }
 
@@ -1045,7 +1073,7 @@ namespace CatBot.Music
                 string id = args.Id.Substring(0, args.Id.IndexOf('_'));
                 if (args.Id.EndsWith(uniqueID + "_player_controls_" + serverInstance.server.Id))
                 {
-                    if (!serverInstance.currentVoiceNextConnection.TargetChannel.Users.Any((DiscordMember u) => args.User == u))
+                    if (!serverInstance.currentVoiceNextConnection.TargetChannel.Users.Any((DiscordMember u) => args.User == u) && !Utils.IsBotOwner(args.User.Id))
                     {
                         await args.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Bạn không ở cùng kênh thoại với bot!").AsEphemeral());
                         return;
@@ -1077,9 +1105,9 @@ namespace CatBot.Music
                         if (!isPaused)
                         {
                             if (lastCurrentlyPlayingEmbed != null)
-                                await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                                await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
                             else 
-                                await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed((await GetCurrentlyPlayingEmbed()).Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)));
+                                await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed((await GetCurrentlyPlayingEmbed()).Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
                             return;
                         }
                     }
@@ -1109,6 +1137,17 @@ namespace CatBot.Music
                         if (volume < 0.0)
                             volume = 0.0;
                         await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+                        await UpdateCurrentlyPlayingButtons();
+                        return;
+                    }
+                    else if (id == "refresh")
+                    {
+                        await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+                        if ((DateTime.Now - lastTimeRefresh).TotalSeconds > 5.0)
+                        {
+                            lastTimeRefresh = DateTime.Now;
+                            await SendOrEditCurrentlyPlayingSong(true);
+                        }
                         return;
                     }
                     else if (id == "stop")
@@ -1124,14 +1163,29 @@ namespace CatBot.Music
                         isPreparingNextSong = false;
                         return;
                     }
+                    else if (id == "download")
+                    {
+                        if (currentlyPlayingSong.GetDownloadFile().Stream.Length > 25 * 1024 * 1024)
+                        {
+                            await args.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Kích thước bài hát hiện tại lớn hơn 25MB!"));
+                            return;
+                        }
+                        await args.Interaction.DeferAsync();
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Artists) + " - " + MusicUtils.RemoveEmbedLink(currentlyPlayingSong.Title) + currentlyPlayingSong.GetDownloadFile().Extension, currentlyPlayingSong.GetDownloadFile().Stream));
+                        isSongDownloaded = true;
+                        await UpdateCurrentlyPlayingButtons();
+                        return;
+                    }
                     else if (id == "volume+")
                     {
                         volume += 0.1;
                         if (volume > 2.5)
                             volume = 2.5;
                         await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+                        await UpdateCurrentlyPlayingButtons();
                         return;
                     }
+                    //row 3
                     else if (id == "lyric")
                     {
                         try
@@ -1149,14 +1203,26 @@ namespace CatBot.Music
                         await UpdateCurrentlyPlayingButtons();
                         return;
                     }
-                    else if (id == "refresh")
+                    else if (id == "repeat")
                     {
                         await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
-                        if ((DateTime.Now - lastTimeRefresh).TotalSeconds > 5.0)
+                        if (!playMode.isLoopASong && !playMode.isLoopQueue)
+                            playMode.isLoopQueue = true;
+                        else if (!playMode.isLoopASong && playMode.isLoopQueue)
                         {
-                            lastTimeRefresh = DateTime.Now;
-                            await SendOrEditCurrentlyPlayingSong(true);
+                            playMode.isLoopQueue = false;
+                            playMode.isLoopASong = true;
                         }
+                        else //if (playMode.isLoopASong && !playMode.isLoopQueue)
+                            playMode.isLoopASong = playMode.isLoopQueue = false;
+                        await UpdateCurrentlyPlayingButtons();
+                        return;
+                    }
+                    else if (id == "shuffle")
+                    {
+                        await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
+                        playMode.isRandom = !playMode.isRandom;
+                        await UpdateCurrentlyPlayingButtons();
                         return;
                     }
                     await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage);
@@ -1213,16 +1279,25 @@ namespace CatBot.Music
                     new DiscordButtonComponent(ButtonStyle.Primary, "rewind_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":rewind:"))),
                     new DiscordButtonComponent(ButtonStyle.Primary, "pauseplay_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, isPaused ? ":arrow_forward:" : ":pause_button:"))),
                     new DiscordButtonComponent(ButtonStyle.Primary, "fastforward_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":fast_forward:"))),
-                    new DiscordButtonComponent(ButtonStyle.Primary, "next_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", musicQueue.Count <= 0, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":track_next:")))
+                    new DiscordButtonComponent(ButtonStyle.Primary, "next_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", musicQueue.Count <= 0 && !playMode.isLoopQueue, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":track_next:")))
                 };
             if (rows == 2)
                 return new DiscordButtonComponent[]
                 {
                     new DiscordButtonComponent(ButtonStyle.Secondary, "volume-_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", volume <= 0.0, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":sound:"))),
-                    new DiscordButtonComponent(ButtonStyle.Secondary, "lyric_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", lyricsShown, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":page_facing_up:"))),
+                    new DiscordButtonComponent(ButtonStyle.Secondary, "refresh_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":arrows_counterclockwise:"))),
                     new DiscordButtonComponent(ButtonStyle.Secondary, "stop_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":stop_button:"))),
-                    new DiscordButtonComponent(ButtonStyle.Secondary, "refresh_" + uniqueID + "_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":arrows_counterclockwise:"))),
+                    new DiscordButtonComponent(ButtonStyle.Secondary, "download_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", isSongDownloaded, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":arrow_down:"))),
                     new DiscordButtonComponent(ButtonStyle.Secondary, "volume+_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", volume >= 2.5, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":loud_sound:")))
+                };
+            if (rows == 3)
+                return new DiscordButtonComponent[]
+                {
+                    new DiscordButtonComponent(ButtonStyle.Secondary, "unused1_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", true, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":black_small_square:"))),
+                    new DiscordButtonComponent(ButtonStyle.Secondary, "lyric_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", lyricsShown, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":page_facing_up:"))),
+                    new DiscordButtonComponent((playMode.isLoopASong || playMode.isLoopQueue) ? ButtonStyle.Success : ButtonStyle.Secondary, "repeat_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, (playMode.isLoopASong ? ":repeat_one:" : ":repeat:")))),
+                    new DiscordButtonComponent(playMode.isRandom ? ButtonStyle.Success : ButtonStyle.Secondary, "shuffle_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", false, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":twisted_rightwards_arrows:"))),
+                    new DiscordButtonComponent(ButtonStyle.Secondary, "unused2_" + uniqueID + "_player_controls_" + serverInstance.server.Id, "", true, new DiscordComponentEmoji(DiscordEmoji.FromName(DiscordBotMain.botClient, ":black_small_square:"))),
                 };
             return new DiscordButtonComponent[0];
         }

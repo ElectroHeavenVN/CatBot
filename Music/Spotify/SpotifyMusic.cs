@@ -51,6 +51,7 @@ namespace CatBot.Music.Spotify
         bool _disposed;
         string pcmFile;
         string lyric;
+        string mimeType;
 
         static string token;
         static DateTime tokenExpireTime = DateTime.Now;
@@ -83,7 +84,6 @@ namespace CatBot.Music.Spotify
 
         public void Download()
         {
-            string mimeType;
             audioFilePath = Path.GetTempFileName();
             try
             {
@@ -114,8 +114,8 @@ namespace CatBot.Music.Spotify
                 throw new MusicException("not found");
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(audioFilePath, ref pcmFile));
-            File.Delete(audioFilePath);
-            audioFilePath = null;
+            //File.Delete(audioFilePath);
+            //audioFilePath = null;
         }
 
         public MusicType MusicType => MusicType.Spotify;
@@ -206,6 +206,8 @@ namespace CatBot.Music.Spotify
                 musicDesc += "Thời lượng: " + Duration.toString();
             return musicDesc;
         }
+
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload('.' + mimeType.Remove(0, 7), new FileStream(audioFilePath, FileMode.Open, FileAccess.Read));
 
         void DownloadTrackUsingZotify()
         {

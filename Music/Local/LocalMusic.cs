@@ -129,6 +129,8 @@ namespace CatBot.Music.Local
 
         public string GetPCMFilePath() => pcmFile;
 
+        public MusicFileDownload GetDownloadFile() => new MusicFileDownload(Path.GetExtension(path), new FileStream(path, FileMode.Open, FileAccess.Read));
+
         public void DeletePCMFile()
         {
             try
@@ -141,7 +143,7 @@ namespace CatBot.Music.Local
             catch (Exception) { }
         }
 
-        public string[] GetFilesInUse() => new string[] { pcmFile };
+        public string[] GetFilesInUse() => new string[] { pcmFile, path };
 
         public string GetIcon() => "\ud83d\udcc1";
 
