@@ -286,17 +286,23 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task PlayAllLocalMusic(InteractionContext ctx)
+        internal static async Task PlayAllLocalMusic(InteractionContext ctx, string search = "")
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.lastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
                 return;
             await ctx.DeferAsync();
+            search = search.ToLower();  
             List<FileInfo> musicFiles2 = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
             musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
             foreach (FileInfo musicFile in musicFiles2)
-                serverInstance.musicPlayer.musicQueue.Enqueue(MusicUtils.CreateMusicInstance(musicFile.Name, MusicType.Local));
+            {
+                IMusic music = MusicUtils.CreateMusicInstance(musicFile.Name, MusicType.Local);
+                if (!string.IsNullOrEmpty(search) && !music.Title.ToLower().Contains(search) && !music.Artists.ToLower().Contains(search) && !music.Album.ToLower().Contains(search))
+                    continue;
+                serverInstance.musicPlayer.musicQueue.Enqueue(music);
+            }
             serverInstance.musicPlayer.isPaused = false;
             serverInstance.musicPlayer.isStopped = false;
             serverInstance.isDisconnect = false;

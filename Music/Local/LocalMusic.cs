@@ -40,7 +40,7 @@ namespace CatBot.Music.Local
                 duration = musicFile.Properties.Duration;
                 title = string.IsNullOrWhiteSpace(musicFile.Tag.Title) ? Path.GetFileNameWithoutExtension(path) : musicFile.Tag.Title;
                 artists = string.Join(", ", musicFile.Tag.Performers);
-                album = musicFile.Tag.Album;
+                album = musicFile.Tag.Album ?? "";
                 if (musicFile.Tag.Pictures.Length != 0 && musicFile.Tag.Pictures[0].Data.Data.Length != 0)
                 {
                     albumThumbnailData = MusicUtils.TrimStartNullBytes(musicFile.Tag.Pictures[0].Data.Data);

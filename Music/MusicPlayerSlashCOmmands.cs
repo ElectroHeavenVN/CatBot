@@ -71,7 +71,7 @@ namespace CatBot.Music
         public async Task PlayRandomLocalMusic(InteractionContext ctx, [Option("count", "Số lượng bài nhạc"), Minimum(1), Maximum(int.MaxValue)] long count = 1) => await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);
 
         [SlashCommand("play-local-all", "Thêm toàn bộ nhạc local vào hàng đợi")]
-        public async Task PlayAllLocalMusic(InteractionContext ctx) => await MusicPlayerCore.PlayAllLocalMusic(ctx);
+        public async Task PlayAllLocalMusic(InteractionContext ctx, [Option("search", "Từ khóa lọc các bài hát")] string search = "") => await MusicPlayerCore.PlayAllLocalMusic(ctx, search);
 
         [SlashCommand("now-playing", "Xem thông tin bài nhạc đang phát")]
         public async Task NowPlaying(InteractionContext ctx) => await MusicPlayerCore.NowPlaying(ctx);
