@@ -296,18 +296,20 @@ namespace CatBot.Music
             search = search.ToLower();  
             List<FileInfo> musicFiles2 = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
             musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
+            int count = 0;
             foreach (FileInfo musicFile in musicFiles2)
             {
                 IMusic music = MusicUtils.CreateMusicInstance(musicFile.Name, MusicType.Local);
                 if (!string.IsNullOrEmpty(search) && !music.Title.ToLower().Contains(search) && !music.Artists.ToLower().Contains(search) && !music.Album.ToLower().Contains(search))
                     continue;
                 serverInstance.musicPlayer.musicQueue.Enqueue(music);
+                count++;
             }
             serverInstance.musicPlayer.isPaused = false;
             serverInstance.musicPlayer.isStopped = false;
             serverInstance.isDisconnect = false;
             serverInstance.musicPlayer.InitMainPlay();
-            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm {musicFiles2.Count} bài vào hàng đợi! Hiện tại hàng đợi có {serverInstance.musicPlayer.musicQueue.Count} bài!").Build()));
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm {count} bài vào hàng đợi! Hiện tại hàng đợi có {serverInstance.musicPlayer.musicQueue.Count} bài!").Build()));
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
