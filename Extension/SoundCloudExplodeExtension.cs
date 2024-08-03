@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus.Net;
+using SoundCloudExplode;
 using SoundCloudExplode.Bridge;
 using SoundCloudExplode.Common;
 using SoundCloudExplode.Exceptions;
@@ -15,76 +20,57 @@ using SoundCloudExplode.Users;
 
 namespace CatBot.SoundCloudExplodeExtension
 {
-    public class SoundCloudCollectionItem : IBatchItem
-    {
-        [JsonPropertyName("created_at")]
-        public DateTime CreatedAt { get; set; }
-            
-        [JsonPropertyName("type")]
-        public string Type { get; set; }
-
-        [JsonPropertyName("kind")]
-        public string Kind { get; set; }
-
-        [JsonPropertyName("user")]
-        public User User { get; set; }
-
-        [JsonPropertyName("uuid")]
-        public string UUID { get; set; }
-
-        [JsonPropertyName("caption")]
-        public string Caption { get; set; }
-
-        [JsonPropertyName("track")]
-        public Track Track { get; set; }
-    }
-
     internal static class Extension
     {
-        public static async Task<IEnumerable<Batch<SoundCloudCollectionItem>>> GetItemBatchesAsync(UserClient client, string url, string queryPart, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
+        static async Task<IEnumerable<Batch<Track>>> GetTrackBatchesAsync(UserClient client, string url, string trackQuery, int offset = Constants.DefaultOffset, int limit = Constants.DefaultLimit, CancellationToken cancellationToken = default)
         {
-            SoundcloudEndpoint _endpoint = (SoundcloudEndpoint)typeof(UserClient).GetField("_endpoint", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
-            HttpClient _http = (HttpClient)typeof(UserClient).GetField("_http", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
             if (limit < 0 || limit > 200)
                 throw new SoundcloudExplodeException($"Limit must be between 0 and 200");
-            User user = await client.GetAsync(url, cancellationToken);
-            if (user == null)
-                return Enumerable.Empty<Batch<SoundCloudCollectionItem>>();
-            string nextUrl = null;
-            var batches = new List<Batch<SoundCloudCollectionItem>>();
+            var user = await client.GetAsync(url, cancellationToken);
+            if (user is null)
+                return Enumerable.Empty<Batch<Track>>();
+            var endpoint = (SoundcloudEndpoint)typeof(UserClient).GetField("<endpoint>P", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
+            var http = (HttpClient)typeof(UserClient).GetField("<http>P", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
+            MethodInfo executeGetAsync = typeof(UserClient).Assembly.GetType("SoundCloudExplode.Utils.Extensions.HttpExtensions").GetMethod("ExecuteGetAsync");
+
+            var nextUrl = "";
+            var batches = new List<Batch<Track>>();
             while (true)
             {
-                url = nextUrl ?? $"https://api-v2.soundcloud.com{(queryPart == "reposts" ? "/stream" : "")}/users/{user.Id}/{queryPart}?offset={offset}&limit={limit}&client_id={_endpoint.ClientId}";
-                ValueTask<string> executeGetAsyncValueTask = (ValueTask<string>)typeof(UserClient).Assembly.GetType("SoundCloudExplode.Utils.Extensions.HttpExtensions").GetMethod("ExecuteGetAsync").Invoke(null, new object[] { _http, url, cancellationToken });
-                await executeGetAsyncValueTask.ConfigureAwait(false);
-                JsonElement doc = JsonDocument.Parse(executeGetAsyncValueTask.Result).RootElement;
-                string collectionStr = doc.GetProperty("collection").ToString();
-                if (!string.IsNullOrEmpty(collectionStr))
-                {
-                    List<SoundCloudCollectionItem> list = JsonSerializer.Deserialize<List<SoundCloudCollectionItem>>(collectionStr);
-                    if (list == null || !list.Any())
-                        break;
-                    batches.Add(new Batch<SoundCloudCollectionItem>(list));
-                    nextUrl = doc.GetProperty("next_href").GetString();
-                    if (!string.IsNullOrEmpty(nextUrl))
-                        nextUrl = nextUrl + "&client_id=" + _endpoint.ClientId;
-                    else
-                        break;
-                }
+                if (!string.IsNullOrEmpty(nextUrl))
+                    url = nextUrl;
                 else
+                    url = $"https://api-v2.soundcloud.com/{(trackQuery == "reposts" ? "stream" : "")}/users/{user.Id}/{trackQuery}?offset={offset}&limit={limit}&client_id={endpoint.ClientId}";
+                ValueTask<string> executeGetAsyncValueTask = (ValueTask<string>)executeGetAsync.Invoke(null, new object[] { http, url, cancellationToken });
+                var response = await executeGetAsyncValueTask;
+                var doc = JsonDocument.Parse(response).RootElement;
+                var collectionStr = doc.GetProperty("collection").ToString();
+                if (string.IsNullOrEmpty(collectionStr))
+                    break;
+                Type sourceGenerationContext = typeof(SoundCloudClient).Assembly.GetType("SoundCloudExplode.SourceGenerationContext");
+                JsonTypeInfo<Track> track = (JsonTypeInfo<Track>)sourceGenerationContext.GetProperty("Track", BindingFlags.Public | BindingFlags.Instance).GetValue(sourceGenerationContext.GetProperty("Default", BindingFlags.Public | BindingFlags.Static).GetValue(null));
+                List<Track> list = doc.GetProperty("collection")
+                    .EnumerateArray()
+                    .Select(x =>
+                    {
+                        return x.GetProperty("track").Deserialize(track);
+                    })
+                    .Where(tr => tr != null)
+                    .ToList();
+                batches.Add(new Batch<Track>(list));
+                nextUrl = doc.GetProperty("next_href").GetString();
+                if (string.IsNullOrEmpty(nextUrl))
+                    break;
+                nextUrl += $"&client_id={endpoint.ClientId}";
+                if (string.IsNullOrEmpty(collectionStr))
                     break;
             }
             return batches;
         }
 
-        public static async Task<IEnumerable<SoundCloudCollectionItem>> GetLikedItemsAsync(this UserClient client, string url, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
+        public static async Task<IEnumerable<Track>> GetRepostedTracksAsync(this UserClient client, string url, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
         {
-            return await FlattenAsync(GetItemBatchesAsync(client, url, "likes", offset, limit, cancellationToken));
-        }
-
-        public static async Task<IEnumerable<SoundCloudCollectionItem>> GetRepostItemsAsync(this UserClient client, string url, int offset = 0, int limit = 50, CancellationToken cancellationToken = default)
-        {
-            return await FlattenAsync(GetItemBatchesAsync(client, url, "reposts", offset, limit, cancellationToken));
+            return await FlattenAsync(GetTrackBatchesAsync(client, url, "reposts", offset, limit, cancellationToken));
         }
 
         static async Task<IEnumerable<T>> FlattenAsync<T>(Task<IEnumerable<Batch<T>>> sourceTask) where T : IBatchItem => await SelectManyAsync(sourceTask, b => b.Items);

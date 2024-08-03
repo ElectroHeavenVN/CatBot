@@ -140,9 +140,9 @@ namespace CatBot.Music.SoundCloud
             else if (type == "set")
                 tracks = await SoundCloudMusic.scClient.Playlists.GetTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "likes")
-                tracks = (await SoundCloudMusic.scClient.Users.GetLikedItemsAsync(link, 0, 200)).Select(i => i.Track);
+                tracks = await SoundCloudMusic.scClient.Users.GetLikedTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "reposts")
-                tracks = (await SoundCloudMusic.scClient.Users.GetRepostItemsAsync(link, 0, 200)).Select(i => i.Track);
+                tracks = await SoundCloudMusic.scClient.Users.GetRepostedTracksAsync(link, 0, 200);
             await Task.Run(() =>
             {
                 foreach (Track track in tracks)
