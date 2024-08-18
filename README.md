@@ -8,7 +8,7 @@
 - Phát nhạc từ [SoundCloud](https://soundcloud.com/) (cung cấp bởi [SoundCloudExplode](https://github.com/jerry08/SoundCloudExplode))
 - Phát nhạc từ [Spotify](https://spotify.com/) (cung cấp bởi [SpotifyExplode](https://github.com/jerry08/SpotifyExplode), [Zotify](https://github.com/zotify-dev/zotify), [spotDL](https://github.com/spotDL/spotify-downloader) và [SpotifyDown](https://spotifydown.com/))
 - Phát nhạc đã tải về trong máy
-- Tìm lời bài hát (cung cấp bởi [Lyrist](https://lyrist.vercel.app/))
+- Tìm lời bài hát (cung cấp bởi [LRCLIB](https://lrclib.net/))
 ## Setup
 - Biên dịch dự án hoặc tải tệp thực thi từ [Build CatBot Action](../../actions/workflows/Build.yml) và chạy file CatBot.exe lần đầu tiên, file `CatBot_config.json` sẽ được tạo mới
 - Thay đổi các thông số trong file `CatBot_config.json`:
