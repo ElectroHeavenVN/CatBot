@@ -240,7 +240,11 @@ namespace CatBot
                         count = -1;
                     }
                     count++;
-                    await botClient.UpdateStatusAsync(discordActivity, DiscordUserStatus.Online);
+                    try
+                    {
+                        await botClient.UpdateStatusAsync(discordActivity, DiscordUserStatus.Online);
+                    }
+                    catch { }
                     for (int i = 0; i < 30; i++)
                     {
                         if (activity != null)
@@ -250,7 +254,11 @@ namespace CatBot
                 }
                 if (activity != null)
                 {
-                    await botClient.UpdateStatusAsync(activity, DiscordUserStatus.Online);
+                    try
+                    {
+                        await botClient.UpdateStatusAsync(activity, DiscordUserStatus.Online);
+                    }
+                    catch { }
                     for (int i = 0; i < 30; i++)
                     {
                         if (activity == null)
