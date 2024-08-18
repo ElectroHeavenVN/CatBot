@@ -1,24 +1,19 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
 namespace CatBot.Music.YouTube
 {
-    internal class YouTubeMusicChoiceProvider : IAutocompleteProvider
+    internal class YouTubeMusicChoiceProvider : IAutoCompleteProvider
     {
-        public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            Task<IEnumerable<DiscordAutoCompleteChoice>> result = null;
-            string linkOrKeyword = (string)ctx.FocusedOption.Value;
-            if (string.IsNullOrWhiteSpace(linkOrKeyword))
-                result = Task.FromResult(new List<DiscordAutoCompleteChoice>().AsEnumerable());
-            else 
-                result = Task.FromResult(YouTubeSearch.Search(linkOrKeyword).Select(sR =>
+            var result = new Dictionary<string, object>();
+            await Task.Run(() =>
+            {
+                string linkOrKeyword = context.UserInput;
+                if (string.IsNullOrWhiteSpace(linkOrKeyword))
+                    return;
+                YouTubeSearch.Search(linkOrKeyword).ForEach(sR =>
                 {
                     string name = sR.Title + " - " + sR.Author;
                     if (name.Length > 100)
@@ -28,8 +23,9 @@ namespace CatBot.Music.YouTube
                         else
                             name = name.Substring(0, 97) + "...";
                     }
-                    return new DiscordAutoCompleteChoice(name, sR.LinkOrID);
-                }));
+                    result.Add(name, sR.LinkOrID);
+                });
+            });
             return result;
         }
     }

@@ -1,24 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.VoiceNext;
-using TagLib.Asf;
-using System.Diagnostics;
-using System.IO;
-using System.Threading;
-using DSharpPlus.Entities;
-using DSharpPlus;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Trees.Metadata;
 
 namespace CatBot.Instance
 {
-    public class GlobalBaseCommands : BaseCommandModule
+    public class GlobalBaseCommands
     {
-        [Command("volume"), Aliases("vol", "v"), Description("Xem hoặc chỉnh âm lượng tổng của bot")]
-        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await BotServerInstance.SetVolume(ctx.Message, volume);
+        [Command("vol"), TextAlias("v"), Description("Xem hoặc chỉnh âm lượng tổng của bot")]
+        public async Task SetVolume(TextCommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await BotServerInstance.SetVolume(ctx.Message, volume);
 
         //[Command("test")]
         //public async Task Test(CommandContext ctx)

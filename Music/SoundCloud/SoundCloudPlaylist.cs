@@ -15,25 +15,27 @@ using SoundCloudExplode.Users;
 
 namespace CatBot.Music.SoundCloud
 {
-    internal class SoundCloudPlaylist : IPlaylist
+    internal partial class SoundCloudPlaylist : IPlaylist
     {
-        internal static readonly Regex regexMatchSoundCloudPlaylistLink = new Regex("^(?:https?:\\/\\/)?((?:(?:m|on)\\.)?soundcloud\\.com)\\/([\\w-]*)\\/?(?:(?:\\/?(?:sets\\/)((?:[\\w-]*))\\??.*)|(?:(likes|tracks|popular-tracks|reposts)))?$", RegexOptions.Compiled);
-        string title;
-        string description;
-        string author;
-        string thumbnailLink;
-        string type;
+        [GeneratedRegex("^(?:https?:\\/\\/)?((?:(?:m|on)\\.)?soundcloud\\.com)\\/([\\w-]*)\\/?(?:(?:\\/?(?:sets\\/)((?:[\\w-]*))\\??.*)|(?:(likes|tracks|popular-tracks|reposts)))?$", RegexOptions.Compiled)]
+        internal static partial Regex GetRegexMatchSoundCloudPlaylistLink();
+
+        string title = "";
+        string description = "";
+        string author = "";
+        string thumbnailLink = "";
+        string type = "";
         long songsCount;
-        MusicQueue musicQueue;
-        CancellationTokenSource addSongsInPlaylistCTS;
+        MusicQueue? musicQueue;
+        CancellationTokenSource? addSongsInPlaylistCTS;
 
         public SoundCloudPlaylist() { }
         public SoundCloudPlaylist(string link, MusicQueue queue) 
         {
-            if (regexMatchSoundCloudPlaylistLink.IsMatch(link))
+            if (GetRegexMatchSoundCloudPlaylistLink().IsMatch(link))
             {
                 musicQueue = queue;
-                Match match = regexMatchSoundCloudPlaylistLink.Match(link);
+                Match match = GetRegexMatchSoundCloudPlaylistLink().Match(link);
                 string domain = match.Groups[1].Value;
                 //string artist = match.Groups[2].Value;
                 //string playlist = match.Groups[3].Value;
@@ -41,13 +43,13 @@ namespace CatBot.Music.SoundCloud
                 Playlist playlist;
                 User user;
                 if (domain == "on.soundcloud.com")
-                    link = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, link), HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult().RequestMessage.RequestUri.ToString();
+                    link = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, link), HttpCompletionOption.ResponseHeadersRead).Result.RequestMessage.RequestUri.ToString();
                 if (link.Contains("/sets/"))
                 {
                     type = "set";
                     try
                     {
-                        playlist = SoundCloudMusic.scClient.Playlists.GetAsync(link).GetAwaiter().GetResult();
+                        playlist = SoundCloudMusic.scClient.Playlists.GetAsync(link).Result;
                         title = Formatter.MaskedUrl(playlist.Title, playlist.PermalinkUrl);
                         author = Formatter.MaskedUrl(playlist.User.Username, playlist.User.PermalinkUrl);
                         description = playlist.Description;
@@ -65,7 +67,7 @@ namespace CatBot.Music.SoundCloud
                     if (type == "tracks")
                     {
                         link = link.ReplaceFirst(type, "");
-                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
                         title = "Nhạc của " + Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         author = Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         if (user.AvatarUrl != null)
@@ -73,7 +75,7 @@ namespace CatBot.Music.SoundCloud
                     }
                     else if (type == "popular-tracks")
                     {
-                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
                         title = Formatter.MaskedUrl("Nhạc nổi bật", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         author = Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         if (user.AvatarUrl != null)
@@ -81,7 +83,7 @@ namespace CatBot.Music.SoundCloud
                     }
                     else if (type == "likes")
                     {
-                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
                         title = Formatter.MaskedUrl("Nhạc đã thích", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         author = Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         if (user.AvatarUrl != null)
@@ -89,7 +91,7 @@ namespace CatBot.Music.SoundCloud
                     }
                     else if (type == "reposts")
                     {
-                        user = SoundCloudMusic.scClient.Users.GetAsync(link).GetAwaiter().GetResult();
+                        user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
                         title = Formatter.MaskedUrl("Nhạc repost", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         author = Formatter.MaskedUrl(user.Username, user.PermalinkUrl);
                         if (user.AvatarUrl != null)
@@ -112,7 +114,7 @@ namespace CatBot.Music.SoundCloud
 
         public string ThumbnailLink => thumbnailLink;
 
-        public CancellationTokenSource AddSongsInPlaylistCTS
+        public CancellationTokenSource? AddSongsInPlaylistCTS
         {
             get => addSongsInPlaylistCTS;
             set => addSongsInPlaylistCTS = value;
@@ -142,7 +144,7 @@ namespace CatBot.Music.SoundCloud
             else if (type == "likes")
                 tracks = await SoundCloudMusic.scClient.Users.GetLikedTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "reposts")
-                tracks = await SoundCloudMusic.scClient.Users.GetRepostedTracksAsync(link, 0, 200);
+                tracks = await SoundCloudMusic.scClient.Users.GetRepostedTracksAsync(link, 0, 200).ToListAsync();
             await Task.Run(() =>
             {
                 foreach (Track track in tracks)
@@ -152,6 +154,6 @@ namespace CatBot.Music.SoundCloud
 
         public void SetSponsorBlockOptions(SponsorBlockOptions sponsorBlockOptions) { }
 
-        public bool isLinkMatch(string link) => regexMatchSoundCloudPlaylistLink.IsMatch(link) && (SoundCloudMusic.scClient.Playlists.IsUrlValidAsync(link).GetAwaiter().GetResult() || SoundCloudMusic.scClient.Users.IsUrlValid(link.ReplaceFirst("popular-tracks", "").ReplaceFirst("tracks", "").ReplaceFirst("likes", "").ReplaceFirst("reposts", "")));
+        public bool isLinkMatch(string link) => GetRegexMatchSoundCloudPlaylistLink().IsMatch(link) && (SoundCloudMusic.scClient.Playlists.IsUrlValidAsync(link).Result || SoundCloudMusic.scClient.Users.IsUrlValid(link.ReplaceFirst("popular-tracks", "").ReplaceFirst("tracks", "").ReplaceFirst("likes", "").ReplaceFirst("reposts", "")));
     }
 }

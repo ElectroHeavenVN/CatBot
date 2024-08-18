@@ -42,7 +42,7 @@ namespace CatBot.Music.Spotify
                     Album album;
                     try
                     {
-                        album = SpotifyMusic.SPClient.Albums.GetAsync(id).GetAwaiter().GetResult();
+                        album = SpotifyMusic.SPClient.Albums.GetAsync(id).Result;
                     }
                     catch (Exception) { throw new MusicException("album not found"); }
                     title = Formatter.MaskedUrl(album.Name, new Uri(album.Url));
@@ -55,10 +55,10 @@ namespace CatBot.Music.Spotify
                     Playlist playlist;
                     try
                     {
-                        playlist = SpotifyMusic.SPClient.Playlists.GetAsync(id).GetAwaiter().GetResult();
+                        playlist = SpotifyMusic.SPClient.Playlists.GetAsync(id).Result;
                     }
                     catch (Exception) { throw new MusicException("playlist not found"); }
-                    string[] imageLinks = SpotifyMusic.SPClient.Playlists.GetImagesAsync(id).GetAwaiter().GetResult();
+                    string[] imageLinks = SpotifyMusic.SPClient.Playlists.GetImagesAsync(id).Result;
                     title = Formatter.MaskedUrl(playlist.Name, new Uri($"https://open.spotify.com/playlist/{playlist.Id}"));
                     description = playlist.Description;
                     HtmlDocument doc = new HtmlDocument();
@@ -76,7 +76,7 @@ namespace CatBot.Music.Spotify
                     Artist artist; 
                     try
                     {
-                        artist = SpotifyMusic.SPClient.Artists.GetAsync(id).GetAwaiter().GetResult();
+                        artist = SpotifyMusic.SPClient.Artists.GetAsync(id).Result;
                     }
                     catch (Exception) { throw new MusicException("artist not found"); }
                     title = "Nhạc phổ biến của " + Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}"));
@@ -99,7 +99,7 @@ namespace CatBot.Music.Spotify
 
         public long TracksCount => songCount;
 
-        public CancellationTokenSource AddSongsInPlaylistCTS
+        public CancellationTokenSource? AddSongsInPlaylistCTS
         {
             get => addSongsInPlaylistCTS;
             set => addSongsInPlaylistCTS = value;

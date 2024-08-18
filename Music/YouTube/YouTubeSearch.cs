@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
+﻿using System.Net;
 using Newtonsoft.Json.Linq;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -17,15 +13,15 @@ namespace CatBot.Music.YouTube
 
         internal static List<SearchResult> Search(string linkOrKeyword, int count = 25)
         {
-            if (YouTubePlaylist.regexMatchYTPlaylistLink.IsMatch(linkOrKeyword))
+            if (YouTubePlaylist.GetRegexMatchYTPlaylistLink().IsMatch(linkOrKeyword))
             {
                 if (linkOrKeyword.Contains("@") || linkOrKeyword.Contains("channel/"))
                 {
                     Channel channel;
                     if (linkOrKeyword.Contains("@"))
-                        channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(linkOrKeyword).GetAwaiter().GetResult();
+                        channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(linkOrKeyword).Result;
                     else
-                        channel = YouTubeMusic.ytClient.Channels.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                        channel = YouTubeMusic.ytClient.Channels.GetAsync(linkOrKeyword).Result;
                     return new List<SearchResult>()
                     {
                         new SearchResult(channel.Url, "Video tải lên", channel.Title, channel.Url, channel.Thumbnails.TryGetWithHighestResolution().Url)
@@ -33,22 +29,23 @@ namespace CatBot.Music.YouTube
                 }
                 else if (linkOrKeyword.Contains("playlist?list="))
                 {
-                    Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                    Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(linkOrKeyword).Result;
                     return new List<SearchResult>()
                     {
                         new SearchResult(playlist.Url, playlist.Title, playlist.Author.ChannelTitle, playlist.Author.ChannelUrl, playlist.Thumbnails.TryGetWithHighestResolution().Url)
                     };
                 }
             }
-            if (YouTubeMusic.regexMatchYTVideoLink.IsMatch(linkOrKeyword))
+            if (YouTubeMusic.GetRegexMatchYTVideoLink().IsMatch(linkOrKeyword))
             {
-                Video video = YouTubeMusic.ytClient.Videos.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
+                Video video = YouTubeMusic.ytClient.Videos.GetAsync(linkOrKeyword).Result;
                 return new List<SearchResult>()
                 {
                     new SearchResult(video.Url, video.Title, video.Author.ChannelTitle, video.Author.ChannelUrl, video.Thumbnails.TryGetWithHighestResolution().Url)
                 };
             }
-            JObject searchResult = JObject.Parse(new WebClient() { Encoding = Encoding.UTF8 }.DownloadString($"{searchVideoAPI}&maxResults={count}&key={Config.gI().GoogleAPIKey}&q={Uri.EscapeUriString(linkOrKeyword)}"));
+            HttpClient httpClient = new HttpClient();
+            JObject searchResult = JObject.Parse(httpClient.GetStringAsync($"{searchVideoAPI}&maxResults={count}&key={Config.gI().GoogleAPIKey}&q={Uri.EscapeDataString(linkOrKeyword)}").Result);
             return searchResult["items"].Select(sR => new SearchResult($"https://www.youtube.com/watch?v={sR["id"]["videoId"]}", WebUtility.HtmlDecode(sR["snippet"]["title"].ToString()), $"{WebUtility.HtmlDecode(sR["snippet"]["channelTitle"].ToString())}", $"https://www.youtube.com/channel/{sR["snippet"]["channelId"]}", sR["snippet"]["thumbnails"]["high"]["url"].ToString())).ToList();
         }
     }

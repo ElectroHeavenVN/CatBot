@@ -1,34 +1,31 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
 namespace CatBot.Music.ZingMP3
 {
-    internal class ZingMP3MusicChoiceProvider : IAutocompleteProvider
+    internal class ZingMP3MusicChoiceProvider : IAutoCompleteProvider
     {
-        public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            Task<IEnumerable<DiscordAutoCompleteChoice>> result = null;
-            string linkOrKeyword = (string)ctx.FocusedOption.Value;
-            if (string.IsNullOrWhiteSpace(linkOrKeyword))
-                result = Task.FromResult(new List<DiscordAutoCompleteChoice>().AsEnumerable());
-            else
-                result = Task.FromResult(ZingMP3Search.Search(linkOrKeyword).Select(sR =>
+            var result = new Dictionary<string, object>();
+            await Task.Run(() =>
+            {
+                string linkOrKeyword = context.UserInput;
+                if (string.IsNullOrWhiteSpace(linkOrKeyword))
+                    return;
+                ZingMP3Search.Search(linkOrKeyword).ForEach(sR =>
                 {
                     string name = sR.Title + " - " + sR.Author;
                     if (name.Length > 100)
                     {
                         if (sR.Author.Length <= sR.Title.Length)
                             name = sR.Title.Substring(0, 100 - 3 - sR.Author.Length - 3) + "..." + " - " + sR.Author;
-                        else 
+                        else
                             name = name.Substring(0, 97) + "...";
                     }
-                    return new DiscordAutoCompleteChoice(name, "ID: " + sR.LinkOrID);
-                }));
+                    result.Add(name, sR.LinkOrID);
+                });
+            });
             return result;
         }
     }

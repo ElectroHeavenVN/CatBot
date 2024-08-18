@@ -1,11 +1,4 @@
-﻿using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CatBot.Music.SponsorBlock
+﻿namespace CatBot.Music.SponsorBlock
 {
     internal class SponsorBlockOptions
     {

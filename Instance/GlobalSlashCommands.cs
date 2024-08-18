@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using CatBot.Admin;
 using DSharpPlus;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 
 namespace CatBot.Instance
 {
-    public class GlobalSlashCommands : ApplicationCommandModule
+    public class GlobalSlashCommands
     {
         static string speakFile;
         //static string speak;
@@ -32,23 +31,23 @@ namespace CatBot.Instance
         static string reset;
         static List<string> slashCommandMentions = new List<string>();
 
-        [SlashCommand("volume", "Xem hoặc chỉnh âm lượng tổng của bot")]
-        public async Task SetVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
+        [Command("volume"), Description("Xem hoặc chỉnh âm lượng tổng của bot")]
+        public async Task SetVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue(0, 250)] long volume = -1) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
 
-        [SlashCommand("reset", "Đặt lại bot (dùng trong trường hợp bot bị lỗi)")]
-        public async Task ResetBotServerInstance(InteractionContext ctx) => await AdminCommandsCore.ResetBotServerInstance(ctx, "this");
+        [Command("reset"), Description("Đặt lại bot (dùng trong trường hợp bot bị lỗi)")]
+        public async Task ResetBotServerInstance(SlashCommandContext ctx) => await AdminCommandsCore.ResetBotServerInstance(ctx, "this");
 
-        [SlashCommand("help", "Xem trợ giúp về lệnh slash")]
-        public async Task Help(InteractionContext ctx)
+        [Command("help"), Description("Xem trợ giúp về lệnh slash")]
+        public async Task Help(CommandContext ctx)
         {
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle("Danh sách lệnh slash");
             embed.Description = string.Join(", ", slashCommandMentions) + Environment.NewLine;
             embed.Description += "Ấn vào từng lệnh để xem chi tiết.";
-            await ctx.CreateResponseAsync(embed.Build());
+            await ctx.RespondAsync(embed.Build());
         }
 
-        [SlashCommand("about", "Xem thông tin về bot")]
-        public async Task About(InteractionContext ctx)
+        [Command("about"), Description("Xem thông tin về bot")]
+        public async Task About(CommandContext ctx)
         {
             string prefix = Config.gI().DefaultPrefix;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder().WithTitle(DiscordBotMain.botClient.CurrentUser.Username + "#" + DiscordBotMain.botClient.CurrentUser.Discriminator).WithDescription(
@@ -66,7 +65,7 @@ namespace CatBot.Instance
                 $"Sử dụng lệnh {help} | {prefix}help để xem danh sách lệnh.\r\n" +
                 Formatter.Bold($"Bot bị lỗi? Dùng lệnh {reset} nếu bạn có quyền quản trị viên hoặc liên hệ <@!650357286526648350>!")
                 ).WithFooter("Source code của bot: https://github.com/ElectroHeavenVN/CatBot", "https://github.githubassets.com/favicons/favicon-dark.png");
-            await ctx.CreateResponseAsync(embed.Build());
+            await ctx.RespondAsync(embed.Build());
         }
 
         internal static async Task GetMentionStrings()

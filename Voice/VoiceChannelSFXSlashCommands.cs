@@ -1,61 +1,64 @@
-﻿using CatBot.Instance;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.ArgumentModifiers;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
 namespace CatBot.Voice
 {
-    public class VoiceChannelSFXSlashCommands : ApplicationCommandModule
+    public class VoiceChannelSFXSlashCommands
     {
-        [SlashCommand("speak-file", "Chọn file SFX để nói")]
-        public async Task Speak(InteractionContext ctx, [Option("file", "Tên file (cách nhau bằng dấu cách) hoặc \"x\" + số lần lặp lại file SFX trước đó"), Autocomplete(typeof(VoiceSFXChoiceProvider))] string fileNames) => await VoiceChannelSFXCore.Speak(ctx.Interaction, fileNames.Split(' '));
+        [Command("speak-file"), Description("Chọn file SFX để nói")]
+        public async Task Speak(SlashCommandContext ctx, [Parameter("file"), Description("Tên file (cách nhau bằng dấu cách) hoặc \"x\" + số lần lặp lại file SFX trước đó"), SlashAutoCompleteProvider(typeof(VoiceSFXChoiceProvider))] string fileNames) => await VoiceChannelSFXCore.Speak(ctx.Interaction, fileNames.Split(' '));
 
-        [SlashCommand("reconnect", "Kết nối lại kênh thoại hiện tại")]
-        public async Task Reconnect(InteractionContext ctx) => await VoiceChannelSFXCore.Reconnect(ctx.Interaction);
+        [Command("reconnect"), Description("Kết nối lại kênh thoại hiện tại")]
+        public async Task Reconnect(SlashCommandContext ctx) => await VoiceChannelSFXCore.Reconnect(ctx.Interaction);
 
-        [SlashCommand("dictionary", "Xem danh sách file")]
-        public async Task Dictionary(InteractionContext ctx) => await VoiceChannelSFXCore.Dictionary(ctx.Interaction);
+        [Command("dictionary"), Description("Xem danh sách file")]
+        public async Task Dictionary(SlashCommandContext ctx) => await VoiceChannelSFXCore.Dictionary(ctx.Interaction);
 
-        [SlashCommand("stops-speak", "Dừng phát SFX và TTS")]
-        public async Task StopSpeaking(InteractionContext ctx) => await VoiceChannelSFXCore.StopSpeaking(ctx.Interaction);
+        [Command("stops-speak"), Description("Dừng phát SFX và TTS")]
+        public async Task StopSpeaking(SlashCommandContext ctx) => await VoiceChannelSFXCore.StopSpeaking(ctx.Interaction);
 
-        [SlashCommand("disconnect", "Thoát kênh thoại hiện tại")]
-        public async Task Disconnect(InteractionContext ctx) => await VoiceChannelSFXCore.Disconnect(ctx.Interaction);
+        [Command("disconnect"), Description("Thoát kênh thoại hiện tại")]
+        public async Task Disconnect(SlashCommandContext ctx) => await VoiceChannelSFXCore.Disconnect(ctx.Interaction);
 
-        [SlashCommand("delay", "Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
-        public async Task Delay(InteractionContext ctx, [Option("delay", "Thời gian nghỉ (mili giây)"), Minimum(0), Maximum(5000)] long delay = 250) => await VoiceChannelSFXCore.Delay(ctx.Interaction, (int)delay);
+        [Command("delay"), Description("Chỉnh thời gian nghỉ giữa các SFX khi phát tuần tự")]
+        public async Task Delay(SlashCommandContext ctx, [Parameter("delay"), Description("Thời gian nghỉ (mili giây)"), MinMaxValue(0, 5000)] long delay = 250) => await VoiceChannelSFXCore.Delay(ctx.Interaction, (int)delay);
 
-        [SlashCommand("sfxvolume", "Xem hoặc chỉnh âm lượng SFX của bot")]
-        public async Task SetSFXVolume(InteractionContext ctx, [Option("volume", "Âm lượng"), Minimum(0), Maximum(250)] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
+        [Command("sfxvolume"), Description("Xem hoặc chỉnh âm lượng SFX của bot")]
+        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue(0, 250)] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
     }
 
-    internal class VoiceSFXChoiceProvider : IAutocompleteProvider
+    internal class VoiceSFXChoiceProvider : IAutoCompleteProvider
     {
-        public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            List<DiscordAutoCompleteChoice> choices = new List<DiscordAutoCompleteChoice>();
-            List<FileInfo> sfxFiles = new DirectoryInfo(Config.gI().SFXFolder).GetFiles().Concat(new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles()).ToList();
-            sfxFiles.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
-            string userInput = ctx.FocusedOption.Value.ToString();
-            string[] fileNamesUserInput = userInput.Split(' ');
-            int index = userInput.LastIndexOf(' ');
-            if (index == -1)
-                index = 0;
-            foreach (FileInfo sfxFile in sfxFiles.Where(f => f.Extension == ".pcm"))
+            var result = new Dictionary<string, object>();
+            await Task.Run(() =>
             {
-                string fileName = Path.GetFileNameWithoutExtension(sfxFile.Name);
-                if (fileName.ToLower().Contains(fileNamesUserInput.Last().ToLower()))
+                List<FileInfo> sfxFiles = new DirectoryInfo(Config.gI().SFXFolder).GetFiles().Concat(new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles()).ToList();
+                sfxFiles.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
+                string userInput = context.UserInput;
+                if (string.IsNullOrWhiteSpace(userInput))
+                    return;
+                string[] fileNamesUserInput = userInput.Split(' ');
+                int index = userInput.LastIndexOf(' ');
+                if (index == -1)
+                    index = 0;
+                foreach (FileInfo sfxFile in sfxFiles.Where(f => f.Extension == ".pcm"))
                 {
-                    string str = userInput.Substring(0, index) + " " + fileName;
-                    choices.Add(new DiscordAutoCompleteChoice(str, str));
+                    string fileName = Path.GetFileNameWithoutExtension(sfxFile.Name);
+                    if (fileName.ToLower().Contains(fileNamesUserInput.Last().ToLower()))
+                    {
+                        string str = userInput.Substring(0, index) + " " + fileName;
+                        result.Add(str, str);
+                    }
+                    if (result.Count >= 25)
+                        break;
                 }
-                if (choices.Count >= 25)
-                    break;
-            }
-            return Task.FromResult(choices.AsEnumerable());
+            });
+            return result;
         }
     }
 }

@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CatBot.Voice;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.TextCommands;
 
 namespace CatBot.Music
 {
-    public class MusicPlayerBaseCommands : BaseCommandModule
+    public class MusicPlayerBaseCommands
     {
-        [Command("musicvolume"), Aliases("mvol"), Description("Xem hoặc chỉnh âm lượng nhạc của bot")]
-        public async Task SetVolume(CommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Message, volume);
+        [Command("mvol"), Description("Xem hoặc chỉnh âm lượng nhạc của bot")]
+        public async Task SetVolume(TextCommandContext ctx, [Description("Âm lượng (0 - 250)")] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Message, volume);
     }
 }

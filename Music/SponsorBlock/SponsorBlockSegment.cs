@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace CatBot.Music.SponsorBlock
 {
@@ -25,7 +20,7 @@ namespace CatBot.Music.SponsorBlock
             Start = startEnd[0];
             End = startEnd[1];
         }
-        internal double[] GetArray() => new double[] { Start, End };
+        internal double[] GetArray() => [Start, End];
         internal bool IsLengthZero() => End - Start == 0;
         internal double Start { get; set; }
         internal double End { get; set; }

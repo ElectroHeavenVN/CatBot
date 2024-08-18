@@ -1,23 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 
 namespace CatBot.Music.Spotify
 {
-    internal class SpotifyMusicChoiceProvider : IAutocompleteProvider
+    internal class SpotifyMusicChoiceProvider : IAutoCompleteProvider
     {
-        public Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
+        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            Task<IEnumerable<DiscordAutoCompleteChoice>> result = null;
-            string linkOrKeyword = (string)ctx.FocusedOption.Value;
-            if (string.IsNullOrWhiteSpace(linkOrKeyword))
-                result = Task.FromResult(new List<DiscordAutoCompleteChoice>().AsEnumerable());
-            else
-                result = Task.FromResult(SpotifySearch.Search(linkOrKeyword).Select(sR =>
+            var result = new Dictionary<string, object>();
+            await Task.Run(() =>
+            {
+                string linkOrKeyword = context.UserInput;
+                if (string.IsNullOrWhiteSpace(linkOrKeyword))
+                    return;
+                SpotifySearch.Search(linkOrKeyword).ForEach(sR =>
                 {
                     string name = sR.Title + " - " + sR.Author;
                     if (name.Length > 100)
@@ -27,8 +24,9 @@ namespace CatBot.Music.Spotify
                         else
                             name = name.Substring(0, 97) + "...";
                     }
-                    return new DiscordAutoCompleteChoice(name, sR.LinkOrID);
-                }));
+                    result.Add(name, sR.LinkOrID);
+                });
+            });
             return result;
         }
     }

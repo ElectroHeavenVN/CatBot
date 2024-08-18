@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
-using DSharpPlus.Net.Abstractions;
+﻿using DSharpPlus.Entities;
 using Newtonsoft.Json;
 
 namespace CatBot
@@ -13,13 +7,13 @@ namespace CatBot
     {
         internal ulong? ApplicationID { get; set; }
 
-        internal ActivityType ActivityType { get; set; }
+        internal DiscordActivityType ActivityType { get; set; }
 
         internal string Name { get; set; }
     
         internal string State { get; set; }
 
-        internal CustomDiscordActivity(ulong? applicationID = 0, ActivityType type = ActivityType.Playing, string name = "", string state = " ")
+        internal CustomDiscordActivity(ulong? applicationID = 0, DiscordActivityType type = DiscordActivityType.Playing, string name = "", string state = " ")
         {
             ApplicationID = applicationID;
             ActivityType = type;
@@ -35,18 +29,19 @@ namespace CatBot
             [JsonProperty("application_id", NullValueHandling = NullValueHandling.Ignore)]
             public string ApplicationIdStr
             {
-                get => ApplicationId?.ToString();
-                set => ApplicationId = ulong.Parse(value);
+                get => ApplicationId.HasValue ? ApplicationId.Value.ToString() : "0";
+
+                set => ApplicationId = value != null ? ulong.Parse(value) : null;
             }
 
             [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
-            public ActivityType ActivityType { get; set; }
+            public DiscordActivityType DiscordActivityType { get; set; }
 
             [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
-            public string Name { get; set; }
+            public required string Name { get; set; }
 
             [JsonProperty("state", NullValueHandling = NullValueHandling.Ignore)]
-            public string State { get; set; }
+            public required string State { get; set; }
         }
 
         internal class StatusUpdate
@@ -56,63 +51,39 @@ namespace CatBot
             {
                 get
                 {
-                    switch (Status)
+                    return Status switch
                     {
-                        case UserStatus.Offline:
-                        case UserStatus.Invisible:
-                            return "invisible";
-                        case UserStatus.Online:
-                            return "online";
-                        case UserStatus.Idle:
-                            return "idle";
-                        case UserStatus.DoNotDisturb:
-                            return "dnd";
-                    }
-                    return "online";
+                        DiscordUserStatus.Offline or DiscordUserStatus.Invisible => "invisible",
+                        DiscordUserStatus.Online => "online",
+                        DiscordUserStatus.Idle => "idle",
+                        DiscordUserStatus.DoNotDisturb => "dnd",
+                        _ => "online",
+                    };
                 }
                 set
                 {
-                    switch (value)
+                    Status = value switch
                     {
-                        case "invisible":
-                            Status = UserStatus.Invisible;
-                            break;
-                        case "online":
-                            Status = UserStatus.Online;
-                            break;
-                        case "idle":
-                            Status = UserStatus.Idle;
-                            break;
-                        case "dnd":
-                            Status = UserStatus.DoNotDisturb;
-                            break;
-                        default:
-                            Status = UserStatus.Offline;
-                            break;
-                    }
+                        "invisible" => DiscordUserStatus.Invisible,
+                        "online" => DiscordUserStatus.Online,
+                        "idle" => DiscordUserStatus.Idle,
+                        "dnd" => DiscordUserStatus.DoNotDisturb,
+                        _ => DiscordUserStatus.Offline,
+                    };
                 }
             }
 
             [JsonIgnore]
-            internal UserStatus Status { get; set; }
+            internal DiscordUserStatus Status { get; set; }
 
             [JsonProperty("since", NullValueHandling = NullValueHandling.Ignore)]
             public long? IdleSince { get; set; }
 
             [JsonProperty("activities", NullValueHandling = NullValueHandling.Ignore)]
-            public List<TransportActivity> Activities { get; set; }
+            public List<TransportActivity>? Activities { get; set; }
 
             [JsonProperty("afk")]
             public bool IsAFK { get; set; }
         }
-
-        //internal class GatewayPayload
-        //{
-        //    [JsonProperty("op")]
-        //    public GatewayOpCode OpCode { get; set; }
-
-        //    [JsonProperty("d")]
-        //    public object Data { get; set; }
-        //}
     }
 }

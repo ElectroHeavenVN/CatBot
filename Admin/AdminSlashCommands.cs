@@ -1,28 +1,28 @@
-﻿using CatBot.Voice;
-using DSharpPlus.CommandsNext.Attributes;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CatBot.Admin
 {
-    [SlashCommandGroup("admin", "admin commands")]
-    public class AdminSlashCommands : ApplicationCommandModule
+    [Command("admin")]
+    [Description("Các lệnh dành cho quản trị viên")]
+    public class AdminSlashCommands
     {
-        [SlashCommand("join-voice", "Vào kênh thoại")]
-        public async Task JoinVoiceChannel(InteractionContext ctx, [Option("channelID", "ID kênh thoại")] string channelID) => await AdminCommandsCore.JoinVoiceChannel(ctx, channelID);
+        [Command("join-voice")]
+        [Description("Vào kênh thoại")]
+        public async Task JoinVoiceChannel(SlashCommandContext ctx, [Parameter("channelID"), Description("ID kênh thoại")] string channelID) => await AdminCommandsCore.JoinVoiceChannel(ctx, channelID);
 
-        [SlashCommand("leave-voice", "Thoát kênh thoại")]
-        public async Task LeaveVoiceChannel(InteractionContext ctx, [Option("serverID", "ID Máy chủ")] string serverID) => await AdminCommandsCore.LeaveVoiceChannel(ctx, serverID);
+        [Command("leave-voice")]
+        [Description("Rời kênh thoại")]
+        public async Task LeaveVoiceChannel(SlashCommandContext ctx, [Parameter("serverID"), Description("ID Máy chủ")] string serverID) => await AdminCommandsCore.LeaveVoiceChannel(ctx, serverID);
 
-        [SlashCommand("reset-instance", "Đặt lại instance bot của server")]
-        public async Task ResetBotServerInstance(InteractionContext ctx, [Option("serverID", "ID máy chủ")] string serverID = "this") => await AdminCommandsCore.ResetBotServerInstance(ctx, serverID);
+        [Command("reset-instance")]
+        [Description("Đặt lại instance bot của server")]
+        public async Task ResetBotServerInstance(SlashCommandContext ctx, [Parameter("serverID"), Description("ID máy chủ")] string serverID = "this") => await AdminCommandsCore.ResetBotServerInstance(ctx, serverID);
 
-        [SlashCommand("set-presence", "Đặt presence bot")]
-        public async Task SetBotStatus(InteractionContext ctx, [Option("name", "tên presence")] string name = "", [Option("activityType", "Loại presence")] ActivityType activityType = ActivityType.Playing, [Option("state", "trạng thái presence")] string state = "") => await AdminCommandsCore.SetBotStatus(ctx, activityType, name, state);
+        [Command("set-presence")]
+        [Description("Đặt presence bot")]
+        public async Task SetBotStatus(SlashCommandContext ctx, [Parameter("name"), Description("tên presence")] string name = "", [Parameter("activityType"), Description("Loại presence")] DiscordActivityType activityType = DiscordActivityType.Playing, [Parameter("state"), Description("trạng thái presence")] string state = "") => await AdminCommandsCore.SetBotStatus(ctx, activityType, name, state);
     }
 }

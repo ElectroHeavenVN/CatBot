@@ -1,15 +1,9 @@
-﻿using AngleSharp.Dom;
+﻿using System.Net;
+using System.Text;
+using System.Xml;
+using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using TagLib.Ape;
 
 namespace CatBot.Music.NhacCuaTui
 {
@@ -27,7 +21,7 @@ namespace CatBot.Music.NhacCuaTui
                     new SearchResult(linkOrKeyword, $"{xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText}", xmlDoc.DocumentElement["track"].SelectSingleNode("creator").InnerText, "", xmlDoc.DocumentElement["track"].SelectSingleNode("avatar").InnerText)
                 };
             }
-            string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeUriString(linkOrKeyword));
+            string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeDataString(linkOrKeyword));
             HtmlParser parser = new HtmlParser();
             IHtmlDocument document = parser.ParseDocument(html);
             var node1 = document.Body.Children.First(n => n.GetType().GetInterface(nameof(IHtmlDivElement)) != null && ((IHtmlDivElement)n).ClassName == "box-content");

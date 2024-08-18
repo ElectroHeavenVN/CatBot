@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 
 namespace CatBot
@@ -8,9 +7,11 @@ namespace CatBot
     internal class Program
     {
         [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AllocConsole();
 
         [DllImport("msvcrt.dll")]
+        [return: MarshalAs(UnmanagedType.I4)]
         internal static extern int system(string cmd);
 
         static void Main(string[] args)

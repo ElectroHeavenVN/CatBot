@@ -1,41 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using Newtonsoft.Json.Linq;
-using SpotifyExplode.Albums;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 
 namespace CatBot.Music.YouTube
 {
-    internal class YouTubePlaylist : IPlaylist
+    internal partial class YouTubePlaylist : IPlaylist
     {
-        internal static Regex regexMatchYTPlaylistLink = new Regex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu\\.be))(\\/(?:@|playlist\\?list=|channel\\/))([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled);
+        [GeneratedRegex("^((?:https?:)?\\/\\/)?((?:www|m|music)\\.)?((?:youtube\\.com|youtu\\.be))(\\/(?:@|playlist\\?list=|channel\\/))([\\w\\-]+)(\\S+)?$", RegexOptions.Compiled)]
+        internal static partial Regex GetRegexMatchYTPlaylistLink();
 
-        string thumbnailLink;
-        string title;
-        string description;
+        string thumbnailLink = "";
+        string title = "";
+        string description = "";
         bool isYouTubeMusicPlaylist;
-        string author;
+        string author = "";
         //string subCount;
         int hiddenVideos;
-        SponsorBlockOptions sponsorBlockOptions;
-        MusicQueue musicQueue;
-        CancellationTokenSource addSongsInPlaylistCTS;
+        SponsorBlockOptions? sponsorBlockOptions;
+        MusicQueue? musicQueue;
+        CancellationTokenSource? addSongsInPlaylistCTS;
 
         public YouTubePlaylist() { }
         public YouTubePlaylist(string link, MusicQueue queue) 
         {
-            if (regexMatchYTPlaylistLink.IsMatch(link))
+            if (GetRegexMatchYTPlaylistLink().IsMatch(link))
             {
                 musicQueue = queue;
                 isYouTubeMusicPlaylist = link.Contains("music.youtube.com");
@@ -46,11 +38,11 @@ namespace CatBot.Music.YouTube
                         Channel channel;
                         if (link.Contains("@"))
                         {
-                            channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(link).GetAwaiter().GetResult();
+                            channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(link).Result;
                             link = channel.Url;
                         }
                         else
-                            channel = YouTubeMusic.ytClient.Channels.GetAsync(link).GetAwaiter().GetResult();                        
+                            channel = YouTubeMusic.ytClient.Channels.GetAsync(link).Result;                        
                         title = $"Video tải lên của " + Formatter.MaskedUrl(channel.Title, new Uri(channel.Url));
                         author = Formatter.MaskedUrl(channel.Title, new Uri(channel.Url));
                         thumbnailLink = channel.Thumbnails.TryGetWithHighestResolution().Url;
@@ -61,7 +53,7 @@ namespace CatBot.Music.YouTube
                 {
                     try
                     {
-                        Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(link).GetAwaiter().GetResult();
+                        Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(link).Result;
                         title = Formatter.MaskedUrl(playlist.Title, new Uri(playlist.Url));
                         description = playlist.Description;
                         if (playlist.Author != null)
@@ -77,20 +69,17 @@ namespace CatBot.Music.YouTube
         }
 
         public string Title => title;
-
         public string Description => description;
-
         public string Author => author;
-
         public string ThumbnailLink => thumbnailLink;
-
         public long TracksCount => 0;
 
-        public CancellationTokenSource AddSongsInPlaylistCTS
+        public CancellationTokenSource? AddSongsInPlaylistCTS
         {
             get => addSongsInPlaylistCTS;
             set => addSongsInPlaylistCTS = value;
         }
+        
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicPlaylist ? " Music" : ""), isYouTubeMusicPlaylist ? YouTubeMusic.youTubeMusicIconLink : YouTubeMusic.youTubeIconLink);
 
         public string GetPlaylistDesc()
@@ -125,6 +114,6 @@ namespace CatBot.Music.YouTube
 
         public void SetSponsorBlockOptions(SponsorBlockOptions options) => sponsorBlockOptions = options;
 
-        public bool isLinkMatch(string link) => regexMatchYTPlaylistLink.IsMatch(link);
+        public bool isLinkMatch(string link) => GetRegexMatchYTPlaylistLink().IsMatch(link);
     }
 }

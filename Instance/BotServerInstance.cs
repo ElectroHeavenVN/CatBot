@@ -17,32 +17,31 @@ namespace CatBot.Instance
     /// </summary>
     internal class BotServerInstance
     {
-        DiscordChannel m_lastChannel;
+        DiscordChannel? lastChannel;
         DateTime lastTimeCheckVoiceChannel = DateTime.Now;
-        Thread checkVoiceChannelThread;
+        Thread? checkVoiceChannelThread;
         internal static List<BotServerInstance> serverInstances = new List<BotServerInstance>();
-        internal MusicPlayerCore musicPlayer;
-        internal DiscordGuild server;
-        internal VoiceNextConnection currentVoiceNextConnection;
+        internal MusicPlayerCore? musicPlayer;
+        internal DiscordGuild? server;
+        internal VoiceNextConnection? currentVoiceNextConnection;
         internal bool isDisconnect;
         internal bool canSpeak = true;
-        internal DiscordChannel lastChannel
+        internal DiscordChannel? LastChannel
         {
-            get => m_lastChannel;
+            get => lastChannel;
             set
             {
                 lastTimeSetLastChannel = DateTime.Now.Ticks;
-                m_lastChannel = value;
+                lastChannel = value;
             }
         }
         internal long lastTimeSetLastChannel;
         internal VoiceChannelSFXCore voiceChannelSFX = new VoiceChannelSFXCore();
-        internal TTSCore textToSpeech = new TTSCore();
         internal bool suppressOnVoiceStateUpdatedEvent;
         internal bool isVoicePlaying;
-        DiscordMember botMember;
+        DiscordMember? botMember;
         private int lastNumberOfUsersInVC;
-        DiscordMessage lastNoOneInVCMessage;
+        DiscordMessage? lastNoOneInVCMessage;
 
         internal BotServerInstance() 
         {
@@ -53,7 +52,7 @@ namespace CatBot.Instance
         internal BotServerInstance(DiscordGuild server) : this()
         {
             this.server = server;
-            botMember = server.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id).GetAwaiter().GetResult();
+            botMember = server.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id).Result;
         }
 
         static void CheckVoiceChannel(BotServerInstance self)
@@ -68,7 +67,7 @@ namespace CatBot.Instance
                     {
                         self.suppressOnVoiceStateUpdatedEvent = true;
                         string content = "Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!";
-                        if (self.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                        if (self.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                             content = "Bot tự động rời sân khấu do không có người nghe trong 30 phút!";
                         self.GetLastChannel().SendMessageAsync(new DiscordEmbedBuilder().WithTitle(content).WithColor(DiscordColor.Red));
                         if (self.musicPlayer.isPlaying)
@@ -111,10 +110,10 @@ namespace CatBot.Instance
 
         internal DiscordChannel GetLastChannel()
         {
-            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && m_lastChannel != null)
-                return lastChannel;
-            else if (musicPlayer.lastChannel != null)
-                return musicPlayer.lastChannel;
+            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && lastChannel != null)
+                return LastChannel;
+            else if (musicPlayer.LastChannel != null)
+                return musicPlayer.LastChannel;
             else
                 return null;
         }
@@ -167,15 +166,15 @@ namespace CatBot.Instance
                 else
                 {
                     DiscordChannel voiceChannel = member.VoiceState.Channel;
-                    Permissions permissions = voiceChannel.PermissionsFor(serverInstance.botMember);
-                    if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
+                    DiscordPermissions DiscordPermissions = voiceChannel.PermissionsFor(serverInstance.botMember);
+                    if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
                     {
-                        if (voiceChannel.Type == ChannelType.Stage)
+                        if (voiceChannel.Type == DiscordChannelType.Stage)
                             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
                         voiceNextConnection = await voiceChannel.ConnectAsync();
-                        if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                        if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                         {
-                            if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                            if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                                 await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                         }
@@ -186,7 +185,7 @@ namespace CatBot.Instance
                     }
                     else
                     {
-                        await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
+                        await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
                         return null;
                     }
                 }
@@ -196,15 +195,15 @@ namespace CatBot.Instance
             {
                 if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id))
                     return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
-                Permissions permissions = channel.PermissionsFor(serverInstance.botMember);
-                if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
+                DiscordPermissions DiscordPermissions = channel.PermissionsFor(serverInstance.botMember);
+                if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
                 {
-                    if (channel.Type == ChannelType.Stage)
+                    if (channel.Type == DiscordChannelType.Stage)
                         serverInstance.suppressOnVoiceStateUpdatedEvent = true;
                     voiceNextConnection = await channel.ConnectAsync();
-                    if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                    if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     {
-                        if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                        if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                             await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                         serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     }
@@ -216,7 +215,7 @@ namespace CatBot.Instance
                 }
                 else
                 {
-                    await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
+                    await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
                     return null;
                 }
             }
@@ -280,15 +279,6 @@ namespace CatBot.Instance
             return null;
         }
 
-        internal static BotServerInstance GetBotServerInstance(TTSCore textToSpeech)
-        {
-            if (textToSpeech == null)
-                return null;
-            if (serverInstances.Any(s => s.textToSpeech == textToSpeech))
-                return serverInstances.First(s => s.textToSpeech == textToSpeech);
-            return null;
-        }
-        
         internal static BotServerInstance GetBotServerInstance(VoiceNextConnection voiceNextConnection)
         {
             if (voiceNextConnection == null)
@@ -311,7 +301,7 @@ namespace CatBot.Instance
             DiscordChannel channel = null;
             VoiceNextConnection voiceNextConnection = null;
             foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
-                foreach (DiscordChannel voiceChannel in server.Channels.Values.Where(c => c.Type == ChannelType.Voice))
+                foreach (DiscordChannel voiceChannel in server.Channels.Values.Where(c => c.Type == DiscordChannelType.Voice))
                     if (voiceChannel.Id == channelID)
                     {
                         channel = voiceChannel;
@@ -323,13 +313,13 @@ namespace CatBot.Instance
                             serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                             await Task.Delay(300);
                         }
-                        Permissions permissions = channel.PermissionsFor(serverInstance.botMember);
-                        if (permissions.HasPermission(Permissions.AccessChannels | Permissions.UseVoice))
+                        DiscordPermissions DiscordPermissions = channel.PermissionsFor(serverInstance.botMember);
+                        if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
                         {
                             voiceNextConnection = await channel.ConnectAsync();
-                            if (voiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                            if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                             {
-                                if (permissions.HasPermission(Permissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                                if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                                     await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                             }
                             serverInstance.currentVoiceNextConnection = voiceNextConnection;
@@ -372,7 +362,6 @@ namespace CatBot.Instance
             if (volume == -1)
             {
                 await obj.TryRespondAsync("Âm lượng hiện tại: " + (int)(serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier * 100) + Environment.NewLine + 
-                    "Âm lượng TTS hiện tại: " + (int)(serverInstance.textToSpeech.volume * 100) + Environment.NewLine + 
                     "Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100) + Environment.NewLine +
                     "Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
                 return;
@@ -386,7 +375,7 @@ namespace CatBot.Instance
             await obj.TryRespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
         }
 
-        internal static async Task OnVoiceStateUpdated(VoiceStateUpdateEventArgs args)
+        internal static async Task OnVoiceStateUpdated(VoiceStateUpdatedEventArgs args)
         {
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
             if (args.User.Id != DiscordBotMain.botClient.CurrentUser.Id)
@@ -426,9 +415,9 @@ namespace CatBot.Instance
                         DiscordChannel channel = serverInstance.GetLastChannel();
                         bool isDelete = false;
                         DiscordMessage discordMessage = null;
-                        string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel.Id}>!";
-                        if (args.Before.Channel.Type == ChannelType.Stage)
-                            message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel.Id}>!";
+                        string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel?.Id}>!";
+                        if (args.Before.Channel?.Type == DiscordChannelType.Stage)
+                            message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel?.Id}>!";
                         if (channel != null)
                         {
                             discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
@@ -497,7 +486,7 @@ namespace CatBot.Instance
                                 targetChannel = args.After.Channel;
                             else
                                 targetChannel = serverInstance.currentVoiceNextConnection.TargetChannel;
-                            if (targetChannel.Type == ChannelType.Stage && args.After.IsSuppressed)
+                            if (targetChannel.Type == DiscordChannelType.Stage && args.After.IsSuppressed)
                                 message = "Bot đang là người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
                             if (channel != null)
                             {
@@ -571,22 +560,32 @@ namespace CatBot.Instance
             canSpeak = result;
             if (!result && lastNumberOfUsersInVC >= 2 && (musicPlayer.isPlaying || isVoicePlaying))
             {
-                if (lastChannel != null)
+                if (LastChannel != null)
                 {
-                    IReadOnlyList<DiscordMessage> lastMessage = await lastChannel.GetMessagesAsync(1);
-                    if (lastNoOneInVCMessage != null && lastNoOneInVCMessage == lastMessage[0])
+                    IAsyncEnumerable<DiscordMessage> lastMessage = LastChannel.GetMessagesAsync(1);
+                    if (lastNoOneInVCMessage != null && lastNoOneInVCMessage == await lastMessage.ElementAtAsync(0))
                         return;
                     if (lastNoOneInVCMessage != null)
                         await lastNoOneInVCMessage.DeleteAsync();
                 }
                 string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
-                if (currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage)
+                if (currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
                 DiscordChannel discordChannel = GetLastChannel();
                 if (discordChannel != null)
                     lastNoOneInVCMessage = await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
             }
             lastNumberOfUsersInVC = userCount;
+        }
+
+        internal static async Task ComponentInteractionCreated(DiscordClient client, ComponentInteractionCreatedEventArgs args)
+        {
+            foreach (BotServerInstance instance in serverInstances)
+            {
+                if (instance.musicPlayer == null)
+                    continue;
+                await instance.musicPlayer.ButtonPressed(client, args);
+            }
         }
     }
 }

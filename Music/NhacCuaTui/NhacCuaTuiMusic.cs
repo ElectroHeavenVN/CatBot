@@ -1,38 +1,36 @@
-﻿using CatBot.Music.SponsorBlock;
+﻿using System.Net;
+using System.Text.RegularExpressions;
+using System.Xml;
+using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace CatBot.Music.NhacCuaTui
 {
-    internal class NhacCuaTuiMusic : IMusic
+    internal partial class NhacCuaTuiMusic : IMusic
     {
+        [GeneratedRegex(".*-\\.([a-zA-Z0-9]*)\\.html", RegexOptions.Compiled)]
+        private static partial Regex GetRegexMatchIDSong();
+
         static readonly string searchLink = "https://www.nhaccuatui.com/ajax/search?type=song&q=";
         internal static readonly string nhacCuaTuiLink = "https://www.nhaccuatui.com/";
-        internal static Regex regexMatchIDSong = new Regex(".*-\\.([a-zA-Z0-9]*)\\.html", RegexOptions.Compiled);
         static readonly string findArtistLink = "https://www.nhaccuatui.com/tim-kiem?b=singer&q=";
         static readonly string nhacCuaTuiIconLink = "https://cdn.discordapp.com/emojis/1124397223359299725.webp?quality=lossless";  
-        string link;
+        string link = "";
         TimeSpan duration;
         string title = "";
-        string artists = "";
-        string albumThumbnailLink;
-        string mp3FilePath;
-        string pcmFile;
-        FileStream musicPCMDataStream;
+        string[] artists = [];
+        string[] artistsWithLinks = [];
+        string albumThumbnailLink = "";
+        string mp3FilePath = "";
+        string pcmFile = "";
+        FileStream? musicPCMDataStream;
         bool canGetStream;
         bool _disposed;
-        string mp3Link;
+        string mp3Link = "";
+        static HttpClient? httpRequestWithCookie;
+        LyricData? lyric;
 
         public NhacCuaTuiMusic() { }
 
@@ -46,29 +44,34 @@ namespace CatBot.Music.NhacCuaTui
             {
                 JToken obj = FindSongInfo(linkOrKeyword);
                 link = obj["url"].ToString();
-                title = Formatter.MaskedUrl(obj["name"].ToString(), new Uri(obj["url"].ToString()));
-                foreach (JToken singer in obj["singer"])
-                    artists += Formatter.MaskedUrl(singer["name"].ToString(), new Uri(singer["url"].ToString())) + ", ";
+                title = obj["name"].ToString();
+                artists = obj["singer"].Select(singer => singer["name"].ToString()).ToArray();
+                artistsWithLinks = obj["singer"].Select(singer => Formatter.MaskedUrl(singer["name"].ToString(), new Uri(singer["url"].ToString()))).ToArray();
             }
             XmlDocument xmlDoc = GetXML(link);
             if (linkOrKeyword.StartsWith("ID: "))
                 link = xmlDoc.DocumentElement["track"].SelectSingleNode("info").InnerText;
             if (string.IsNullOrWhiteSpace(title))
-                title = Formatter.MaskedUrl(xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText, new Uri(link));
-            if (string.IsNullOrWhiteSpace(artists))
+                title = xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText;
+            if (artists.Length == 0)
             {
                 string[] array = xmlDoc.DocumentElement["track"].SelectSingleNode("creator").InnerText.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                artists = new string[array.Length];
+                artistsWithLinks = new string[array.Length];
                 for (int i = 0; i < array.Length; i++)
                 {
                     if (i == 0)
                     {
                         string firstArtistsLink = xmlDoc.DocumentElement["track"].SelectSingleNode("newtab").InnerText;
-                        artists += Formatter.MaskedUrl(array[i].Trim(), new Uri(firstArtistsLink)) + ", ";
+                        artists[i] = array[i].Trim();
+                        artistsWithLinks[i] = Formatter.MaskedUrl(array[i].Trim(), new Uri(firstArtistsLink));
                     }
                     else
-                        artists += Formatter.MaskedUrl(array[i].Trim(), new Uri(findArtistLink + Uri.EscapeUriString(array[i].Trim()))) + ", ";
+                    {
+                        artists[i] = array[i].Trim();
+                        artistsWithLinks[i] = Formatter.MaskedUrl(array[i].Trim(), new Uri(findArtistLink + Uri.EscapeDataString(array[i].Trim())));
+                    }
                 }
-                artists = artists.TrimEnd(", ".ToCharArray());
             }
             albumThumbnailLink = xmlDoc.DocumentElement["track"].SelectSingleNode("avatar").InnerText;
             mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("location").InnerText;
@@ -80,7 +83,11 @@ namespace CatBot.Music.NhacCuaTui
         public void Download()
         {
             mp3FilePath = Path.GetTempFileName();
-            new WebClient().DownloadFile(mp3Link, mp3FilePath);
+            using (HttpClient client = new HttpClient())
+            {
+                var data = client.GetByteArrayAsync(mp3Link).Result;
+                File.WriteAllBytes(mp3FilePath, data);
+            }
             TagLib.File mp3File = TagLib.File.Create(mp3FilePath, "taglib/mp3", TagLib.ReadStyle.Average);
             duration = mp3File.Properties.Duration;
             mp3File.Dispose();
@@ -93,20 +100,24 @@ namespace CatBot.Music.NhacCuaTui
         ~NhacCuaTuiMusic() => Dispose(false);
 
         public MusicType MusicType => MusicType.NhacCuaTui;
-
         public string PathOrLink => link;
-
         public TimeSpan Duration => duration;
-
         public string Title => title;
-
-        public string Artists => artists;
-
-        public string Album => null;
-
+        public string TitleWithLink => Formatter.MaskedUrl(title, new Uri(link));
+        public string[] Artists => artists;
+        public string[] ArtistsWithLinks => artistsWithLinks;
+        public string AllArtists => string.Join(", ", artists);
+        public string AllArtistsWithLinks => string.Join(", ", artistsWithLinks);
+        public string Album => "";
+        public string AlbumWithLink => "";
         public string AlbumThumbnailLink => albumThumbnailLink;
+        public SponsorBlockOptions? SponsorBlockOptions
+        {
+            get => null;
+            set { }
+        }
 
-        public Stream MusicPCMDataStream
+        public Stream? MusicPCMDataStream
         {
             get
             {
@@ -116,47 +127,53 @@ namespace CatBot.Music.NhacCuaTui
             }
         }
 
-        public SponsorBlockOptions SponsorBlockOptions
-        {
-            get => null;
-            set { }
-        }
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by NhacCuaTui", nhacCuaTuiIconLink);
 
-        public LyricData GetLyric()
+        public LyricData? GetLyric()
         {
+            if (lyric != null)
+                return lyric;
             XmlDocument xmlDoc = GetXML(link);
             string lyricLink = xmlDoc.DocumentElement["track"].SelectSingleNode("lyric").InnerText;
+
+            string plainLyrics = "";
             if (string.IsNullOrWhiteSpace(lyricLink) || lyricLink == "https://lrc-nct.nixcdn.com/null")
             {
-                string html = MusicUtils.GetHttpRequestWithCookie().Get(link).ToString();
+                string html = GetHttpClientWithCookie().GetStringAsync(link).Result;
                 int startIndex = html.IndexOf("<p id=\"divLyric\" class=\"pd_lyric trans\" style=\"height:auto;max-height:255px;overflow:hidden;\">") + 94;
                 string htmlLyric = html.Substring(startIndex, html.IndexOf("<div class=\"more_add\" id=\"divMoreAddLyric\">") - startIndex).Replace("<br />", "");
                 string lyric = string.Join(Environment.NewLine, WebUtility.HtmlDecode(htmlLyric).Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim())).Replace("</p>", "").Trim();
                 if (lyric.StartsWith("- Hiện chưa có lời bài hát"))
                     return new LyricData("Bài hát này không có lời trên server của NhacCuaTui!");
                 else
-                    return new LyricData(MusicUtils.RemoveEmbedLink(title), MusicUtils.RemoveEmbedLink(artists), lyric, albumThumbnailLink);
+                    plainLyrics = lyric;
             }
             string encryptedLyric = "";
             try
             { 
-                encryptedLyric = new WebClient().DownloadString(lyricLink);
+                encryptedLyric = GetHttpClientWithCookie().GetStringAsync(lyricLink).Result;
             }
             catch (WebException) 
             { 
-                return new LyricData("Lỗi khi lấy lời bài hát!");
+                if (string.IsNullOrWhiteSpace(plainLyrics))
+                    return new LyricData("Lỗi khi lấy lời bài hát!");
+                else 
+                    return lyric = new LyricData(title, AllArtists, "", albumThumbnailLink) { PlainLyrics = plainLyrics };
             }
-            string decryptedLyric = RemoveEmptyLines(MusicUtils.RemoveLyricTimestamps(DecryptLyric(encryptedLyric)));
-            return new LyricData(MusicUtils.RemoveEmbedLink(title), MusicUtils.RemoveEmbedLink(artists), decryptedLyric, albumThumbnailLink);
+            string syncedLyrics = DecryptLyric(encryptedLyric);
+            return lyric = new LyricData(title, AllArtists, "", albumThumbnailLink)
+            {
+                PlainLyrics = plainLyrics,
+                SyncedLyrics = syncedLyrics
+            };
         }
 
         public string GetSongDesc(bool hasTimeStamp = false)
         {
             while (!canGetStream)
                 Thread.Sleep(500);
-            string musicDesc = $"Bài hát: {title}" + Environment.NewLine;
-            musicDesc += $"Nghệ sĩ: {artists}" + Environment.NewLine;
+            string musicDesc = $"Bài hát: {TitleWithLink}" + Environment.NewLine;
+            musicDesc += $"Nghệ sĩ: {AllArtistsWithLinks}" + Environment.NewLine;
             if (hasTimeStamp)
                 musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
@@ -164,7 +181,7 @@ namespace CatBot.Music.NhacCuaTui
             return musicDesc;
         }
 
-        public string[] GetFilesInUse() => new string[] { mp3FilePath, pcmFile };
+        public string[] GetFilesInUse() => [mp3FilePath, pcmFile];
 
         public string GetIcon() => Config.gI().NCTIcon;
 
@@ -174,7 +191,7 @@ namespace CatBot.Music.NhacCuaTui
 
         internal static XmlDocument GetXML(string link)
         {
-            string html = MusicUtils.GetHttpRequestWithCookie().Get(link).ToString();
+            string html = GetHttpClientWithCookie().GetStringAsync(link).Result;
             Regex regex = new Regex("player\\.peConfig\\.xmlURL = \"(.*)\";");
             string linkContainInfo = regex.Match(html).Groups[1].Value;
             if (string.IsNullOrWhiteSpace(linkContainInfo))
@@ -185,7 +202,7 @@ namespace CatBot.Music.NhacCuaTui
                     throw new MusicException(MusicType.NhacCuaTui, "VIP only");
                 throw new MusicException("not found");
             }
-            string xml = MusicUtils.GetHttpRequestWithCookie().Get(linkContainInfo).ToString();
+            string xml = GetHttpClientWithCookie().GetStringAsync(linkContainInfo).Result;
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(xml);
             return xmlDoc;
@@ -193,7 +210,7 @@ namespace CatBot.Music.NhacCuaTui
 
         static JToken FindSongInfo(string keyword)
         {
-            JObject obj = JObject.Parse(MusicUtils.GetHttpRequestWithCookie().Get(searchLink + Uri.EscapeUriString(keyword)).ToString());
+            JObject obj = JObject.Parse(GetHttpClientWithCookie().GetStringAsync(searchLink + Uri.EscapeDataString(keyword)).Result);
             if (obj["error_code"].ToString() != "0")
                 throw new MusicException("songs not found");
             if (obj["data"]["song"].Count() == 0)
@@ -212,16 +229,26 @@ namespace CatBot.Music.NhacCuaTui
             return PUtils.HexFromArray(d);
         }
 
-        static string RemoveEmptyLines(string str)
-        {
-            return string.Join(Environment.NewLine, str.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries));
-        }
-
         internal static string GetSongID(string link)
         {
             if (link.StartsWith(nhacCuaTuiLink))
-                link = regexMatchIDSong.Match(link).Groups[1].Value;
+                link = GetRegexMatchIDSong().Match(link).Groups[1].Value;
             return link;
+        }
+
+        static HttpClient GetHttpClientWithCookie()
+        {
+            if (httpRequestWithCookie == null)
+            {
+                httpRequestWithCookie = MusicUtils.CreateHttpClientWithCookies("");
+                httpRequestWithCookie.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
+                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                httpRequestWithCookie.DefaultRequestHeaders.Add("Referer", nhacCuaTuiLink);
+                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept", "*/*");
+                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Language", "vi-VN,vi;q=0.9");
+                httpRequestWithCookie.GetAsync(nhacCuaTuiLink).Wait();
+            }
+            return httpRequestWithCookie;
         }
 
         public string GetPCMFilePath() => pcmFile;
@@ -231,7 +258,7 @@ namespace CatBot.Music.NhacCuaTui
             try
             {
                 File.Delete(pcmFile);
-                pcmFile = null;
+                pcmFile = "";
                 musicPCMDataStream?.Dispose();
                 musicPCMDataStream = null;
             }

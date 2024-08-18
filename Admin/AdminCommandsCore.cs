@@ -1,63 +1,56 @@
-﻿using CatBot.Instance;
-using CatBot.Voice;
+﻿using System.Net;
+using CatBot.Instance;
 using DSharpPlus;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using DSharpPlus.VoiceNext;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CatBot.Admin
 {
     internal class AdminCommandsCore
     {
-        internal static async Task JoinVoiceChannel(InteractionContext ctx, string channelIDstr)
+        internal static async Task JoinVoiceChannel(SlashCommandContext ctx, string channelIDstr)
         {
-            await ctx.DeferAsync(true);
+            await ctx.DeferResponseAsync(true);
             if (!Utils.IsBotOwner(ctx.Member.Id))
             {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
             if (!ulong.TryParse(channelIDstr, out ulong channelID))
             {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Dữ liệu nhập vào không hợp lệ!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Dữ liệu nhập vào không hợp lệ!").AsEphemeral());
                 return;
             }
             KeyValuePair<DiscordChannel, VoiceNextConnection> keyValuePair = await BotServerInstance.JoinVoiceChannel(channelID);
             if (keyValuePair.Key == null)
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy kênh thoại với ID {channelID}!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"Không tìm thấy kênh thoại với ID {channelID}!").AsEphemeral());
             else if (keyValuePair.Value == null)
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không thể kết nối với kênh thoại <#{keyValuePair.Key.Id}>!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"Không thể kết nối với kênh thoại <#{keyValuePair.Key.Id}>!").AsEphemeral());
             else
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Đã kết nối với kênh thoại <#{keyValuePair.Key.Id}>!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"Đã kết nối với kênh thoại <#{keyValuePair.Key.Id}>!").AsEphemeral());
         }
 
-        internal static async Task LeaveVoiceChannel(InteractionContext ctx, string serverIDstr)
+        internal static async Task LeaveVoiceChannel(SlashCommandContext ctx, string serverIDstr)
         {
-            await ctx.DeferAsync(true);
+            await ctx.DeferResponseAsync(true);
             if (!Utils.IsBotOwner(ctx.Member.Id))
             {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
             if (!ulong.TryParse(serverIDstr, out ulong serverID))
             {
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Dữ liệu nhập vào không hợp lệ!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Dữ liệu nhập vào không hợp lệ!").AsEphemeral());
                 return;
             }
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             KeyValuePair<DiscordChannel, bool> result = BotServerInstance.LeaveVoiceChannel(serverID).Result;
             if (!result.Value)
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Không thể ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"Không thể ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
             else 
-                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Đã ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"Đã ngắt kết nối kênh thoại <#{result.Key.Id}>!").AsEphemeral());
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
         }
 
@@ -78,6 +71,7 @@ namespace CatBot.Admin
                 await message.RespondAsync("Chỉ được đính kèm 1 file!");
                 return;
             }
+            using HttpClient client = new HttpClient();
             foreach (DiscordAttachment attachment in message.Attachments)
             {
                 string sfxUrl = attachment.Url;
@@ -87,7 +81,8 @@ namespace CatBot.Admin
                 try
                 {
                     string tempPath = Path.GetTempFileName();
-                    new WebClient().DownloadFile(sfxUrl, tempPath);
+                    byte[] fileBytes = await client.GetByteArrayAsync(sfxUrl);
+                    await File.WriteAllBytesAsync(tempPath, fileBytes);
                     MemoryStream pcmStream = new MemoryStream();
                     Utils.GetPCMStream(tempPath).CopyTo(pcmStream);
                     pcmStream.Position = 0;
@@ -137,22 +132,25 @@ namespace CatBot.Admin
                 await message.RespondAsync("Bạn chưa đính kèm file!");
                 return;
             }
-            WebClient webClient = new WebClient();
+            using HttpClient client = new HttpClient();
             foreach (DiscordAttachment attachment in message.Attachments.Where(a => Path.GetExtension(a.FileName) == ".mp3"))
-                webClient.DownloadFile(new Uri(attachment.Url), Path.Combine(Config.gI().MusicFolder, attachment.FileName));
+            {
+                byte[] music = await client.GetByteArrayAsync(attachment.Url);
+                await File.WriteAllBytesAsync(Path.Combine(Config.gI().MusicFolder, attachment.FileName), music);
+            }
             await message.RespondAsync("Đã tải nhạc về bộ nhớ!");
         }
 
-        internal static async Task ResetBotServerInstance(InteractionContext ctx, string serverIDstr)
+        internal static async Task ResetBotServerInstance(SlashCommandContext ctx, string serverIDstr)
         {
             if (serverIDstr != "this" && !Utils.IsBotOwner(ctx.Member.Id))
             {
-                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
-            if (!ctx.Member.Permissions.HasFlag(Permissions.Administrator))
+            if (!ctx.Member.Permissions.HasFlag(DiscordPermissions.Administrator))
             {
-                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
 
@@ -161,32 +159,25 @@ namespace CatBot.Admin
             else if (serverIDstr == "this")
                 await BotServerInstance.RemoveBotServerInstance(ctx.Guild.Id);
             BotServerInstance.GetBotServerInstance(ctx.Guild);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại bot!").AsEphemeral());
+            await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại bot!").AsEphemeral());
         }
 
-        //internal static async Task GetFieldValue(DiscordMessage message)
-        //{
-        //    if (message.Channel != Config.gI().debugChannel)
-        //        return;
-            
-        //}
-
-        internal static async Task SetBotStatus(InteractionContext ctx, ActivityType activityType, string name, string state)
+        internal static async Task SetBotStatus(SlashCommandContext ctx, DiscordActivityType activityType, string name, string state)
         {
             if (!Utils.IsBotOwner(ctx.Member.Id))
             {
-                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
             if (string.IsNullOrEmpty(name))
             {
                 DiscordBotMain.activity = null;
-                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại trạng thái bot!").AsEphemeral());
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt lại trạng thái bot!").AsEphemeral());
             }
             else
             {
                 DiscordBotMain.activity = new CustomDiscordActivity(DiscordBotMain.botClient.CurrentApplication.Id, activityType, name, state);
-                await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt trạng thái bot!").AsEphemeral());
+                await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt trạng thái bot!").AsEphemeral());
             }
         }
     }

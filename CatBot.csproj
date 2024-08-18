@@ -1,325 +1,35 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <RootNamespace>CatBot</RootNamespace>
-    <AssemblyName>CatBot</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Deterministic>False</Deterministic>
-    <DocumentationFile>bin\Debug\CatBot.xml</DocumentationFile>
-    <NoWarn>CS1591</NoWarn>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>embedded</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DebugSymbols>true</DebugSymbols>
-    <Deterministic>False</Deterministic>
-    <DocumentationFile>bin\Release\CatBot.xml</DocumentationFile>
-    <NoWarn>CS1591</NoWarn>
-  </PropertyGroup>
-  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <StartupObject>CatBot.Program</StartupObject>
   </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="0Harmony, Version=2.3.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Lib.Harmony.2.3.3\lib\net452\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="AngleSharp, Version=1.1.2.0, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>packages\AngleSharp.1.1.2\lib\net461\AngleSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="ConcurrentCollections, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\ConcurrentHashSet.1.3.0\lib\net461\ConcurrentCollections.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.4.4.9\lib\netstandard2.0\DSharpPlus.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus.CommandsNext, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.CommandsNext.4.4.9\lib\netstandard2.0\DSharpPlus.CommandsNext.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus.Interactivity, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.Interactivity.4.4.9\lib\netstandard2.0\DSharpPlus.Interactivity.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus.Rest, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.Rest.4.4.9\lib\netstandard2.0\DSharpPlus.Rest.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus.SlashCommands, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.SlashCommands.4.4.9\lib\netstandard2.0\DSharpPlus.SlashCommands.dll</HintPath>
-    </Reference>
-    <Reference Include="DSharpPlus.VoiceNext, Version=4.4.9.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\DSharpPlus.VoiceNext.4.4.9\lib\netstandard2.0\DSharpPlus.VoiceNext.dll</HintPath>
-    </Reference>
-    <Reference Include="HtmlAgilityPack, Version=1.11.62.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>packages\HtmlAgilityPack.1.11.62\lib\Net45\HtmlAgilityPack.dll</HintPath>
-    </Reference>
-    <Reference Include="Leaf.xNet, Version=5.2.10.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Leaf.xNet.5.2.10\lib\net45\Leaf.xNet.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.DependencyInjection, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Extensions.DependencyInjection.8.0.0\lib\net462\Microsoft.Extensions.DependencyInjection.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.1\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Extensions.Logging.Abstractions.8.0.1\lib\net462\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="SoundCloudExplode, Version=1.6.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SoundCloudExplode.1.6.4\lib\net461\SoundCloudExplode.dll</HintPath>
-    </Reference>
-    <Reference Include="SpotifyExplode, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\SpotifyExplode.1.1.1\lib\net461\SpotifyExplode.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Collections.Immutable.8.0.0\lib\net462\System.Collections.Immutable.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Linq.Async, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
-      <HintPath>packages\System.Linq.Async.6.0.1\lib\netstandard2.0\System.Linq.Async.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Net.WebSockets, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Net.WebSockets.4.3.0\lib\net46\System.Net.WebSockets.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Net.WebSockets.Client, Version=4.0.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Net.WebSockets.Client.4.3.2\lib\net46\System.Net.WebSockets.Client.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime, Version=4.1.1.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Runtime.4.3.1\lib\net462\System.Runtime.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.Algorithms.4.3.1\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.2, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.X509Certificates.4.3.2\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
-      <Private>True</Private>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Text.Encoding.CodePages, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Encoding.CodePages.8.0.0\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Json, Version=8.0.0.4, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Text.Json.8.0.4\lib\net462\System.Text.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Channels, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Threading.Channels.8.0.0\lib\net462\System.Threading.Channels.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="TagLibSharp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
-      <HintPath>packages\TagLibSharp.2.3.0\lib\net462\TagLibSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="YoutubeExplode, Version=6.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\YoutubeExplode.6.4.0\lib\net461\YoutubeExplode.dll</HintPath>
-    </Reference>
+    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus.Rest" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus.VoiceNext.Natives" Version="1.0.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.63" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SoundCloudExplode" Version="1.6.4" />
+    <PackageReference Include="SpotifyExplode" Version="1.1.2" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.4.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Admin\AdminBaseCommand.cs" />
-    <Compile Include="Admin\AdminCommandsCore.cs" />
-    <Compile Include="Admin\AdminSlashCommands.cs" />
-    <Compile Include="CustomDiscordActivity.cs" />
-    <Compile Include="Emoji\CatNSoupEmoji.cs" />
-    <Compile Include="Config.cs" />
-    <Compile Include="DiscordBotMain.cs" />
-    <Compile Include="Emoji\EmojiReplyCore.cs" />
-    <Compile Include="Emoji\EmojiReplyBaseCommands.cs" />
-    <Compile Include="Emoji\EmojiReplySlashCommands.cs" />
-    <Compile Include="Extension\DSharpPlusExtensions.cs" />
-    <Compile Include="Extension\SpotifyExplodeExtension.cs" />
-    <Compile Include="HelpFormatter.cs" />
-    <Compile Include="Hook.cs" />
-    <Compile Include="Instance\BotServerInstance.cs" />
-    <Compile Include="Instance\GlobalBaseCommands.cs" />
-    <Compile Include="Instance\GlobalSlashCommands.cs" />
-    <Compile Include="Music\IMusic.cs" />
-    <Compile Include="Music\IPlaylist.cs" />
-    <Compile Include="Music\LyricException.cs" />
-    <Compile Include="Music\MusicException.cs" />
-    <Compile Include="Music\MusicFileDownload.cs" />
-    <Compile Include="Music\MusicPlayerBaseCommands.cs" />
-    <Compile Include="Music\MusicQueue.cs" />
-    <Compile Include="Music\NhacCuaTui\NhacCuaTuiSearch.cs" />
-    <Compile Include="Music\NotAPlaylistException.cs" />
-    <Compile Include="Music\PlayMode.cs" />
-    <Compile Include="Music\SearchResult.cs" />
-    <Compile Include="Music\Local\LocalMusic.cs" />
-    <Compile Include="Music\Local\LocalMusicChoiceProvider.cs" />
-    <Compile Include="Music\MusicPlayerCore.cs" />
-    <Compile Include="Music\MusicPlayerSlashCommands.cs" />
-    <Compile Include="Music\MusicType.cs" />
-    <Compile Include="Music\LyricData.cs" />
-    <Compile Include="Music\MusicUtils.cs" />
-    <Compile Include="Music\NhacCuaTui\ARC4.cs" />
-    <Compile Include="Music\NhacCuaTui\NhacCuaTuiMusicChoiceProvider.cs" />
-    <Compile Include="Music\NhacCuaTui\NhacCuaTuiMusic.cs" />
-    <Compile Include="Music\NhacCuaTui\PUtils.cs" />
-    <Compile Include="Music\SoundCloud\SoundCloudMusic.cs" />
-    <Compile Include="Music\SoundCloud\SoundCloudMusicChoiceProvider.cs" />
-    <Compile Include="Music\SoundCloud\SoundCloudPlaylist.cs" />
-    <Compile Include="Music\SoundCloud\SoundCloudSearch.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockActionType.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockCategory.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockOptions.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockSegment.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockSegmentJsonConverter.cs" />
-    <Compile Include="Music\SponsorBlock\SponsorBlockSkipSegment.cs" />
-    <Compile Include="Music\Spotify\SpotifyMusic.cs" />
-    <Compile Include="Music\Spotify\SpotifyMusicChoiceProvider.cs" />
-    <Compile Include="Music\Spotify\SpotifyPlaylist.cs" />
-    <Compile Include="Music\Spotify\SpotifySearch.cs" />
-    <Compile Include="Music\YouTube\YouTubeMusic.cs" />
-    <Compile Include="Music\YouTube\YouTubeMusicChoiceProvider.cs" />
-    <Compile Include="Music\YouTube\YouTubePlaylist.cs" />
-    <Compile Include="Music\YouTube\YouTubeSearch.cs" />
-    <Compile Include="Music\ZingMP3\ZingMP3Music.cs" />
-    <Compile Include="Music\ZingMP3\ZingMP3MusicChoiceProvider.cs" />
-    <Compile Include="Music\ZingMP3\ZingMP3Search.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Extension\SoundCloudExplodeExtension.cs" />
-    <Compile Include="Utils.cs" />
-    <Compile Include="Voice\TTSBaseCommands.cs" />
-    <Compile Include="Voice\TTSCore.cs" />
-    <Compile Include="Voice\TTSSlashCommands.cs" />
-    <Compile Include="Voice\VoiceChannelSFXBaseCommands.cs" />
-    <Compile Include="Voice\VoiceChannelSFXCore.cs" />
-    <Compile Include="Voice\VoiceChannelSFXSlashCommands.cs" />
-    <Compile Include="Voice\VoiceID.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
-    <None Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Files\ffmpeg\ffmpeg.exe" />
-    <Content Include="Files\ffmpeg\ffplay.exe" />
-    <Content Include="Files\ffmpeg\ffprobe.exe" />
-    <Content Include="Files\libopus.dll" />
-    <Content Include="Files\libsodium.dll" />
-    <Content Include="Files\Images\Local.png" />
-    <Content Include="Files\Images\Lyrist.png" />
-    <Content Include="Files\Images\NCT.png" />
-    <Content Include="Files\Images\SoundCloud.png" />
-    <Content Include="Files\spotdl\spotdl.exe" />
-    <Content Include="Files\Images\YouTubeMusic.png" />
-    <Content Include="Files\Images\YouTube.png" />
-    <Content Include="Files\Images\ZaloAI.png" />
-    <Content Include="Files\Images\ZingMP3.png" />
-    <Content Include="Files\Images\Spotify.png" />
-    <Content Include="ReadMeResources\cookie_1.png" />
-    <Content Include="ReadMeResources\raw_emoji_string.png" />
-    <Content Include="ReadMeResources\user_agent_1.png" />
-    <Content Include="ReadMeResources\zing_mp3_api_key_1.png" />
-    <Content Include="ReadMeResources\zing_mp3_api_key_2.png" />
-    <Content Include="ReadMeResources\zing_mp3_api_key_3.png" />
-    <Content Include="ReadMeResources\zing_mp3_api_key_4.png" />
-    <Content Include="ReadMeResources\zing_mp3_secret_key_1.png" />
-    <Content Include="ReadMeResources\zing_mp3_secret_key_2.png" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>xcopy /y /c /s "$(ProjectDir)Files\*" "$(TargetDir)"
-mkdir "$(TargetDir)Lib" | echo
-move /y "$(TargetDir)*.dll" "$(TargetDir)Lib\"
-move /y "$(TargetDir)*.xml" "$(TargetDir)Lib\"
-move /y "$(TargetDir)*.pdb" "$(TargetDir)Lib\"
-move /y "$(TargetDir)Lib\libopus.dll" "$(TargetDir)libopus.dll"
-move /y "$(TargetDir)Lib\libsodium.dll" "$(TargetDir)libsodium.dll"
-move /y "$(TargetDir)Lib\$(TargetName).xml" "$(TargetDir)$(TargetName).xml"
-move /y "$(TargetDir)Lib\$(TargetName).pdb" "$(TargetDir)$(TargetName).pdb" | echo</PostBuildEvent>
-  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /y /c /s &quot;$(ProjectDir)Files\*&quot; &quot;$(TargetDir)&quot;" />
+  </Target>
+
 </Project>

@@ -1,33 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
+﻿using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using CatBot.Extension;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
 using SpotifyExplode;
-using SpotifyExplode.Artists;
 using SpotifyExplode.Search;
 using SpotifyExplode.Tracks;
 
 namespace CatBot.Music.Spotify
 {
-    internal class SpotifyMusic : IMusic
+    internal partial class SpotifyMusic : IMusic
     {
-        internal static readonly Regex regexMatchSpotifyLink = new Regex("^(?:(?:(?:spotify:|https?:\\/\\/)[a-z]*\\.?spotify\\.com(?:\\/embed)?\\/track\\/)|(?:https?:\\/\\/spotify\\.link\\/))(.[^\\?\\n]*)(\\?.*)?$", RegexOptions.Compiled);
+        [GeneratedRegex("^(?:(?:(?:spotify:|https?:\\/\\/)[a-z]*\\.?spotify\\.com(?:\\/embed)?\\/track\\/)|(?:https?:\\/\\/spotify\\.link\\/))(.[^\\?\\n]*)(\\?.*)?$", RegexOptions.Compiled)]
+        internal static partial Regex GetRegexMatchSpotifyLink();
+
         internal static readonly string spotifyIconLink = "https://open.spotifycdn.com/cdn/images/icons/Spotify_256.17e41e58.png";
-        string link;
-        TimeSpan duration;
-        string title = "";
-        string artists = "";
-        string album = "";
-        string albumThumbnailLink = "";
         string trackID = "";
         static SpotifyClient spClient;
         internal static SpotifyClient SPClient
@@ -44,40 +32,44 @@ namespace CatBot.Music.Spotify
                 return spClient;
             }
         }
-        Stream musicPCMDataStream;
-        string audioFilePath;
-        Track track;
+        Track? track;
+        string mimeType = "";
+        string link = "";
+        TimeSpan duration;
+        string title = "";
+        string[] artists = [];
+        string[] artistsWithLinks = [];
+        string albumThumbnailLink = "";
+        string audioFilePath = "";
+        string pcmFile = "";
+        string album = "";
+        string albumWithLink = "";
+        FileStream? musicPCMDataStream;
         bool canGetStream;
         bool _disposed;
-        string pcmFile;
-        string lyric;
-        string mimeType;
-
-        static string token;
-        static DateTime tokenExpireTime = DateTime.Now;
 
         public SpotifyMusic() { }
         public SpotifyMusic(string linkOrKeyword)
         {
-            if (!regexMatchSpotifyLink.IsMatch(linkOrKeyword))
+            if (!GetRegexMatchSpotifyLink().IsMatch(linkOrKeyword))
             {
-                List<TrackSearchResult> result = SPClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).GetAwaiter().GetResult();
+                List<TrackSearchResult> result = SPClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).Result;
                 if (result.Count == 0)
                     throw new MusicException("songs not found");
                 linkOrKeyword = result[0].Url;
             }
             if (linkOrKeyword.Contains("spotify.link"))
-                linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult().RequestMessage.RequestUri.ToString();
+                linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).Result.RequestMessage.RequestUri.ToString();
             link = linkOrKeyword;
-            track = SPClient.Tracks.GetAsync(linkOrKeyword).GetAwaiter().GetResult();
-            title = Formatter.MaskedUrl(track.Title, new Uri(track.Url));
-            foreach (Artist artist in track.Artists)
-                artists += Formatter.MaskedUrl(artist.Name, new Uri($"https://open.spotify.com/artist/{artist.Id}")) + ", ";
-            artists = artists.TrimEnd(", ".ToCharArray());
-            album = Formatter.MaskedUrl(track.Album.Name, new Uri($"https://open.spotify.com/album/{track.Album.Id}"));
+            track = SPClient.Tracks.GetAsync(linkOrKeyword).Result;
+            title = track.Title;
+            artists = track.Artists.Select(a => a.Name).ToArray();
+            artistsWithLinks = track.Artists.Select(a => Formatter.MaskedUrl(a.Name, new Uri($"https://open.spotify.com/artist/{a.Id}"))).ToArray();
+            album = track.Album.Name;
+            albumWithLink = Formatter.MaskedUrl(track.Album.Name, new Uri($"https://open.spotify.com/album/{track.Album.Id}"));
             if (track.Album.Images.Count != 0)
                 albumThumbnailLink = track.Album.Images[0].Url;
-            trackID = regexMatchSpotifyLink.Match(link).Groups[1].Value;
+            trackID = GetRegexMatchSpotifyLink().Match(link).Groups[1].Value;
         }
 
         ~SpotifyMusic() => Dispose(false);
@@ -88,7 +80,10 @@ namespace CatBot.Music.Spotify
             try
             {
                 DownloadTrackUsingZotify();
-                mimeType = "taglib/ogg";
+                //if (MusicUtils.IsFFMPEGInPATH())
+                //    mimeType = "taglib/mp3";
+                //else
+                    mimeType = "taglib/ogg";
             }
             catch
             {
@@ -101,7 +96,9 @@ namespace CatBot.Music.Spotify
                 {
                     try
                     {
-                        new WebClient().DownloadFile(GetLinkFromSpotifyDown(), audioFilePath);
+                        HttpClient httpClient = new HttpClient();
+                        byte[] data = httpClient.GetByteArrayAsync(GetLinkFromSpotifyDown()).Result;
+                        File.WriteAllBytes(audioFilePath, data);
                         mimeType = "taglib/mp3";
                     }
                     catch { throw new MusicException(MusicType.Spotify, "not found"); }
@@ -119,26 +116,24 @@ namespace CatBot.Music.Spotify
         }
 
         public MusicType MusicType => MusicType.Spotify;
-
         public string PathOrLink => link;
-
         public TimeSpan Duration => duration;
-
         public string Title => title;
-
-        public string Artists => artists;
-
+        public string TitleWithLink => Formatter.MaskedUrl(title, new Uri(link));
+        public string[] Artists => artists;
+        public string[] ArtistsWithLinks => artistsWithLinks;
+        public string AllArtists => string.Join(", ", artists);
+        public string AllArtistsWithLinks => string.Join(", ", artistsWithLinks);
         public string Album => album;
-
+        public string AlbumWithLink => albumWithLink;
         public string AlbumThumbnailLink => albumThumbnailLink;
-
-        public SponsorBlockOptions SponsorBlockOptions
+        public SponsorBlockOptions? SponsorBlockOptions
         {
             get => null;
             set { }
         }
 
-        public Stream MusicPCMDataStream
+        public Stream? MusicPCMDataStream
         {
             get
             {
@@ -148,48 +143,11 @@ namespace CatBot.Music.Spotify
             }
         }
 
-        public LyricData GetLyric()
-        {
-            if (string.IsNullOrWhiteSpace(Config.gI().SpotifyCookie))
-                return new LyricData("Không tìm thấy cookie của Spotify!");
-            if (string.IsNullOrEmpty(token) || tokenExpireTime < DateTime.Now)
-            {
-                string url = "https://open.spotify.com/get_access_token";
-                Leaf.xNet.HttpRequest httpClient = new Leaf.xNet.HttpRequest();
-                httpClient.AddHeader("User-Agent", Config.gI().UserAgent);
-                httpClient.AddHeader("Cookie", Config.gI().SpotifyCookie);
-                httpClient.SetCookie(Config.gI().SpotifyCookie);
-                JObject responseContent = JObject.Parse(httpClient.Get(url).ToString());
-                token = responseContent["accessToken"].ToString();
-                tokenExpireTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(double.Parse(responseContent["accessTokenExpirationTimestampMs"].ToString())).ToLocalTime();
-            }
-            if (string.IsNullOrWhiteSpace(lyric))
-            {
-                string url = $"https://spclient.wg.spotify.com/color-lyrics/v2/track/{trackID}?format=json&vocalRemoval=false&market=from_token";
-                Leaf.xNet.HttpRequest httpClient = new Leaf.xNet.HttpRequest();
-                httpClient.AddHeader("app-platform", "WebPlayer");
-                httpClient.Authorization = $"Bearer {token}";
-                httpClient.AddHeader("Accept-Language", "en");
-                try
-                {
-                    JObject lyricData = JObject.Parse(httpClient.Get(url).ToString());
-                    foreach (var item in lyricData["lyrics"]["lines"])
-                        lyric += item["words"] + Environment.NewLine;
-                    lyric = lyric.TrimEnd(Environment.NewLine.ToCharArray()).Trim();
-                }
-                catch (Leaf.xNet.HttpException ex) 
-                {
-                    if (ex.HttpStatusCode == Leaf.xNet.HttpStatusCode.NotFound)
-                        return new LyricData("Không tìm thấy lời bài hát này trên Spotify!");
-                    throw;
-                }
-            }
-            return new LyricData(MusicUtils.RemoveEmbedLink(title), MusicUtils.RemoveEmbedLink(artists), lyric, albumThumbnailLink);
-        }
+        public LyricData? GetLyric() => new LyricData("Chỉ người dùng Premium mới xem được lời bài hát!");   //TODO: Get lyrics using BeautifulLyrics/LyricPlus backend
 
         public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by Spotify", spotifyIconLink);
 
-        public string[] GetFilesInUse() => new string[] { audioFilePath, pcmFile };
+        public string[] GetFilesInUse() => [audioFilePath, pcmFile];
 
         public string GetIcon() => Config.gI().SpotifyIcon;
 
@@ -197,9 +155,9 @@ namespace CatBot.Music.Spotify
         {
             while (!canGetStream)
                 Thread.Sleep(500);
-            string musicDesc = $"Bài hát: {title}" + Environment.NewLine;
-            musicDesc += $"Nghệ sĩ: {artists}" + Environment.NewLine;
-            musicDesc += $"Album: {album}" + Environment.NewLine;
+            string musicDesc = $"Bài hát: {TitleWithLink}" + Environment.NewLine;
+            musicDesc += $"Nghệ sĩ: {AllArtistsWithLinks}" + Environment.NewLine;
+            musicDesc += $"Album: {AlbumWithLink}" + Environment.NewLine;
             if (hasTimeStamp)
                 musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
@@ -239,18 +197,18 @@ namespace CatBot.Music.Spotify
             HttpResponseMessage response;
             try
             {
-                response = httpClient.GetAsync(url).GetAwaiter().GetResult();
+                response = httpClient.GetAsync(url).Result;
             }
             catch (TaskCanceledException)
             {
                 throw new MusicException(MusicType.Spotify, "music download timeout");
             }
-            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
+            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().Result);
             string downloadUrl = responseData["link"].ToString();
             return downloadUrl;
         }
 
-        public bool isLinkMatch(string link) => regexMatchSpotifyLink.IsMatch(link);
+        public bool isLinkMatch(string link) => GetRegexMatchSpotifyLink().IsMatch(link);
 
         public string GetPCMFilePath() => pcmFile;
 
@@ -259,7 +217,7 @@ namespace CatBot.Music.Spotify
             try
             {
                 File.Delete(pcmFile);
-                pcmFile = null;
+                pcmFile = "";
                 musicPCMDataStream?.Dispose();
                 musicPCMDataStream = null;
             }

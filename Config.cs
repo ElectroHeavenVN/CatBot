@@ -8,8 +8,6 @@ namespace CatBot
 {
     internal class Config
     {
-        static Dictionary<string, string> logValue = new Dictionary<string, string>();
-
         internal static Config singletonInstance = new Config();
         internal static Config gI() => singletonInstance;
 
@@ -62,39 +60,39 @@ namespace CatBot
         /// <summary>
         /// Đường dẫn tới thư mục chứa nhạc
         /// </summary>
-        [JsonProperty("MusicFolder")]
+        [JsonProperty(nameof(MusicFolder))]
         internal string MusicFolder { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
         /// <summary>
         /// Đường dẫn tới thư mục chứa SFX
         /// </summary>
-        [JsonProperty("SFXFolder")]
+        [JsonProperty(nameof(SFXFolder))]
         internal string SFXFolder { get; set; } = "SFX";
         /// <summary>
         /// Đường dẫn tới thư mục chứa SFX đặc biệt
         /// </summary>
-        [JsonProperty("SFXFolderSpecial")]
+        [JsonProperty(nameof(SFXFolderSpecial))]
         internal string SFXFolderSpecial { get; set; } = "SFX\\Special";
         /// <summary>
         /// Cho biết lệnh chat điều khiển bot có được kích hoạt hay không
         /// </summary>
-        [JsonProperty("EnableCommandsNext")]
+        [JsonProperty(nameof(EnableCommandsNext))]
         internal bool EnableCommandsNext { get; set; } = true;
 
         #region Zing MP3
         /// <summary>
         /// Mã khóa bí mật Zing MP3
         /// </summary>
-        [JsonProperty("ZingMP3SecretKey")]
+        [JsonProperty(nameof(ZingMP3SecretKey))]
         internal string ZingMP3SecretKey { get; set; } = "";
         /// <summary>
         /// API key Zing MP3
         /// </summary>
-        [JsonProperty("ZingMP3APIKey")]
+        [JsonProperty(nameof(ZingMP3APIKey))]
         internal string ZingMP3APIKey { get; set; } = "";
         /// <summary>
         /// Cookie Zing MP3
         /// </summary>
-        [JsonProperty("ZingMP3Cookie")]
+        [JsonProperty(nameof(ZingMP3Cookie))]
         internal string ZingMP3Cookie { get; set; } = "";
         #endregion
 
@@ -102,7 +100,7 @@ namespace CatBot
         /// <summary>
         /// API key Google
         /// </summary>
-        [JsonProperty("GoogleAPIKey")]
+        [JsonProperty(nameof(GoogleAPIKey))]
         internal string GoogleAPIKey { get; set; } = "";
         #endregion
 
@@ -110,7 +108,7 @@ namespace CatBot
         /// <summary>
         /// Zalo AI cookie
         /// </summary>
-        [JsonProperty("ZaloAICookie")] 
+        [JsonProperty(nameof(ZaloAICookie))] 
         internal string ZaloAICookie { get; set; } = "";
         #endregion
 
@@ -118,58 +116,62 @@ namespace CatBot
         /// <summary>
         /// Spotify cookie
         /// </summary>
-        [JsonProperty("SpotifyCookie")]
+        [JsonProperty(nameof(SpotifyCookie))]
         internal string SpotifyCookie { get; set; } = "";
 
         /// <summary>
         /// Tài khoản Spotify
         /// </summary>
-        [JsonProperty("SpotifyUsername")] 
+        [JsonProperty(nameof(SpotifyUsername))] 
         internal string SpotifyUsername { get; set; } = "";
 
         /// <summary>
         /// Mật khẩu Spotify
         /// </summary>
-        [JsonProperty("SpotifyPassword")]
+        [JsonProperty(nameof(SpotifyPassword))]
         internal string SpotifyPassword { get; set; } = "";
+        #endregion
+
+        #region SoundCloud
+        /// <summary>
+        /// Client ID SoundCloud
+        /// </summary>
+        [JsonProperty(nameof(SoundCloudClientID))]
+        internal string SoundCloudClientID { get; set; } = "";
         #endregion
 
         /// <summary>
         /// User agent
         /// </summary>
-        [JsonProperty("UserAgent")]
+        [JsonProperty(nameof(UserAgent))]
         internal string UserAgent { get; set; } = "";
 
-        /// <summary>
-        /// API tìm lời bài hát
-        /// </summary>
-        [JsonProperty("LyricAPI")]
-        internal string LyricAPI { get; set; } = "https://lyrist.vercel.app/api/";
-
-        [JsonProperty("NCTIcon")]
+        [JsonProperty(nameof(NCTIcon))]
         internal string NCTIcon { get; set; } = "";
-        [JsonProperty("ZingMP3Icon")]
+        [JsonProperty(nameof(ZingMP3Icon))]
         internal string ZingMP3Icon { get; set; } = "";
-        [JsonProperty("YouTubeIcon")]
+        [JsonProperty(nameof(YouTubeIcon))]
         internal string YouTubeIcon { get; set; } = "";
-        [JsonProperty("YouTubeMusicIcon")]
+        [JsonProperty(nameof(YouTubeMusicIcon))]
         internal string YouTubeMusicIcon { get; set; } = "";
-        [JsonProperty("SoundCloudIcon")]
+        [JsonProperty(nameof(SoundCloudIcon))]
         internal string SoundCloudIcon { get; set; } = "";
-        [JsonProperty("SpotifyIcon")]
+        [JsonProperty(nameof(SpotifyIcon))]
         internal string SpotifyIcon { get; set; } = "";
 
         /// <summary>
         /// Token bot
         /// </summary>
-        [JsonProperty("BotToken")]
+        [JsonProperty(nameof(BotToken))]
         internal string BotToken { get; set; } = "";
 
         /// <summary>
         /// Prefix lệnh mặc định
         /// </summary>
-        [JsonProperty("DefaultPrefix")]
+        [JsonProperty(nameof(DefaultPrefix))]
         internal string DefaultPrefix { get; set; } = "";
+
+        internal string LyricAPI => "https://lrclib.net/api/";
 
         internal static void ImportConfig(string configPath) => singletonInstance = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath));
 

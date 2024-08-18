@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.7.33808.371
+VisualStudioVersion = 17.12.35209.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatBot", "CatBot.csproj", "{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatBot", "CatBot.csproj", "{C665AEF1-0AA7-43C0-9350-339BC1D42DBA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0AC6420-2410-4AC4-BDA7-F5385C2E5D61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C665AEF1-0AA7-43C0-9350-339BC1D42DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C665AEF1-0AA7-43C0-9350-339BC1D42DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C665AEF1-0AA7-43C0-9350-339BC1D42DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C665AEF1-0AA7-43C0-9350-339BC1D42DBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {845FCE35-A945-42FB-8F79-70D8A3802D76}
+		SolutionGuid = {F8E5774F-03AE-4452-9805-00BFFCB7C536}
 	EndGlobalSection
 EndGlobal

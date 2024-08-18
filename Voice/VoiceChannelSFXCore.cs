@@ -1,21 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using System.Runtime.Remoting.Channels;
-using System.Threading;
-using System.Diagnostics;
+﻿using CatBot.Instance;
+using CatBot.Music;
 using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
-using Newtonsoft.Json.Linq;
-using DSharpPlus;
-using CatBot.Instance;
-using CatBot.Music;
-using DSharpPlus.SlashCommands;
 
 namespace CatBot.Voice
 {
@@ -51,7 +37,7 @@ namespace CatBot.Voice
                 }
             }
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(message.TryGetChannel().Guild);
-            serverInstance.lastChannel = message.TryGetChannel();
+            serverInstance.LastChannel = message.TryGetChannel();
             if (serverInstance.voiceChannelSFX == null)
                 return;
             serverInstance.voiceChannelSFX.isStop = false;
@@ -61,7 +47,7 @@ namespace CatBot.Voice
         internal static async Task Reconnect(SnowflakeObject messageToReact)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReact.TryGetChannel();
+            serverInstance.LastChannel = messageToReact.TryGetChannel();
             if (serverInstance.voiceChannelSFX == null)
                 return;
             await serverInstance.voiceChannelSFX.InternalReconnect(messageToReact);
@@ -70,7 +56,7 @@ namespace CatBot.Voice
         internal static async Task StopSpeaking(SnowflakeObject messageToReact)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReact.TryGetChannel();
+            serverInstance.LastChannel = messageToReact.TryGetChannel();
             if (serverInstance.voiceChannelSFX == null)
                 return;
             await serverInstance.voiceChannelSFX.InternalStopSpeaking(messageToReact);
@@ -79,7 +65,7 @@ namespace CatBot.Voice
         internal static async Task Dictionary(SnowflakeObject messageToReply)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReply.TryGetChannel();
+            serverInstance.LastChannel = messageToReply.TryGetChannel();
             FileInfo[] sfxs = new DirectoryInfo(Config.gI().SFXFolder).GetFiles();
             List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
             string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
@@ -101,11 +87,11 @@ namespace CatBot.Voice
             if (messageToReply is DiscordMessage message)
                 await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
             else if (messageToReply is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
+                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
             foreach (DiscordEmbedBuilder embed in embeds.Skip(1))
             {
                 await Task.Delay(200);
-                await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
+                await serverInstance.LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
             }
             if (((DiscordMember)messageToReply.TryGetUser()).isInAdminUser())
             {
@@ -129,7 +115,7 @@ namespace CatBot.Voice
                 foreach (DiscordEmbedBuilder embed in embeds2)
                 {
                     await Task.Delay(200);
-                    await serverInstance.lastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
+                    await serverInstance.LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
                 }
             }
         }
@@ -137,7 +123,7 @@ namespace CatBot.Voice
         internal static async Task Disconnect(SnowflakeObject messageToReact)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReact.TryGetChannel();
+            serverInstance.LastChannel = messageToReact.TryGetChannel();
             if (serverInstance.voiceChannelSFX == null)
                 return;
             await serverInstance.voiceChannelSFX.InternalDisconnect(messageToReact);
@@ -146,7 +132,7 @@ namespace CatBot.Voice
         internal static async Task Delay(SnowflakeObject messageToReact, int delayValue)
         {
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.lastChannel = messageToReact.TryGetChannel();
+            serverInstance.LastChannel = messageToReact.TryGetChannel();
             if (serverInstance.voiceChannelSFX == null)
                 return;
             await serverInstance.voiceChannelSFX.InternalDelay(messageToReact, delayValue);
@@ -299,7 +285,7 @@ namespace CatBot.Voice
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             isStop = true;
             serverInstance.isVoicePlaying = false;
-            await messageToReact.TryRespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await messageToReact.TryRespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
             serverInstance.currentVoiceNextConnection.Disconnect();
             serverInstance.musicPlayer.playMode = new PlayMode();
             await Task.Delay(1000);
@@ -315,7 +301,7 @@ namespace CatBot.Voice
             if (messageToReact is DiscordMessage message)
                 await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
             else if (messageToReact is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
+                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
         }
 
         async Task InternalReconnect(SnowflakeObject messageToReact)
@@ -336,7 +322,7 @@ namespace CatBot.Voice
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
 
             isStop = false;
-            await messageToReact.TryRespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == ChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await messageToReact.TryRespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
         }
 
         async Task InternalDelay(SnowflakeObject messageToReact, int delayValue)

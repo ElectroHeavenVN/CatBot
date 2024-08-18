@@ -1,30 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using CatBot.Music.SponsorBlock;
-using System.Threading;
-using CatBot.Music.ZingMP3;
-using Leaf.xNet;
 
 namespace CatBot.Music
 {
     internal static class MusicUtils
     {
-        static Regex regexMatchEmbedLink = new Regex("\\[(.*?)\\]\\((.*?)\\)", RegexOptions.Compiled);
-        static readonly Regex mainMinJSRegex = new Regex("https://zjs.zmdcdn.me/zmp3-desktop/releases/(.*?)/static/js/main.min.js", RegexOptions.Compiled);
-        static DateTime lastTimeCheckZingMP3Version = DateTime.Now.Subtract(new TimeSpan(12, 1, 0));
-        private static HttpRequest httpRequestWithCookie;
-
         internal static IMusic CreateMusicInstance(string keywordOrPath, MusicType musicType)
         {
             if (musicType == 0)
@@ -37,7 +23,7 @@ namespace CatBot.Music
                     ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
                     if (singletonInstance.MusicType == musicType)
-                        return (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { keywordOrPath });
+                        return (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke([keywordOrPath]);
                 }
             }
             catch (Exception ex)
@@ -59,7 +45,7 @@ namespace CatBot.Music
                 IMusic singletonInstance = (IMusic)constructors.First(c => c.GetParameters().Length == 0).Invoke(null);
                 if (singletonInstance.isLinkMatch(link))
                 {
-                    music = (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke(new object[] { link });
+                    music = (IMusic)constructors.First(c => c.GetParameters().Length == 1).Invoke([link]);
                     return true;
                 }
             }
@@ -78,9 +64,9 @@ namespace CatBot.Music
                 {
                     try
                     {
-                        playlist = (IPlaylist)constructors.First(c => c.GetParameters().Length == 2).Invoke(new object[] { link, musicQueue });
+                        playlist = (IPlaylist)constructors.First(c => c.GetParameters().Length == 2).Invoke([link, musicQueue]);
                     }
-                    catch (TargetInvocationException ex) 
+                    catch (TargetInvocationException ex)
                     {
                         if (ex.InnerException is NotAPlaylistException)
                             continue;
@@ -117,7 +103,7 @@ namespace CatBot.Music
 
         internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
         {
-            string randomString = "tmp" + Utils.RandomString(10); 
+            string randomString = "tmp" + Utils.RandomString(10);
             string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), randomString);
             Directory.CreateDirectory(tempFolder);
             Process zotify = new Process()
@@ -217,15 +203,39 @@ namespace CatBot.Music
         static void WriteConcatFile(string concatFile, string tempWEBMFile, SponsorBlockSkipSegment[] sponsorBlockSkipSegments)
         {
             string concatFileContent = "ffconcat version 1.0" + Environment.NewLine;
+            List<(double, double)> segmentsToKeep = new List<(double, double)>();
+            (double, double) segmentToKeep = (0, -1);
             foreach (SponsorBlockSkipSegment segment in sponsorBlockSkipSegments)
             {
                 if (segment.Segment.IsLengthZero())
                     continue;
-                concatFileContent += "file '" + tempWEBMFile + "'" + Environment.NewLine;
                 if (segment.Segment.Start > 0)
-                    concatFileContent += "outpoint " + segment.Segment.Start.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
-                if (segment.VideoDuration - segment.Segment.End > 0)
-                    concatFileContent += "inpoint " + segment.Segment.End.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
+                    segmentToKeep.Item2 = segment.Segment.Start;
+                if (segmentToKeep.Item1 != -1 && segmentToKeep.Item2 != -1)
+                {
+                    if (segmentToKeep.Item1 < segmentToKeep.Item2)
+                        segmentsToKeep.Add(segmentToKeep);
+                    segmentToKeep = (-1, -1);
+                }
+                if (segment.VideoDuration - segment.Segment.End > .5d)
+                    segmentToKeep.Item1 = segment.Segment.End;
+                if (segmentToKeep.Item1 != -1 && segmentToKeep.Item2 != -1)
+                {
+                    if (segmentToKeep.Item1 < segmentToKeep.Item2)
+                        segmentsToKeep.Add(segmentToKeep);
+                    segmentToKeep = (-1, -1);
+                }
+            }
+            if (segmentToKeep.Item1 != -1 && segmentToKeep.Item2 == -1 && segmentToKeep.Item1 < sponsorBlockSkipSegments[0].VideoDuration)
+            {
+                segmentToKeep.Item2 = sponsorBlockSkipSegments[0].VideoDuration;
+                segmentsToKeep.Add(segmentToKeep);
+            }
+            foreach (var segment in segmentsToKeep)
+            {
+                concatFileContent += "file '" + tempWEBMFile + "'" + Environment.NewLine;
+                concatFileContent += "inpoint " + segment.Item1.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
+                concatFileContent += "outpoint " + segment.Item2.ToString("0.000000").Replace(',', '.') + Environment.NewLine;
             }
             File.WriteAllText(concatFile, concatFileContent);
         }
@@ -238,11 +248,6 @@ namespace CatBot.Music
             while (result[0] == 0)
                 result.RemoveAt(0);
             return result.ToArray();
-        }
-
-        internal static string RemoveEmbedLink(string withEmbedLink)
-        {
-            return regexMatchEmbedLink.Replace(withEmbedLink, m => m.Groups[1].Value);
         }
 
         internal static string RemoveLyricTimestamps(string lyrics)
@@ -262,42 +267,6 @@ namespace CatBot.Music
         internal static string HashSHA512(string text, string secretKey) => BitConverter.ToString(new HMACSHA512(Encoding.UTF8.GetBytes(secretKey)).ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
 
         internal static string HashSHA256(string text) => BitConverter.ToString(new SHA256Managed().ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
-
-        internal static HttpRequest GetHttpRequestWithCookie()
-        {
-            if (httpRequestWithCookie == null)
-            {
-                CheckZingMP3Version();
-                httpRequestWithCookie = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                httpRequestWithCookie.SetCookie($"zmp3_app_version.1={ZingMP3Music.zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
-                httpRequestWithCookie.UserAgent = Config.gI().UserAgent;
-                httpRequestWithCookie.AcceptEncoding = "gzip, deflate, br";
-                httpRequestWithCookie.Referer = ZingMP3Music.zingMP3Link;
-                httpRequestWithCookie.AddHeader(HttpHeader.Accept, "*/*");
-                httpRequestWithCookie.AddHeader(HttpHeader.AcceptLanguage, "vi");
-                httpRequestWithCookie.AddHeader("Host", "zingmp3.vn");
-                httpRequestWithCookie.Get(ZingMP3Music.zingMP3Link, null);    
-            }
-            return httpRequestWithCookie;
-        }
-
-        internal static void CheckZingMP3Version()
-        {
-            if ((DateTime.Now - lastTimeCheckZingMP3Version).TotalHours > 12)
-            {
-                HttpRequest http = new HttpRequest { SslProtocols = SslProtocols.Tls12 };
-                http.UserAgent = Config.gI().UserAgent;
-                http.AcceptEncoding = "gzip, deflate, br";
-                http.Referer = ZingMP3Music.zingMP3Link;
-                http.AddHeader(HttpHeader.Accept, "*/*");
-                http.AddHeader(HttpHeader.AcceptLanguage, "vi");
-                http.AddHeader("Host", "zingmp3.vn");
-                string zingMP3Web = http.Get(ZingMP3Music.zingMP3Link).ToString();
-                while(string.IsNullOrWhiteSpace(ZingMP3Music.zingMP3Version))
-                    ZingMP3Music.zingMP3Version = mainMinJSRegex.Match(zingMP3Web).Groups[1].Value.Replace("v", "");
-                lastTimeCheckZingMP3Version = DateTime.Now;
-            }
-        }
 
         internal static MemoryStream GetMusicWaveform(IMusic music, bool fullGray = false)
         {
@@ -333,12 +302,11 @@ namespace CatBot.Music
             return result;
         }
 
-        internal static void SetCookie(this HttpRequest httpRequest, string cookies, bool RemoveOldCookie = true)
+        internal static HttpClient CreateHttpClientWithCookies(string cookies)
         {
+            CookieContainer cookieContainer = new CookieContainer();
             cookies = cookies.Replace("Cookie: ", "");
             string[] array = cookies.Split(';');
-            if (RemoveOldCookie)
-                httpRequest.Cookies = new CookieStorage(false);
             for (int i = 0; i < array.Length; i++)
             {
                 if (!array[i].Contains("="))
@@ -346,10 +314,12 @@ namespace CatBot.Music
                 string[] cookie = array[i].Trim().Split('=');
                 try
                 {
-                    httpRequest.Cookies.Add(new Cookie(cookie[0], cookie[1]));
+                    cookieContainer.Add(new Cookie(cookie[0], cookie[1]));
                 }
                 catch { }
             }
+            HttpClient httpClient = new HttpClient(new HttpClientHandler() { UseCookies = true, CookieContainer = cookieContainer, AutomaticDecompression = DecompressionMethods.All });
+            return httpClient;
         }
 
         internal static CookieContainer GetCookie(string domain, string cookies)
@@ -388,6 +358,11 @@ namespace CatBot.Music
                 }
                 catch { }
             }
+        }
+
+        internal static bool IsFFMPEGInPATH()
+        {
+            return Environment.GetEnvironmentVariable("PATH").Split(';').Any(p => File.Exists(Path.Combine(p, "ffmpeg.exe")));
         }
     }
 }

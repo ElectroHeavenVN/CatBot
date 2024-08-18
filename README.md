@@ -2,8 +2,6 @@
 1 con bot Discord cùi bắp của ElectroHeavenVN
 ## Chức năng
 - Phát SFX
-- ~~Text to speech (cung cấp bởi [Zalo AI](https://zalo.ai/products/text-to-audio-converter))~~
-- ~~Gửi emoji từ các server có bot và emoji CatAndSoup~~
 - Phát nhạc từ [YouTube](https://www.youtube.com/) và [YouTube Music](https://music.youtube.com/) (cung cấp bởi [yt-dlp](https://github.com/yt-dlp/yt-dlp))
 - Phát nhạc từ [NhacCuaTui](https://www.nhaccuatui.com/)
 - Phát nhạc từ [Zing MP3](https://zingmp3.vn/)
@@ -15,23 +13,21 @@
 - Biên dịch dự án hoặc tải tệp thực thi từ [Build CatBot Action](../../actions/workflows/Build.yml) và chạy file CatBot.exe lần đầu tiên, file `CatBot_config.json` sẽ được tạo mới
 - Thay đổi các thông số trong file `CatBot_config.json`:
 	+ `MainServer`: ID server chính dùng để quản lý bot (Sử dụng lệnh `/admin`, báo lỗi, cache ảnh cho [LocalMusic](Music/Local/LocalMusic.cs))
-	+ `AdminUsers`: Mảng chứa ID người dùng được sử dụng SFX đặc biệt ~~và được sử dụng lệnh `/emoji` với emoji trong server này~~
+	+ `AdminUsers`: Mảng chứa ID người dùng được sử dụng SFX đặc biệt
 	+ `CacheImageChannel`: ID kênh dùng để cache ảnh album của [LocalMusic](Music/Local/LocalMusic.cs) (Kênh này nằm trong server chính dùng để quản lý bot)
 	+ `LogExceptionChannel`: ID kênh dùng để báo lỗi khi bot chạy (Kênh này nằm trong server chính dùng để quản lý bot)
-	+ ~~`DebugChannel`: ID kênh dùng để debug~~
 	+ `BotOwners`: Danh sách ID chủ của bot (Người có quyền dùng lệnh `/admin`, `addsfx`, `delsfx`, `downloadmusic`)
 	+ `ExcludeBots`: Danh sách ID bot loại trừ (bot được coi như là người trong kênh thoại và kênh sân khấu, có thể sử dụng lệnh prefix)
 	+ `SFXFolder`: Đường dẫn lưu các tệp SFX, mặc định là `SFX`
 	+ `SFXFolderSpecial`: Đường dẫn lưu các tệp SFX đặc biệt, mặc định là `SFX\Special`
-	+ `LyricAPI`: API tìm lời bài hát, mặc định là `https://lyrist.vercel.app/api/`
 	+ `ZingMP3SecretKey`: Zing MP3 secret key (tham khảo phần [Lấy Zing MP3 API key và Secret key](#lay-zing-mp3-api-key-va-secret-key) để biết thêm chi tiết)
 	+ `ZingMP3APIKey`: Zing MP3 API key (tham khảo phần [Lấy Zing MP3 API key và Secret key](#lay-zing-mp3-api-key-va-secret-key) để biết thêm chi tiết)
 	+ `ZingMP3Cookie`: Cookie Zing MP3 (tham khảo phần [Lấy Zing MP3 API key và Secret key](#lay-zing-mp3-api-key-va-secret-key) để biết thêm chi tiết), lưu ý loại trừ đoạn "zmp3_app_version.1=....;"
 	+ `GoogleAPIKey`: Google API key (tham khảo phần [Lấy Google API key](#lay-google-api-key) để biết thêm chi tiết)
-	+ ~~`ZaloAICookie:` Zalo AI Cookie (tham khảo phần [Lấy Cookie](#lay-cookie) để biết thêm chi tiết)~~
 	+ `SpotifyCookie`: Cookie Spotify (tham khảo phần [Lấy Cookie](#lay-cookie) để biết thêm chi tiết)
 	+ `SpotifyUsername`: Tên người dùng/email đăng nhập Spotify
 	+ `SpotifyPassword`: Mật khẩu đăng nhập Spotify
+	+ `SoundCloudClientID`: Client ID của SoundCloud
 	+ `UserAgent`: User agent để thực hiện request
 	+ `BotToken`: Token của bot
 	+ `DefaultPrefix`: Prefix lệnh của bot

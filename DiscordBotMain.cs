@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Net;
 using System.Net.Security;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Reflection;
 using CatBot.Admin;
 using CatBot.Extension;
 using CatBot.Instance;
@@ -14,13 +9,15 @@ using CatBot.Music;
 using CatBot.Music.Local;
 using CatBot.Voice;
 using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Exceptions;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.TextCommands;
+using DSharpPlus.Commands.Processors.TextCommands.Parsing;
+using DSharpPlus.Commands.Trees;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.SlashCommands;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using Microsoft.Extensions.Logging;
@@ -29,7 +26,7 @@ namespace CatBot
 {
     internal class DiscordBotMain
     {
-        internal static DiscordClient botClient;
+        internal static DiscordClient? botClient;
 
         //internal static DiscordRestClient botRESTClient = new DiscordRestClient(new DiscordConfiguration()
         //{
@@ -39,14 +36,19 @@ namespace CatBot
         //    MinimumLogLevel = LogLevel.Information
         //});
 
-        internal static CustomDiscordActivity activity;
+        internal static CustomDiscordActivity? activity;
 
         internal static void Main()
         {
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(delegate { return true; });
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-            string configPath = $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule.FileName)}_config.json";
+            //ServicePointManager.Expect100Continue = true;
+            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback((_, _, _, _) => true);
+            //ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+            try
+            {
+                new Harmony("Hook").PatchAll();
+            }
+            catch (Exception ex) { Utils.LogException(ex, false); }
+            string configPath = $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule?.FileName)}_config.json";
             try
             {
                 Config.ImportConfig(configPath);
@@ -58,78 +60,84 @@ namespace CatBot
                 else
                     Console.WriteLine("Config file corrupted, creating new one...");
                 Config.ExportConfig(configPath);
-                Process.Start(Path.GetFullPath(configPath));
+                ProcessStartInfo processStartInfo = new ProcessStartInfo(Path.GetFullPath(configPath))
+                {
+                    UseShellExecute = true,
+                };
+                Process.Start(processStartInfo);
                 Program.system("pause");
                 Environment.Exit(1);
             }
-            botClient = new DiscordClient(new DiscordConfiguration()
-            {
-                TokenType = TokenType.Bot,
-                Token = Config.gI().BotToken,
-                Intents = DiscordIntents.All,
-                MinimumLogLevel = LogLevel.Information,
-            });
-            botClient.GuildDownloadCompleted += BotClient_GuildDownloadCompleted;
-            botClient.VoiceStateUpdated += BotClient_VoiceStateUpdated;
-            try
-            {
-                new Harmony("Hook").PatchAll();
-            }
-            catch (Exception ex) { Utils.LogException(ex, false); }
-            new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
-            new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
-            new Thread(UpdateYTDlp) { IsBackground = true, Name = nameof(UpdateYTDlp) }.Start();
-            new Thread(LocalMusicChoiceProvider.UpdateCachedLocalMusic) { IsBackground = true, Name = nameof(LocalMusicChoiceProvider.UpdateCachedLocalMusic) }.Start();
-            MainAsync().GetAwaiter().GetResult();
-        }
-
-        public static async Task MainAsync()
-        {
-            if (Config.gI().EnableCommandsNext)
-            {
-                CommandsNextExtension commandNext = botClient.UseCommandsNext(new CommandsNextConfiguration()
+            var botClientBuilder = DiscordClientBuilder.CreateDefault(Config.gI().BotToken, DiscordIntents.All)
+                .SetLogLevel(LogLevel.Information)
+                .ConfigureEventHandlers(handler =>
                 {
-                    StringPrefixes = new string[] { Config.gI().DefaultPrefix },
-                    CaseSensitive = true,
-                    EnableDms = false,
-                    UseDefaultCommandHandler = false,
+                    handler.HandleGuildDownloadCompleted(BotClient_GuildDownloadCompleted);
+                    handler.HandleVoiceStateUpdated(BotClient_VoiceStateUpdated);
+                    handler.HandleComponentInteractionCreated(BotClient_ComponentInteractionCreated);
                 });
-                botClient.MessageCreated += commandNext.HandleCommandsAsync;
-                commandNext.CommandErrored += (_, args) => 
+
+            botClientBuilder.UseCommands(cmd =>
+            {
+                cmd.CommandErrored += (_, args) =>
                 {
-                    if (args.Exception is CommandNotFoundException)
-                        return Task.CompletedTask;
+                    //if (args.Exception is CommandNotFoundException)
+                    //    return Task.CompletedTask;
                     return LogException(args.Exception);
                 };
-                commandNext.RegisterCommands<AdminBaseCommand>();
-                commandNext.RegisterCommands<GlobalBaseCommands>();
-                commandNext.RegisterCommands<MusicPlayerBaseCommands>();
-                commandNext.RegisterCommands<VoiceChannelSFXBaseCommands>();
-                //commandNext.RegisterCommands<TTSBaseCommands>();
-                //commandNext.RegisterCommands<EmojiReplyBaseCommands>();
-                commandNext.SetHelpFormatter<HelpFormatter>();
-            }
-            SlashCommandsExtension slashCommand = botClient.UseSlashCommands(new SlashCommandsConfiguration());
-            slashCommand.SlashCommandErrored += (_, args) =>
-            {
-                if (args.Exception is CommandNotFoundException)
-                    return Task.CompletedTask;
-                return LogException(args.Exception);
-            };
-            slashCommand.RegisterCommands<VoiceChannelSFXSlashCommands>();
-            slashCommand.RegisterCommands<MusicPlayerSlashCommands>();
-            slashCommand.RegisterCommands<GlobalSlashCommands>();
-            slashCommand.RegisterCommands<AdminSlashCommands>(Config.gI().MainServerID);
-            //slashCommand.RegisterCommands<EmojiReplySlashCommands>();
-            //slashCommand.RegisterCommands<TTSSlashCommands>();
+                cmd.AddProcessor<SlashCommandProcessor>();
+                foreach (MethodInfo method in typeof(VoiceChannelSFXSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                    cmd.AddCommands(CommandBuilder.From(method));
+                foreach (MethodInfo method in typeof(MusicPlayerSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                    cmd.AddCommands(CommandBuilder.From(method));
+                foreach (MethodInfo method in typeof(GlobalSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                    cmd.AddCommands(CommandBuilder.From(method));
+                if (Config.gI().EnableCommandsNext)
+                {
+                    cmd.AddProcessor(new TextCommandProcessor(new TextCommandConfiguration()
+                    {
+                        IgnoreBots = false,
+                        PrefixResolver = new DefaultPrefixResolver(true, [Config.gI().DefaultPrefix]).ResolvePrefixAsync
+                    }));
+                    foreach (MethodInfo method in typeof(AdminBaseCommand).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                        cmd.AddCommands(CommandBuilder.From(method));
+                    foreach (MethodInfo method in typeof(GlobalBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                        cmd.AddCommands(CommandBuilder.From(method));
+                    foreach (MethodInfo method in typeof(MusicPlayerBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                        cmd.AddCommands(CommandBuilder.From(method));
+                    foreach (MethodInfo method in typeof(VoiceChannelSFXBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
+                        cmd.AddCommands(CommandBuilder.From(method));
+                }
+                cmd.AddCommands<AdminSlashCommands>(Config.gI().MainServerID);
+            }, new CommandsConfiguration());
 
-            botClient.UseVoiceNext(new VoiceNextConfiguration());
 
-            botClient.UseInteractivity(new InteractivityConfiguration
+            botClientBuilder.UseVoiceNext(new VoiceNextConfiguration());
+
+            botClientBuilder.UseInteractivity(new InteractivityConfiguration
             {
                 Timeout = TimeSpan.FromMinutes(5.0),
             });
 
+            new Thread(GCThread) { IsBackground = true, Name = nameof(GCThread) }.Start();
+            new Thread(DeleteTempFile) { IsBackground = true, Name = nameof(DeleteTempFile) }.Start();
+            new Thread(UpdateYTDlp) { IsBackground = true, Name = nameof(UpdateYTDlp) }.Start();
+            new Thread(LocalMusicChoiceProvider.UpdateCachedLocalMusic) { IsBackground = true, Name = nameof(LocalMusicChoiceProvider.UpdateCachedLocalMusic) }.Start();
+
+
+            botClient = botClientBuilder.Build();
+            MainAsync().GetAwaiter().GetResult();
+        }
+
+        static async Task BotClient_ComponentInteractionCreated(DiscordClient client, ComponentInteractionCreatedEventArgs args)
+        {
+            await BotServerInstance.ComponentInteractionCreated(client, args);
+        }
+
+        public static async Task MainAsync()
+        {
+            if (botClient == null)
+                throw new NullReferenceException();
             //await botRESTClient.InitializeAsync();
             await botClient.ConnectAsync();
 
@@ -140,21 +148,25 @@ namespace CatBot
         {
             while (true)
             {
-                Process yt_dlp = new Process()
+                try
                 {
-                    StartInfo = new ProcessStartInfo
+                    Process yt_dlp = new Process()
                     {
-                        FileName = "yt-dlp\\yt-dlp",
-                        Arguments = "-U",
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        UseShellExecute = false,
-                    },
-                    EnableRaisingEvents = true,
-                };
-                Console.WriteLine("--------------yt-dlp Console output--------------");
-                yt_dlp.Start();
-                yt_dlp.WaitForExit();
-                Console.WriteLine("--------------End of yt-dlp Console output--------------");
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "yt-dlp\\yt-dlp",
+                            Arguments = "-U",
+                            WindowStyle = ProcessWindowStyle.Hidden,
+                            UseShellExecute = false,
+                        },
+                        EnableRaisingEvents = true,
+                    };
+                    Console.WriteLine("--------------yt-dlp Console output--------------");
+                    yt_dlp.Start();
+                    yt_dlp.WaitForExit();
+                    Console.WriteLine("--------------End of yt-dlp Console output--------------");
+                }
+                catch { }
                 Thread.Sleep(1000 * 60 * 60 * 24);
             }
         }
@@ -189,19 +201,23 @@ namespace CatBot
 
         static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
         {
+            if (botClient == null)
+                throw new NullReferenceException();
             await Task.Run(() =>
             {
                 Config.gI().mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().MainServerID).Value;
-                Config.gI().cacheImageChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID);
-                Config.gI().exceptionReportChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID);
-                Config.gI().debugChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID);
+                Config.gI().cacheImageChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID) ?? throw new NullReferenceException();
+                Config.gI().exceptionReportChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID) ?? throw new NullReferenceException();
+                Config.gI().debugChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID) ?? throw new NullReferenceException();
             });
             await GlobalSlashCommands.GetMentionStrings();
-            new Thread(async() => await ChangeStatus()) { IsBackground = true }.Start();
+            new Thread(async () => await ChangeStatus()) { IsBackground = true }.Start();
         }
 
         static async Task ChangeStatus()
         {
+            if (botClient == null)
+                throw new NullReferenceException();
             int count = 0;
             while (true)
             {
@@ -209,22 +225,22 @@ namespace CatBot
                 {
                     CustomDiscordActivity discordActivity = new CustomDiscordActivity();
                     if (count == 0)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "Zing MP3");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "Zing MP3");
                     else if (count == 1)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "NhacCuaTui");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "NhacCuaTui");
                     else if (count == 2)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "YouTube Music");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "YouTube Music");
                     else if (count == 3)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "SoundCloud");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "SoundCloud");
                     else if (count == 4)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.ListeningTo, "Spotify");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "Spotify");
                     else if (count == 5)
                     {
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, ActivityType.Watching, "YouTube");
+                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.Watching, "YouTube");
                         count = -1;
                     }
                     count++;
-                    await botClient.UpdateStatusAsync(discordActivity, UserStatus.Online);
+                    await botClient.UpdateStatusAsync(discordActivity, DiscordUserStatus.Online);
                     for (int i = 0; i < 30; i++)
                     {
                         if (activity != null)
@@ -234,7 +250,7 @@ namespace CatBot
                 }
                 if (activity != null)
                 {
-                    await botClient.UpdateStatusAsync(activity, UserStatus.Online);
+                    await botClient.UpdateStatusAsync(activity, DiscordUserStatus.Online);
                     for (int i = 0; i < 30; i++)
                     {
                         if (activity == null)
@@ -245,7 +261,7 @@ namespace CatBot
             }
         }
 
-        static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdateEventArgs args) => await BotServerInstance.OnVoiceStateUpdated(args);
+        static async Task BotClient_VoiceStateUpdated(DiscordClient sender, VoiceStateUpdatedEventArgs args) => await BotServerInstance.OnVoiceStateUpdated(args);
 
         static Task LogException(Exception ex)
         {

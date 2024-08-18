@@ -1,9 +1,4 @@
-﻿using DSharpPlus.SlashCommands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
 
 namespace CatBot.Music
 {
@@ -16,17 +11,17 @@ namespace CatBot.Music
 
     public enum PlayModeChoice
     {
-        [ChoiceName("Hàng đợi (Bài hát sẽ bị xóa khỏi hàng đợi khi phát)")]
+        [ChoiceDisplayName("Hàng đợi (Bài hát sẽ bị xóa khỏi hàng đợi khi phát)")]
         Queue = 0,
-        [ChoiceName("Lặp hàng đợi (Bài hát sẽ không bị xóa khỏi hàng đợi khi phát)")]
+        [ChoiceDisplayName("Lặp hàng đợi (Bài hát sẽ không bị xóa khỏi hàng đợi khi phát)")]
         LoopQueue = 1,
-        [ChoiceName("Tuần tự")]
+        [ChoiceDisplayName("Tuần tự")]
         Incremental = 2,
-        [ChoiceName("Ngẫu nhiên")]
+        [ChoiceDisplayName("Ngẫu nhiên")]
         Random = 3,
-        [ChoiceName("Không lặp lại bài hiện tại")]
+        [ChoiceDisplayName("Không lặp lại bài hiện tại")]
         DontLoopSong = 4,
-        [ChoiceName("Lặp lại bài hiện tại")]
+        [ChoiceDisplayName("Lặp lại bài hiện tại")]
         LoopASong = 5,
     }
 }
