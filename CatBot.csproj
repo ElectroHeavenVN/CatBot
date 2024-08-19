@@ -18,6 +18,8 @@
     <PackageReference Include="DSharpPlus.VoiceNext.Natives" Version="1.0.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.63" />
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <PackageReference Include="MyNihongo.KanaConverter" Version="1.0.2" />
+    <PackageReference Include="MyNihongo.KanaDetector" Version="1.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SoundCloudExplode" Version="1.6.4" />
     <PackageReference Include="SpotifyExplode" Version="1.1.2" />
