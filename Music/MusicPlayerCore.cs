@@ -684,14 +684,21 @@ namespace CatBot.Music
             await ctx.DeferResponseAsync();
             try
             {
-                List<DiscordEmbed> embeds = serverInstance.musicPlayer.GetLyricEmbeds(songName, artistsName);
+                DummyMusic music = new DummyMusic()
+                {
+                    Title = songName,
+                    Artists = artistsName.Split([','], StringSplitOptions.RemoveEmptyEntries)
+                };
+                foreach (string artist in music.Artists)
+                    music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
+                List<DiscordEmbed> embeds = GetLyricEmbeds(music);
                 if (embeds.Count > 1)
                 {
                     await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(embeds[0]));
                     foreach (DiscordEmbed embed in embeds.Skip(1).Take(embeds.Count - 2))
                         await ctx.Channel.SendMessageAsync(embed);
                     DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-                    foreach (DiscordButtonComponent button in serverInstance.musicPlayer.GetLyricButtons(serverInstance.musicPlayer.currentlyPlayingSong))
+                    foreach (DiscordButtonComponent button in serverInstance.musicPlayer.GetLyricButtons(music))
                     {
                         messageBuilder = messageBuilder.AddComponents(button);
                     }
@@ -700,7 +707,7 @@ namespace CatBot.Music
                 else
                 {
                     DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder().AddEmbed(embeds[0]);
-                    foreach (DiscordButtonComponent button in serverInstance.musicPlayer.GetLyricButtons(serverInstance.musicPlayer.currentlyPlayingSong))
+                    foreach (DiscordButtonComponent button in serverInstance.musicPlayer.GetLyricButtons(music))
                     {
                         builder = builder.AddComponents(button);
                     }
@@ -1053,38 +1060,33 @@ namespace CatBot.Music
             return embed2;
         }
 
-        List<DiscordEmbed> GetLyricEmbeds(string songName = "", string artistsName = "")
+        List<DiscordEmbed> GetLyricEmbeds()
         {
             LyricData? lyricData = null;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-            if (string.IsNullOrWhiteSpace(songName))
-            {
-                if (currentlyPlayingSong == null)
-                    throw new LyricException("Không có bài nào đang phát!");
-                if (string.IsNullOrWhiteSpace(currentlyPlayingSong.Title))
-                    throw new LyricException("Bài hát đang phát không có tiêu đề!");
-                lyricData = currentlyPlayingSong.GetLyric();
-                if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
-                    throw new LyricException(lyricData.NotFoundMessage);
-                if (currentlyPlayingSong is LocalMusic)
-                    embed = embed.WithFooter("Powered by LRCLIB", "https://cdn.discordapp.com/emojis/1274659676688224307.webp");
-                else
-                    embed = currentlyPlayingSong.AddFooter(embed);
-            }
-            else
-            {
-                DummyMusic music = new DummyMusic()
-                {
-                    Title = songName,
-                    Artists = artistsName.Split([','], StringSplitOptions.RemoveEmptyEntries)
-                };
-                foreach (string artist in music.Artists)
-                    music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
-                lyricData = music.GetLyric();
-                if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
-                    throw new LyricException(lyricData.NotFoundMessage);
+            if (currentlyPlayingSong == null)
+                throw new LyricException("Không có bài nào đang phát!");
+            if (string.IsNullOrWhiteSpace(currentlyPlayingSong.Title))
+                throw new LyricException("Bài hát đang phát không có tiêu đề!");
+            lyricData = currentlyPlayingSong.GetLyric();
+            if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
+                throw new LyricException(lyricData.NotFoundMessage);
+            if (currentlyPlayingSong is LocalMusic)
                 embed = embed.WithFooter("Powered by LRCLIB", "https://cdn.discordapp.com/emojis/1274659676688224307.webp");
-            }
+            else
+                embed = currentlyPlayingSong.AddFooter(embed);
+            embed = embed.WithTitle("Lời bài hát " + lyricData.Title + " - " + lyricData.Artists).WithDescription(lyricData.PlainLyrics).WithThumbnail(lyricData.AlbumThumbnail);
+            return embed.SplitLongEmbed().Select(e => e.Build()).ToList();
+        }
+
+        static List<DiscordEmbed> GetLyricEmbeds(IMusic music)
+        {
+            LyricData? lyricData = null;
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            lyricData = music.GetLyric();
+            if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
+                throw new LyricException(lyricData.NotFoundMessage);
+            embed = embed.WithFooter("Powered by LRCLIB", "https://cdn.discordapp.com/emojis/1274659676688224307.webp");
             embed = embed.WithTitle("Lời bài hát " + lyricData.Title + " - " + lyricData.Artists).WithDescription(lyricData.PlainLyrics).WithThumbnail(lyricData.AlbumThumbnail);
             return embed.SplitLongEmbed().Select(e => e.Build()).ToList();
         }
@@ -1324,14 +1326,21 @@ namespace CatBot.Music
                     {
                         try
                         {
-                            List<DiscordEmbed> embeds = GetLyricEmbeds(currentlyPlayingSong.Title, currentlyPlayingSong.AllArtists);
+                            DummyMusic music = new DummyMusic()
+                            {
+                                Title = currentlyPlayingSong.Title,
+                                Artists = currentlyPlayingSong.AllArtists.Split([','], StringSplitOptions.RemoveEmptyEntries)
+                            };
+                            foreach (string artist in music.Artists)
+                                music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
+                            List<DiscordEmbed> embeds = GetLyricEmbeds(music);
                             if (embeds.Count > 1)
                             {
                                 await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embeds[0]));
                                 foreach (DiscordEmbed embed in embeds.Skip(1).Take(embeds.Count - 2))
                                     await args.Channel.SendMessageAsync(embed);
                                 DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-                                foreach (DiscordButtonComponent button in GetLyricButtons(currentlyPlayingSong))
+                                foreach (DiscordButtonComponent button in GetLyricButtons(music))
                                 {
                                     messageBuilder = messageBuilder.AddComponents(button);
                                 }
@@ -1340,7 +1349,7 @@ namespace CatBot.Music
                             else
                             {
                                 DiscordFollowupMessageBuilder builder = new DiscordFollowupMessageBuilder().AddEmbed(embeds[0]);
-                                foreach (DiscordButtonComponent button in GetLyricButtons(currentlyPlayingSong))
+                                foreach (DiscordButtonComponent button in GetLyricButtons(music))
                                 {
                                     builder = builder.AddComponents(button);
                                 }
