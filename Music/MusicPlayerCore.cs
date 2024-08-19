@@ -6,6 +6,8 @@ using CatBot.Instance;
 using CatBot.Music.Dummy;
 using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
+using CatBot.Music.Spotify;
+using CatBot.Music.ZingMP3;
 using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
@@ -686,11 +688,9 @@ namespace CatBot.Music
             {
                 DummyMusic music = new DummyMusic()
                 {
-                    Title = songName,
+                    Title = songName.Trim(),
                     Artists = artistsName.Split([','], StringSplitOptions.RemoveEmptyEntries)
                 };
-                foreach (string artist in music.Artists)
-                    music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
                 List<DiscordEmbed> embeds = GetLyricEmbeds(music);
                 if (embeds.Count > 1)
                 {
@@ -1328,12 +1328,20 @@ namespace CatBot.Music
                         {
                             DummyMusic music = new DummyMusic()
                             {
-                                Title = currentlyPlayingSong.Title,
+                                Title = currentlyPlayingSong.Title.Trim(),
                                 Artists = currentlyPlayingSong.AllArtists.Split([','], StringSplitOptions.RemoveEmptyEntries)
                             };
-                            foreach (string artist in music.Artists)
-                                music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
-                            List<DiscordEmbed> embeds = GetLyricEmbeds(music);
+                            List<DiscordEmbed> embeds;
+                            try
+                            {
+                                embeds = GetLyricEmbeds(music);
+                            }
+                            catch
+                            {
+                                foreach (string artist in music.Artists)
+                                    music.Title = music.Title.Replace(artist + " - ", "").Replace(" - " + artist, "").Trim();
+                                embeds = GetLyricEmbeds(music);
+                            }
                             if (embeds.Count > 1)
                             {
                                 await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddEmbed(embeds[0]));

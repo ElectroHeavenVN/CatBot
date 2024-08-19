@@ -1,4 +1,4 @@
-name: Build CatBot Full
+name: Build CatBot Only
 
 on: workflow_dispatch
 
@@ -25,24 +25,7 @@ jobs:
 
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
-
-      - name: Setup Python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-
-      - name: Clone Zotify repository
-        run: git clone https://github.com/zotify-dev/zotify.git
-
-      - name: Download yt-dlp executable
-        run: New-Item -ItemType Directory -Path bin\${{ matrix.configuration }}\yt-dlp && Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile bin\${{ matrix.configuration }}\yt-dlp\yt-dlp.exe
-
-      - name: Install PyInstaller
-        run: pip install -U pyinstaller
-
-      - name: Install required libraries
-        run: pip install -r zotify/requirements.txt && pip install git+https://github.com/kokarare1212/librespot-python
-
+        
       - name: Restore the application
         run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
         env:
@@ -55,13 +38,7 @@ jobs:
         run: msbuild $env:Solution_Name /t:rebuild /p:Configuration=$env:Configuration
         env:
           Configuration: ${{ matrix.configuration }}
-
-      - name: Run PyInstaller
-        run: pyinstaller --onefile -F zotify\zotify\__main__.py
-
-      - name: Move Zotify to output folder
-        run: New-Item -ItemType Directory -Path bin\${{ matrix.configuration }}\Zotify && Move-Item -Path dist\__main__.exe -Destination bin\${{ matrix.configuration }}\Zotify\Zotify.exe
-
+          
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
