@@ -5,7 +5,11 @@ using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using CatBot.Music.Dummy;
+using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
+using Newtonsoft.Json.Linq;
+using SpotifyExplode.Albums;
 
 namespace CatBot.Music
 {
@@ -364,5 +368,98 @@ namespace CatBot.Music
         {
             return Environment.GetEnvironmentVariable("PATH").Split(';').Any(p => File.Exists(Path.Combine(p, "ffmpeg.exe")));
         }
+
+        internal static bool TryGetLyricsFromLRCLIB(this IMusic music, out LyricData? lyricData)
+        {
+            lyricData = null;
+            try
+            {
+                if (GetLyricsFromLRCLIB(music, out LyricData? result))
+                {
+                    lyricData = result;
+                    return true;
+                }
+                if (FindLyricsFromLRCLIB(music, out result))
+                {
+                    lyricData = result;
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        static bool GetLyricsFromLRCLIB(IMusic music, out LyricData? result)
+        {
+            result = null;
+            if (string.IsNullOrWhiteSpace(music.Title) || music.Artists.Length == 0 || string.IsNullOrWhiteSpace(music.Album))
+                return false;
+            if (music is DummyMusic)
+                return false;
+            string address = $"{Config.gI().LyricAPI}get?track_name={Uri.EscapeDataString(music.Title)}&artist_name=";
+            foreach (string artist in music.Artists)
+                address += $"{Uri.EscapeDataString(artist)}+";
+            address = $"{address[..^1]}&album_name={Uri.EscapeDataString(music.Album)}&duration={(int)music.Duration.TotalSeconds}";
+
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            string jsonLyric = client.GetStringAsync(address).Result;
+            JObject lyricData = JObject.Parse(jsonLyric);
+            if (lyricData["name"].Value<string>() == "TrackNotFound")
+                return false;
+            if (lyricData["instrumental"].Value<bool>())
+                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+            else
+                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink)
+                {
+                    PlainLyrics = lyricData["plainLyrics"].Value<string>(),
+                    SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                };
+            return true;
+        }
+
+        static bool FindLyricsFromLRCLIB(IMusic music, out LyricData? result)
+        {
+            result = null;
+            if (string.IsNullOrWhiteSpace(music.Title))
+                return false;
+            string address = $"{Config.gI().LyricAPI}search?track_name={Uri.EscapeDataString(music.Title)}";
+            if (music.Artists.Length != 0)
+            {
+                address += "&artist_name=";
+                foreach (string artist in music.Artists)
+                    address += $"{Uri.EscapeDataString(artist)}+";
+                address = $"{address[..^1]}";
+            }
+            if (!string.IsNullOrWhiteSpace(music.Album))
+                address += $"&album_name={Uri.EscapeDataString(music.Album)}";
+
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            string jsonLyric = client.GetStringAsync(address).Result;
+            JArray lyricDatas = JArray.Parse(jsonLyric);
+            foreach (JToken lyricData in lyricDatas)
+            {
+                if (music is not DummyMusic && Math.Abs(lyricData["duration"].Value<long>() - music.Duration.TotalSeconds) > 10)
+                    continue;
+                if (lyricData["name"].Value<string>() == "TrackNotFound")
+                    return false;
+                if (lyricData["instrumental"].Value<bool>())
+                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+                else
+                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink)
+                    {
+                        PlainLyrics = lyricData["plainLyrics"].Value<string>(),
+                        SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                    };
+                return true;
+            }
+            return false;
+        }
+
     }
 }

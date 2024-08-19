@@ -96,87 +96,11 @@ namespace CatBot.Music.Local
 
         public LyricData? GetLyric()
         {
-            try
-            {
-                if (lyric != null)
-                    return lyric;
-                if (ExecuteGetLyrics(out LyricData? result))
-                    return lyric = result;
-                if (ExecuteFindLyrics(out result))
-                    return lyric = result;
-            }
-            catch { }
+            if (lyric != null)
+                return lyric;
+            if (this.TryGetLyricsFromLRCLIB(out LyricData? result))
+                return lyric = result;
             return new LyricData("Không tìm thấy lời bài hát!");
-        }
-
-        bool ExecuteGetLyrics(out LyricData? result)
-        {
-            result = null;
-            if (string.IsNullOrWhiteSpace(Title) || artists.Length == 0 || string.IsNullOrWhiteSpace(Album))
-                return false;
-            string address = $"{Config.gI().LyricAPI}get?track_name={Uri.UnescapeDataString(Title)}&artist_name=";
-            foreach (string artist in artists)
-                address += $"{Uri.UnescapeDataString(artist)}+";
-            address = $"{address[..^1]}&album_name={Uri.UnescapeDataString(Album)}&duration={(int)duration.TotalSeconds}";
-
-            using HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
-            string jsonLyric = client.GetStringAsync(address).Result;
-            JObject lyricData = JObject.Parse(jsonLyric);
-            if (lyricData["name"].Value<string>() == "TrackNotFound")
-                return false;
-            if (lyricData["instrumental"].Value<bool>())
-                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
-            else
-                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), AlbumThumbnailLink)
-                {
-                    PlainLyrics = lyricData["plainLyrics"].Value<string>(),
-                    SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
-                };
-            return true;
-        }
-
-        bool ExecuteFindLyrics(out LyricData? result)
-        {
-            result = null;
-            if (string.IsNullOrWhiteSpace(Title))
-                return false;
-            string address = $"{Config.gI().LyricAPI}search?track_name={Uri.UnescapeDataString(Title)}";
-            if (artists.Length != 0)
-            {
-                address += "&artist_name=";
-                foreach (string artist in artists)
-                    address += $"{Uri.UnescapeDataString(artist)}+";
-                address = $"{address[..^1]}";
-            }
-            if (!string.IsNullOrWhiteSpace(Album))
-                address += $"&album_name={Uri.UnescapeDataString(Album)}";
-
-            using HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
-            string jsonLyric = client.GetStringAsync(address).Result;
-            JArray lyricDatas = JArray.Parse(jsonLyric);
-            foreach (JToken lyricData in lyricDatas)
-            {
-                if (Math.Abs(lyricData["duration"].Value<long>() - duration.TotalSeconds) > 10)
-                    continue;
-                if (lyricData["name"].Value<string>() == "TrackNotFound")
-                    return false;
-                if (lyricData["instrumental"].Value<bool>())
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
-                else
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), AlbumThumbnailLink)
-                    {
-                        PlainLyrics = lyricData["plainLyrics"].Value<string>(),
-                        SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
-                    };
-                return true;
-            }
-            return false;
         }
 
         public string GetSongDesc(bool hasTimeStamp = false)

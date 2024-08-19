@@ -127,7 +127,7 @@ namespace CatBot.Music.ZingMP3
                 return lyric;
             JObject jsonLyricData = (JObject)GetSongLyricInfo(link);
             if (!jsonLyricData.ContainsKey("file") && !jsonLyricData.ContainsKey("sentences"))
-                return new LyricData("Bài hát này không có lời trên server của Zing MP3!");
+                return new LyricData("Bài hát này không có lời trên Zing MP3!");
             string plainLyrics = "";
             string syncedLyrics = "";
             string enhancedLyrics = "";
@@ -139,6 +139,7 @@ namespace CatBot.Music.ZingMP3
             }
             if (jsonLyricData.ContainsKey("sentences"))
             {
+                long lastSentenceTimestamp = 0;
                 foreach (JToken sentence in jsonLyricData["sentences"])
                 {
                     string lyricSentence = "";
@@ -156,8 +157,15 @@ namespace CatBot.Music.ZingMP3
                         }
                         lyricSentence += word["data"].Value<string>() + ' ';
                     }
+
+                    long lastWordTimestamp = sentence["words"].Last()["endTime"].Value<long>();
+                    lyricSentence += $"<{TimeSpan.FromMilliseconds(lastWordTimestamp):mm\\:ss\\.ff}>";
+                    if (lastWordTimestamp - lastSentenceTimestamp > 5000)
+                        enhancedLyrics += $"[{TimeSpan.FromMilliseconds(lastSentenceTimestamp):mm\\:ss\\.ff}] ♪{Environment.NewLine}";
+                    lastSentenceTimestamp = lastWordTimestamp;
                     enhancedLyrics += lyricSentence + Environment.NewLine;
                 }
+                enhancedLyrics += $"[{TimeSpan.FromMilliseconds(jsonLyricData["sentences"].Last()["words"].Last()["endTime"].Value<long>()):mm\\:ss\\.ff}] ♪";
             }
             return lyric = new LyricData(title, AllArtists, album, albumThumbnailLink)
             {
