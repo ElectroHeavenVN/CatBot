@@ -3,8 +3,8 @@ name: Build CatBot Only
 on: workflow_dispatch
 
 jobs:
-  build-catbot:
-    name: Build CatBot
+  build-catbot-only:
+    name: Build CatBot only
     strategy:
       matrix:
         configuration: [Debug, Release]
