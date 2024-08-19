@@ -14,6 +14,7 @@ using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 
 namespace CatBot.Music
@@ -66,6 +67,7 @@ namespace CatBot.Music
         bool isDeleteBrowseQueueButtonThreadRunning;
         bool isSetVCStatus;
         bool isSongDownloaded;
+        LyricData? lyricsFromLRCLIB;
 
         internal MusicPlayerCore(BotServerInstance serverInstance)
         {
@@ -713,6 +715,7 @@ namespace CatBot.Music
                     }
                     await ctx.FollowupAsync(builder);
                 }
+                serverInstance.musicPlayer.lyricsFromLRCLIB = music.GetLyric();
             }
             catch (LyricException ex)
             {
@@ -1309,19 +1312,6 @@ namespace CatBot.Music
                 if (args.Id.EndsWith(uniqueID + "_lyrics_" + serverInstance.server.Id))
                 {
                     await args.Interaction.DeferAsync();
-                    LyricData lyric = currentlyPlayingSong.GetLyric();
-                    if (id == "view-plain")
-                    {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong.AllArtists + " - " + currentlyPlayingSong.Title + ".txt", new MemoryStream(Encoding.UTF8.GetBytes(lyric.PlainLyrics))));
-                    }
-                    if (id == "view-synced")
-                    {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong.AllArtists + " - " + currentlyPlayingSong.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyric.SyncedLyrics))));
-                    }
-                    if (id == "view-enhanced")
-                    {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong.AllArtists + " - " + currentlyPlayingSong.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyric.EnhancedLyrics))));
-                    }
                     if (id == "view-lrclib")
                     {
                         try
@@ -1363,11 +1353,31 @@ namespace CatBot.Music
                                 }
                                 await args.Interaction.CreateFollowupMessageAsync(builder);
                             }
+                            lyricsFromLRCLIB = music.GetLyric();
                         }
                         catch (LyricException ex)
                         {
                             await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent(ex.Message));
                         }
+                        return;
+                    }
+                    LyricData? lyrics = currentlyPlayingSong?.GetLyric();
+                    if (!string.IsNullOrEmpty(lyrics?.NotFoundMessage))
+                        lyrics = lyricsFromLRCLIB;
+                    if (id == "view-plain")
+                    {
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".txt", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.PlainLyrics))));
+                        return;
+                    }
+                    if (id == "view-synced")
+                    {
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.SyncedLyrics))));
+                        return;
+                    }
+                    if (id == "view-enhanced")
+                    {
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.EnhancedLyrics))));
+                        return;
                     }
                 }
             }

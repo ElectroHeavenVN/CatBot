@@ -5,6 +5,8 @@ namespace CatBot.Music.Dummy
 {
     internal class DummyMusic : IMusic
     {
+        LyricData? lyrics;
+
         public string Title { get; set; } = "";
         public string[] Artists { get; set; } = [];
         public string AllArtists => string.Join(", ", Artists);
@@ -13,8 +15,10 @@ namespace CatBot.Music.Dummy
 
         public LyricData? GetLyric()
         {
+            if (lyrics != null)
+                return lyrics;
             if (this.TryGetLyricsFromLRCLIB(out LyricData? result))
-                return result;
+                return lyrics = result;
             return new LyricData("Không tìm thấy lời bài hát!");
         }
 
