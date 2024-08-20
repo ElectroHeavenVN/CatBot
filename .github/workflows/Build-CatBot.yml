@@ -5,10 +5,6 @@ on: workflow_dispatch
 jobs:
   build-catbot-only:
     name: Build CatBot only
-    strategy:
-      matrix:
-        configuration: [Debug, Release]
-
     runs-on: windows-latest
 
     env:
@@ -27,20 +23,16 @@ jobs:
         uses: nuget/setup-nuget@v2
         
       - name: Restore the application
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-        env:
-          Configuration: ${{ matrix.configuration }}
+        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release
 
       - name: Restore NuGet Packages
         run: nuget restore $env:Solution_Name
 
       - name: Build solution
-        run: msbuild $env:Solution_Name /t:rebuild /p:Configuration=$env:Configuration
-        env:
-          Configuration: ${{ matrix.configuration }}
+        run: msbuild $env:Solution_Name /t:rebuild /p:Configuration=Release
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CatBot_${{ matrix.configuration }}
-          path: bin/${{ matrix.configuration }}
+          name: CatBot
+          path: bin/Release
