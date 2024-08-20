@@ -62,7 +62,7 @@ namespace CatBot.Music
         public async Task PlayNextUpSpotifyMusic(SlashCommandContext ctx, [Parameter("input"), Description("Từ khóa hoặc link"), SlashAutoCompleteProvider(typeof(SpotifyMusicChoiceProvider))] string input) => await MusicPlayerCore.PlayNextUp(ctx, input, MusicType.Spotify);
 
         [Command("play-local-random"), Description("Thêm ngẫu nhiên 1 bài nhạc local vào hàng đợi")]
-        public async Task PlayRandomLocalMusic(SlashCommandContext ctx, [Parameter("count"), Description("Số lượng bài nhạc"), MinMaxValue(1, int.MaxValue)] long count = 1) => await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);
+        public async Task PlayRandomLocalMusic(SlashCommandContext ctx, [Parameter("count"), Description("Số lượng bài nhạc"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.PlayRandomLocalMusic(ctx, count);
 
         [Command("play-local-all"), Description("Thêm toàn bộ nhạc local vào hàng đợi")]
         public async Task PlayAllLocalMusic(SlashCommandContext ctx, [Parameter("search"), Description("Từ khóa lọc các bài hát")] string search = "") => await MusicPlayerCore.PlayAllLocalMusic(ctx, search);
@@ -71,10 +71,10 @@ namespace CatBot.Music
         public async Task NowPlaying(SlashCommandContext ctx) => await MusicPlayerCore.NowPlaying(ctx);
 
         [Command("seek"), Description("Tua bài hiện tại")]
-        public async Task Seek(SlashCommandContext ctx, [Parameter("seconds"), Description("số giây để tua (mặc định: 10)"), MinMaxValue(int.MinValue, int.MaxValue)] long seconds = 10) => await MusicPlayerCore.Seek(ctx, seconds);
+        public async Task Seek(SlashCommandContext ctx, [Parameter("seconds"), Description("số giây để tua (mặc định: 10)"), MinMaxValue((long)int.MinValue, (long)int.MaxValue)] long seconds = 10) => await MusicPlayerCore.Seek(ctx, seconds);
         
         [Command("seek-to"), Description("Tua bài hiện tại đến vị trí chỉ định")]
-        public async Task SeekTo(SlashCommandContext ctx, [Parameter("seconds"), Description("số giây tính từ đầu (mặc định: 0)"), MinMaxValue(int.MinValue, int.MaxValue)] long seconds = 0) => await MusicPlayerCore.SeekTo(ctx, seconds);
+        public async Task SeekTo(SlashCommandContext ctx, [Parameter("seconds"), Description("số giây tính từ đầu (mặc định: 0)"), MinMaxValue((long)int.MinValue, (long)int.MaxValue)] long seconds = 0) => await MusicPlayerCore.SeekTo(ctx, seconds);
 
         [Command("clear"), Description("Xóa hết nhạc trong hàng đợi")]
         public async Task Clear(SlashCommandContext ctx) => await MusicPlayerCore.Clear(ctx);
@@ -86,10 +86,10 @@ namespace CatBot.Music
         public async Task Resume(SlashCommandContext ctx) => await MusicPlayerCore.Resume(ctx);
 
         [Command("skip"), Description("Bỏ qua bài hát")]
-        public async Task Skip(SlashCommandContext ctx, [Parameter("count"), Description("Số bài bỏ qua (mặc định: 1)"), MinMaxValue(1, int.MaxValue)] long count = 1) => await MusicPlayerCore.Skip(ctx, count);
+        public async Task Skip(SlashCommandContext ctx, [Parameter("count"), Description("Số bài bỏ qua (mặc định: 1)"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Skip(ctx, count);
 
         [Command("remove"), Description("Xóa nhạc trong hàng đợi")]
-        public async Task Remove(SlashCommandContext ctx, [Parameter("index"), Description("Vị trí xóa bài hát"), MinMaxValue(0, int.MaxValue)] long startIndex = 0, [Parameter("count"), Description("Số lượng bài hát"), MinMaxValue(1, int.MaxValue)] long count = 1) => await MusicPlayerCore.Remove(ctx, startIndex, count);
+        public async Task Remove(SlashCommandContext ctx, [Parameter("index"), Description("Vị trí xóa bài hát"), MinMaxValue((long)0, (long)int.MaxValue)] long startIndex = 0, [Parameter("count"), Description("Số lượng bài hát"), MinMaxValue(1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Remove(ctx, startIndex, count);
 
         [Command("stop-music"), Description("Dừng phát nhạc")]
         // [Option("clearQueue", "Xóa nhạc trong hàng đợi"), Choice("Có", "true"), Choice("Không", "false")]
@@ -114,7 +114,7 @@ namespace CatBot.Music
         public async Task AddOrRemoveSponsorBlockOption(SlashCommandContext ctx, [Parameter("type"), Description("Loại phân đoạn")] SponsorBlockCategory type = 0) => await MusicPlayerCore.AddOrRemoveSponsorBlockOption(ctx, type);
 
         [Command("musicvolume"), Description("Xem hoặc chỉnh âm lượng nhạc của bot")]
-        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue(0, 250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
+        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)0, (long)250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
 
         [Command("artwork"), Description("Xem ảnh album của bài đang phát")]
         public async Task ViewAlbumArtwork(SlashCommandContext ctx) => await MusicPlayerCore.ViewAlbumArtwork(ctx);
