@@ -72,7 +72,7 @@ namespace CatBot.Music.YouTube
                 JToken searchResource = JObject.Parse(httpClient.GetStringAsync(string.Format(searchVideoAPI, Config.gI().GoogleAPIKey, Uri.EscapeDataString(linkOrKeyword))).Result)["items"][0];
                 videoID = searchResource["id"]["videoId"].ToString();
                 link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
-                title = $"[{WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString())}]({link})";
+                title = WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString());
                 artists = [WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())];
                 artistsWithLinks = [Formatter.MaskedUrl(WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString()), new Uri($"https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]}"))];
                 albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
@@ -89,11 +89,15 @@ namespace CatBot.Music.YouTube
             try
             {
                 HttpClient httpClient = new HttpClient();
-                string sponsorBlockJSON = httpClient.GetStringAsync($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join("", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}").Result;
-                sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
-                hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
+                var response = httpClient.GetAsync($"{sponsorBlockSegmentsAPI}?videoID={videoID}{string.Join("", sponsorBlockOptions.GetCategory().Select(s => "&category=" + s))}").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    string sponsorBlockJSON = response.Content.ReadAsStringAsync().Result;
+                    sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
+                    hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
+                }
             }
-            catch (WebException) { }
+            catch (HttpRequestException) { }
             MusicUtils.DownloadWEBMFromYouTube(link, ref webmFilePath, sponsorBlockSkipSegments);
             TagLib.File webmFile = TagLib.File.Create(webmFilePath, "taglib/webm", TagLib.ReadStyle.Average);
             duration = webmFile.Properties.Duration;
