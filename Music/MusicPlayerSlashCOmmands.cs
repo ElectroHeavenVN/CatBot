@@ -89,7 +89,7 @@ namespace CatBot.Music
         public async Task Skip(SlashCommandContext ctx, [Parameter("count"), Description("Số bài bỏ qua (mặc định: 1)"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Skip(ctx, count);
 
         [Command("remove"), Description("Xóa nhạc trong hàng đợi")]
-        public async Task Remove(SlashCommandContext ctx, [Parameter("index"), Description("Vị trí xóa bài hát"), MinMaxValue((long)0, (long)int.MaxValue)] long startIndex = 0, [Parameter("count"), Description("Số lượng bài hát"), MinMaxValue(1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Remove(ctx, startIndex, count);
+        public async Task Remove(SlashCommandContext ctx, [Parameter("index"), Description("Vị trí xóa bài hát"), MinMaxValue((long)0, (long)int.MaxValue)] long startIndex = 0, [Parameter("count"), Description("Số lượng bài hát"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Remove(ctx, startIndex, count);
 
         [Command("stop-music"), Description("Dừng phát nhạc")]
         // [Option("clearQueue", "Xóa nhạc trong hàng đợi"), Choice("Có", "true"), Choice("Không", "false")]
