@@ -384,6 +384,11 @@ namespace CatBot.Music
                     lyricData = result;
                     return true;
                 }
+                if (FindLyricsFromLRCLIB(music.Title, out result))
+                {
+                    lyricData = result;
+                    return true;
+                }
             }
             catch { }
             return false;
@@ -460,6 +465,35 @@ namespace CatBot.Music
             }
             return false;
         }
+        
+        static bool FindLyricsFromLRCLIB(string trackName, out LyricData? result)
+        {
+            result = null;
+            if (string.IsNullOrWhiteSpace(trackName))
+                return false;
+            string address = $"{Config.gI().LyricAPI}search?track_name={Uri.EscapeDataString(trackName)}";
 
+            using HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            string jsonLyric = client.GetStringAsync(address).Result;
+            JArray lyricDatas = JArray.Parse(jsonLyric);
+            foreach (JToken lyricData in lyricDatas)
+            {
+                if (lyricData["name"].Value<string>() == "TrackNotFound")
+                    return false;
+                if (lyricData["instrumental"].Value<bool>())
+                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), "") { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+                else
+                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), "")
+                    {
+                        PlainLyrics = lyricData["plainLyrics"].Value<string>(),
+                        SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                    };
+                return true;
+            }
+            return false;
+        }
     }
 }

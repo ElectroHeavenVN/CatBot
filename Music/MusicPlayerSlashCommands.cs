@@ -93,7 +93,7 @@ namespace CatBot.Music
 
         [Command("stop-music"), Description("Dừng phát nhạc")]
         // [Option("clearQueue", "Xóa nhạc trong hàng đợi"), Choice("Có", "true"), Choice("Không", "false")]
-        public async Task Stop(SlashCommandContext ctx, [Parameter("clearQueue"), Description("Xóa nhạc trong hàng đợi"), AllowedValues("true", "false")] string clearQueueStr = "true") => await MusicPlayerCore.Stop(ctx, clearQueueStr);
+        public async Task Stop(SlashCommandContext ctx, [Parameter("clearQueue"), Description("Xóa nhạc trong hàng đợi")] bool clearQueue = true) => await MusicPlayerCore.Stop(ctx, clearQueue);
 
         [Command("queue"), Description("Xem hàng đợi nhạc")]
         public async Task Queue(SlashCommandContext ctx) => await MusicPlayerCore.Queue(ctx);

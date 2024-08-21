@@ -46,7 +46,7 @@ namespace CatBot.Extension
             await this.rest.ExecuteRequestAsync(request);
             */
 
-            string route = $"/channels/{discordChannel.Id}/voice-status";
+            string route = $"channels/{discordChannel.Id}/voice-status";
             DiscordApiClient apiClient = (DiscordApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(DiscordBotMain.botClient);
             RestClient rest = (RestClient)typeof(DiscordApiClient).GetField("rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
             Type? restRequest = typeof(DiscordApiClient).Assembly.GetType("DSharpPlus.Net.RestRequest");
