@@ -24,7 +24,8 @@ namespace CatBot.Music.Spotify
                         else
                             name = name.Substring(0, 97) + "...";
                     }
-                    result.Add(name, sR.LinkOrID);
+                    if (!result.ContainsKey(name))
+                        result.Add(name, sR.LinkOrID);
                 });
             });
             return result;

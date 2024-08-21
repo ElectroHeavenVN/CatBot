@@ -45,7 +45,8 @@ namespace CatBot.Music.Local
                             else
                                 name = name.Substring(0, 97) + "...";
                         }
-                        cachedLocalMusics.Add(name, Path.GetFileNameWithoutExtension(musicFile.Name).Min(100));
+                        if (!cachedLocalMusics.ContainsKey(name))
+                            cachedLocalMusics.Add(name, Path.GetFileNameWithoutExtension(musicFile.Name).Min(100));
                     }
                     catch (Exception ex) { Utils.LogException(ex); }
             }

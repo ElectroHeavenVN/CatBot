@@ -52,7 +52,8 @@ namespace CatBot.Voice
                     if (fileName.ToLower().Contains(fileNamesUserInput.Last().ToLower()))
                     {
                         string str = userInput.Substring(0, index) + " " + fileName;
-                        result.Add(str, str);
+                        if (!result.ContainsKey(str))
+                            result.Add(str, str);
                     }
                     if (result.Count >= 25)
                         break;
