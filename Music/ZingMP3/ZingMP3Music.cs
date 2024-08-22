@@ -150,22 +150,22 @@ namespace CatBot.Music.ZingMP3
                         if (timestamp != lastTimestamp)
                         {
                             if (string.IsNullOrEmpty(lyricSentence))
-                                lyricSentence += $"[{TimeSpan.FromMilliseconds(timestamp):mm\\:ss\\.ff}] ";
+                                lyricSentence += $"[{TimeSpan.FromMilliseconds(timestamp):mm\\:ss\\.ff}]";
                             else
                                 lyricSentence += $"<{TimeSpan.FromMilliseconds(timestamp):mm\\:ss\\.ff}>";
                             lastTimestamp = timestamp;
                         }
                         lyricSentence += word["data"].Value<string>() + ' ';
                     }
-
+                    lyricSentence = lyricSentence.Trim();
                     long lastWordTimestamp = sentence["words"].Last()["endTime"].Value<long>();
                     lyricSentence += $"<{TimeSpan.FromMilliseconds(lastWordTimestamp):mm\\:ss\\.ff}>";
                     if (lastWordTimestamp - lastSentenceTimestamp > 5000)
-                        enhancedLyrics += $"[{TimeSpan.FromMilliseconds(lastSentenceTimestamp):mm\\:ss\\.ff}] ♪{Environment.NewLine}";
+                        enhancedLyrics += $"[{TimeSpan.FromMilliseconds(lastSentenceTimestamp + 500):mm\\:ss\\.ff}]♪{Environment.NewLine}";
                     lastSentenceTimestamp = lastWordTimestamp;
                     enhancedLyrics += lyricSentence + Environment.NewLine;
                 }
-                enhancedLyrics += $"[{TimeSpan.FromMilliseconds(jsonLyricData["sentences"].Last()["words"].Last()["endTime"].Value<long>()):mm\\:ss\\.ff}] ♪";
+                enhancedLyrics += $"[{TimeSpan.FromMilliseconds(jsonLyricData["sentences"].Last()["words"].Last()["endTime"].Value<long>()):mm\\:ss\\.ff}]♪";
             }
             return lyric = new LyricData(title, AllArtists, album, albumThumbnailLink)
             {
