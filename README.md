@@ -31,6 +31,7 @@
 	+ `UserAgent`: User agent để thực hiện request
 	+ `BotToken`: Token của bot
 	+ `DefaultPrefix`: Prefix lệnh của bot
+	+ `DefaultPresences`: Danh sách trạng thái mặc định của bot, tự động đổi mỗi 30 giây
 	+ Emoji/Icon (tham khảo phần [Lấy raw string của emoji](#lay-raw-string-cua-emoji) để biết thêm chi tiết):
 		+ `ZingMP3Icon`: Emoji dùng cho [ZingMP3Music](Music/ZingMP3/ZingMP3Music.cs)
 		+ `YouTubeIcon`, `YouTubeMusicIcon`: Emoji dùng cho [YouTubeMusic](Music/YouTube/YouTubeMusic.cs)

@@ -32,7 +32,7 @@ namespace CatBot.Instance
         static List<string> slashCommandMentions = new List<string>();
 
         [Command("volume"), Description("Xem hoặc chỉnh âm lượng tổng của bot")]
-        public async Task SetVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)0, (long)250)] long volume = -1) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
+        public async Task SetVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)-1, (long)250)] long volume = -1) => await BotServerInstance.SetVolume(ctx.Interaction, volume);
 
         [Command("reset"), Description("Đặt lại bot (dùng trong trường hợp bot bị lỗi)")]
         public async Task ResetBotServerInstance(SlashCommandContext ctx) => await AdminCommandsCore.ResetBotServerInstance(ctx, "this");

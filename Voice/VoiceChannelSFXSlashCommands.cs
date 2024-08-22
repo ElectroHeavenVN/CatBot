@@ -27,7 +27,7 @@ namespace CatBot.Voice
         public async Task Delay(SlashCommandContext ctx, [Parameter("delay"), Description("Thời gian nghỉ (mili giây)"), MinMaxValue((long)0, (long)5000)] long delay = 250) => await VoiceChannelSFXCore.Delay(ctx.Interaction, (int)delay);
 
         [Command("sfxvolume"), Description("Xem hoặc chỉnh âm lượng SFX của bot")]
-        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)0, (long)250)] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
+        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)-1, (long)250)] long volume = -1) => await VoiceChannelSFXCore.SetVolume(ctx.Interaction, volume);
     }
 
     internal class VoiceSFXChoiceProvider : IAutoCompleteProvider

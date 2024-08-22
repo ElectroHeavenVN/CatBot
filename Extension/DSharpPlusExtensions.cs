@@ -11,6 +11,11 @@ namespace CatBot.Extension
     {
         internal static async Task UpdateStatusAsync(this DiscordClient discordClient, CustomDiscordActivity customActivity, DiscordUserStatus? userStatus = null, DateTimeOffset? idleSince = null)
         {
+            if (string.IsNullOrEmpty(customActivity.State))
+            {
+                await discordClient.UpdateStatusAsync(new DiscordActivity(customActivity.Name, customActivity.ActivityType), userStatus, idleSince);
+                return;
+            }
             long num = (idleSince != null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
             StatusUpdate statusUpdate = new StatusUpdate
             {
@@ -18,7 +23,7 @@ namespace CatBot.Extension
                 {
                     new TransportActivity()
                     {
-                        ApplicationId = customActivity.ApplicationID,
+                        ApplicationId = discordClient.CurrentApplication.Id,
                         DiscordActivityType = customActivity.ActivityType,
                         Name = customActivity.Name,
                         State = customActivity.State

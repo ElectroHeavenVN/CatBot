@@ -12,7 +12,7 @@ namespace CatBot.Music.ZingMP3
         internal static readonly string zingMP3Link = "https://zingmp3.vn/";
         static readonly string zingMP3IconLink = "https://static-zmp3.zmdcdn.me/skins/zmp3-v5.2/images/icon_zing_mp3_60.png";
 
-        [GeneratedRegex("/([a-zA-Z0-9]+).html", RegexOptions.Compiled)]
+        [GeneratedRegex(@"zingmp3\.vn\/bai-hat\/.*\/(Z[A-Z0-9]{7})\.html", RegexOptions.Compiled)]
         private static partial Regex GetRegexMatchIDSongInLink();
         [GeneratedRegex("Z[A-Z0-9]{7}", RegexOptions.Compiled)]
         private static partial Regex GetRegexMatchIDSong();

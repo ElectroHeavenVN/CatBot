@@ -176,7 +176,7 @@ namespace CatBot.Admin
             }
             else
             {
-                DiscordBotMain.activity = new CustomDiscordActivity(DiscordBotMain.botClient.CurrentApplication.Id, activityType, name, state);
+                DiscordBotMain.activity = new CustomDiscordActivity(activityType, name, state);
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đặt trạng thái bot!").AsEphemeral());
             }
         }

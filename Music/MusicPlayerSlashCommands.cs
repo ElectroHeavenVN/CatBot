@@ -114,7 +114,7 @@ namespace CatBot.Music
         public async Task AddOrRemoveSponsorBlockOption(SlashCommandContext ctx, [Parameter("type"), Description("Loại phân đoạn")] SponsorBlockCategory type = 0) => await MusicPlayerCore.AddOrRemoveSponsorBlockOption(ctx, type);
 
         [Command("musicvolume"), Description("Xem hoặc chỉnh âm lượng nhạc của bot")]
-        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)0, (long)250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
+        public async Task SetSFXVolume(SlashCommandContext ctx, [Parameter("volume"), Description("Âm lượng"), MinMaxValue((long)-1, (long)250)] long volume = -1) => await MusicPlayerCore.SetVolume(ctx.Interaction, volume);
 
         [Command("artwork"), Description("Xem ảnh album của bài đang phát")]
         public async Task ViewAlbumArtwork(SlashCommandContext ctx) => await MusicPlayerCore.ViewAlbumArtwork(ctx);

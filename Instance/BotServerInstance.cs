@@ -118,10 +118,10 @@ namespace CatBot.Instance
                 return null;
         }
 
-        static async Task<VoiceNextConnection> GetVoiceConnection(SnowflakeObject obj)
+        static async Task<VoiceNextConnection?> GetVoiceConnection(SnowflakeObject obj)
         {
-            DiscordMember member = null;
-            DiscordChannel channel = null;
+            DiscordMember? member = null;
+            DiscordChannel? channel = null;
             if (obj is DiscordMessage message)
             {
                 if (message.Author is DiscordMember mem)
@@ -137,7 +137,7 @@ namespace CatBot.Instance
             else if (obj is DiscordChannel ch)
                 channel = ch;
             BotServerInstance serverInstance = GetBotServerInstance(channel.Guild);
-            VoiceNextConnection voiceNextConnection = null;
+            VoiceNextConnection? voiceNextConnection = null;
             double volume = serverInstance.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
             if (member != null)
             {

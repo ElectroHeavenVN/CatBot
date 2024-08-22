@@ -10,6 +10,7 @@ using CatBot.Music.Local;
 using CatBot.Voice;
 using DSharpPlus;
 using DSharpPlus.Commands;
+using DSharpPlus.Commands.Exceptions;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
@@ -21,6 +22,7 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace CatBot
 {
@@ -53,12 +55,14 @@ namespace CatBot
             {
                 Config.ImportConfig(configPath);
             }
-            catch
+            catch (Exception ex)
             {
+                Utils.LogException(ex, false);
                 if (!File.Exists(configPath))
-                    Console.WriteLine("Config file not found, creating one...");
+                    Console.Write("Config file not found, press Enter to create a template config file...");
                 else
-                    Console.WriteLine("Config file corrupted, creating new one...");
+                    Console.Write("Config file corrupted, press Enter to create a template config file...");
+                Console.ReadLine();
                 Config.ExportConfig(configPath);
                 ProcessStartInfo processStartInfo = new ProcessStartInfo(Path.GetFullPath(configPath))
                 {
@@ -81,8 +85,8 @@ namespace CatBot
             {
                 cmd.CommandErrored += (_, args) =>
                 {
-                    //if (args.Exception is CommandNotFoundException)
-                    //    return Task.CompletedTask;
+                    if (args.Exception is CommandNotFoundException)
+                        return Task.CompletedTask;
                     return LogException(args.Exception);
                 };
                 cmd.AddProcessor<SlashCommandProcessor>();
@@ -223,23 +227,10 @@ namespace CatBot
             {
                 if (activity == null)
                 {
-                    CustomDiscordActivity discordActivity = new CustomDiscordActivity();
-                    if (count == 0)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "Zing MP3");
-                    else if (count == 1)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "NhacCuaTui");
-                    else if (count == 2)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "YouTube Music");
-                    else if (count == 3)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "SoundCloud");
-                    else if (count == 4)
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.ListeningTo, "Spotify");
-                    else if (count == 5)
-                    {
-                        discordActivity = new CustomDiscordActivity(botClient.CurrentApplication.Id, DiscordActivityType.Watching, "YouTube");
-                        count = -1;
-                    }
+                    CustomDiscordActivity discordActivity = Config.gI().DefaultPresences[count];
                     count++;
+                    if (count >= Config.gI().DefaultPresences.Length)
+                        count = 0;
                     try
                     {
                         await botClient.UpdateStatusAsync(discordActivity, DiscordUserStatus.Online);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace CatBot
 {
@@ -14,28 +15,28 @@ namespace CatBot
         /// <summary>
         /// ID Server chính dùng để điều khiển bot (dùng lệnh /admin, báo lỗi, cache ảnh cho <see cref="Music.Local.LocalMusic"/>)
         /// </summary>
-        [JsonProperty("MainServer")] 
-        internal ulong MainServerID { get; set; } 
+        [JsonProperty("MainServer")]
+        internal ulong MainServerID { get; set; }
         internal DiscordGuild mainServer;
 
         /// <summary>
         ///  Danh sách các thành viên được sử dụng SFX đặc biệt
         /// </summary>
-        [JsonProperty("AdminUsers")] 
+        [JsonProperty("AdminUsers")]
         internal ulong[] AdminUserIDs { get; set; }
 
         /// <summary>
         /// ID kênh cache ảnh
         /// </summary>
-        [JsonProperty("CacheImageChannel")] 
-        internal ulong CacheImageChannelID { get; set; } 
+        [JsonProperty("CacheImageChannel")]
+        internal ulong CacheImageChannelID { get; set; }
         internal DiscordChannel cacheImageChannel;
 
         /// <summary>
         /// ID kênh báo lỗi bot
         /// </summary>
-        [JsonProperty("LogExceptionChannel")] 
-        internal ulong LogExceptionChannelID { get; set; } 
+        [JsonProperty("LogExceptionChannel")]
+        internal ulong LogExceptionChannelID { get; set; }
         internal DiscordChannel exceptionReportChannel;
 
         /// <summary>
@@ -104,14 +105,6 @@ namespace CatBot
         internal string GoogleAPIKey { get; set; } = "";
         #endregion
 
-        #region Zalo AI
-        /// <summary>
-        /// Zalo AI cookie
-        /// </summary>
-        [JsonProperty(nameof(ZaloAICookie))] 
-        internal string ZaloAICookie { get; set; } = "";
-        #endregion
-
         #region Spotify
         /// <summary>
         /// Spotify cookie
@@ -122,7 +115,7 @@ namespace CatBot
         /// <summary>
         /// Tài khoản Spotify
         /// </summary>
-        [JsonProperty(nameof(SpotifyUsername))] 
+        [JsonProperty(nameof(SpotifyUsername))]
         internal string SpotifyUsername { get; set; } = "";
 
         /// <summary>
@@ -170,6 +163,20 @@ namespace CatBot
         /// </summary>
         [JsonProperty(nameof(DefaultPrefix))]
         internal string DefaultPrefix { get; set; } = "";
+
+        /// <summary>
+        /// Trạng thái mặc định của bot
+        /// </summary>
+        [JsonProperty(nameof(DefaultPresences))]
+        internal CustomDiscordActivity[] DefaultPresences { get; set; } = 
+        [
+            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "Zing MP3"),
+            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "NhacCuaTui"),
+            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "YouTube Music"),
+            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "SoundCloud"),
+            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "Spotify"),
+            new CustomDiscordActivity(DiscordActivityType.Watching, "YouTube")
+        ];
 
         internal string LyricAPI => "https://lrclib.net/api/";
 
