@@ -270,7 +270,7 @@ namespace CatBot.Music
 
         internal static string HashSHA512(string text, string secretKey) => BitConverter.ToString(new HMACSHA512(Encoding.UTF8.GetBytes(secretKey)).ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
 
-        internal static string HashSHA256(string text) => BitConverter.ToString(new SHA256Managed().ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
+        internal static string HashSHA256(string text) => BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(text)), 0).Replace("-", "").ToLower();
 
         internal static MemoryStream GetMusicWaveform(IMusic music, bool fullGray = false)
         {

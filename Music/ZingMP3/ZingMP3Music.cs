@@ -12,14 +12,14 @@ namespace CatBot.Music.ZingMP3
         internal static readonly string zingMP3Link = "https://zingmp3.vn/";
         static readonly string zingMP3IconLink = "https://static-zmp3.zmdcdn.me/skins/zmp3-v5.2/images/icon_zing_mp3_60.png";
 
-        [GeneratedRegex(@"zingmp3\.vn\/bai-hat\/.*\/(Z[A-Z0-9]{7})\.html", RegexOptions.Compiled)]
+        [GeneratedRegex(@"zingmp3\.vn\/bai-hat\/.*?\/(Z[A-Z0-9]{7})\.html", RegexOptions.Compiled)]
         private static partial Regex GetRegexMatchIDSongInLink();
         [GeneratedRegex("Z[A-Z0-9]{7}", RegexOptions.Compiled)]
         private static partial Regex GetRegexMatchIDSong();
         [GeneratedRegex("https://zjs.zmdcdn.me/zmp3-desktop/releases/(.*?)/static/js/main.min.js", RegexOptions.Compiled)]
         private static partial Regex GetMainMinJSRegex();
 
-        internal static string zingMP3Version = "";
+        static string zingMP3Version = "";
         string link = "";
         string mp3FilePath = "";
         TimeSpan duration;
