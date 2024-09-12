@@ -37,6 +37,33 @@ namespace CatBot.Extension
             await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate, 0);
 #pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
+        
+        internal static async Task UpdateStatusAsync(this DiscordClient discordClient, List<CustomDiscordActivity> customActivities, DiscordUserStatus? userStatus = null, DateTimeOffset? idleSince = null)
+        {
+            if (customActivities.Any(customActivity => string.IsNullOrEmpty(customActivity.State)))
+                return;
+            long num = (idleSince != null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
+            StatusUpdate statusUpdate = new StatusUpdate
+            {
+                Activities = new List<TransportActivity>(),
+                IdleSince = num,
+                IsAFK = idleSince != null,
+                Status = userStatus ?? DiscordUserStatus.Online,
+            };
+            foreach (CustomDiscordActivity customActivity in customActivities)
+            {
+                statusUpdate.Activities.Add(new TransportActivity()
+                {
+                    ApplicationId = discordClient.CurrentApplication.Id,
+                    DiscordActivityType = customActivity.ActivityType,
+                    Name = customActivity.Name,
+                    State = customActivity.State
+                });
+            }
+#pragma warning disable DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate, 0);
+#pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        }
 
         internal static ValueTask<RestResponse> ModifyVoiceStatusAsync(this DiscordChannel discordChannel, string status)
         {

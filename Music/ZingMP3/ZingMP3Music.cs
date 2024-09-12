@@ -270,40 +270,52 @@ namespace CatBot.Music.ZingMP3
         {
             if (httpRequestWithCookie == null)
             {
-                CheckZingMP3Version();
-                httpRequestWithCookie = MusicUtils.CreateHttpClientWithCookies($"zmp3_app_version.1={zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
-                httpRequestWithCookie.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
-                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-                httpRequestWithCookie.DefaultRequestHeaders.Add("Referer", zingMP3Link);
-                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept", "*/*");
-                httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Language", "vi-VN,vi;q=0.9");
-                httpRequestWithCookie.DefaultRequestHeaders.Add("Host", "zingmp3.vn");
-                httpRequestWithCookie.GetAsync(zingMP3Link).Wait();
+                zingMP3Version = "1.10.50";
+                UpdateCookies();
             }
+            CheckZingMP3Version();
             return httpRequestWithCookie;
         }
 
         internal static void CheckZingMP3Version()
         {
-            if ((DateTime.Now - lastTimeCheckZingMP3Version).TotalHours > 12)
+            if ((DateTime.Now - lastTimeCheckZingMP3Version).TotalHours <= 12)
+                return;
+            int count = 0;
+            string ver = "";
+            do
             {
-                HttpClient http = new HttpClient(new HttpClientHandler()
+                if (count++ > 3)
                 {
-                    AutomaticDecompression = DecompressionMethods.All
-                });
-                http.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
-                http.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-                http.DefaultRequestHeaders.Add("Referer", zingMP3Link);
-                http.DefaultRequestHeaders.Add("Accept", "*/*");
-                http.DefaultRequestHeaders.Add("Accept-Language", "vi-VN,vi;q=0.9");
-                http.DefaultRequestHeaders.Add("Host", "zingmp3.vn");
-                string zingMP3Web = http.GetStringAsync(zingMP3Link).Result;
-                while (string.IsNullOrWhiteSpace(zingMP3Version))
-                    zingMP3Version = GetMainMinJSRegex().Match(zingMP3Web).Groups[1].Value.Replace("v", "");
-                lastTimeCheckZingMP3Version = DateTime.Now;
+                    ver = "1.10.50";
+                    break;
+                }
+                string zingMP3Web = httpRequestWithCookie.GetStringAsync(zingMP3Link).Result;
+                int startIndex = zingMP3Web.LastIndexOf("/static/js/main.min.js") - 100;
+                if (startIndex >= 0)
+                {
+                    zingMP3Web = zingMP3Web.Substring(startIndex);
+                    ver = GetMainMinJSRegex().Match(zingMP3Web).Groups[1].Value.Replace("v", "");
+                }
+                if (string.IsNullOrWhiteSpace(ver))
+                    Thread.Sleep(2000);
             }
+            while (string.IsNullOrWhiteSpace(ver));
+            zingMP3Version = ver;
+            UpdateCookies();
+            lastTimeCheckZingMP3Version = DateTime.Now;
         }
 
+        static void UpdateCookies()
+        {
+            httpRequestWithCookie = MusicUtils.CreateHttpClientWithCookies($"zmp3_app_version.1={zingMP3Version.Replace(".", "")}; " + Config.gI().ZingMP3Cookie);
+            httpRequestWithCookie.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
+            httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+            httpRequestWithCookie.DefaultRequestHeaders.Add("Referer", zingMP3Link);
+            httpRequestWithCookie.DefaultRequestHeaders.Add("Accept", "*/*");
+            httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Language", "vi-VN,vi;q=0.9");
+            httpRequestWithCookie.DefaultRequestHeaders.Add("Host", "zingmp3.vn");
+        }
 
         public string GetPCMFilePath() => pcmFile;
 

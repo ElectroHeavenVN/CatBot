@@ -78,13 +78,16 @@ namespace CatBot.Music
 
         internal static async Task Play(SlashCommandContext ctx, string input, MusicType musicType)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
 
             DiscordEmbedBuilder embed;
-            await ctx.DeferResponseAsync();
             if (string.IsNullOrWhiteSpace(input))
             {
                 if (serverInstance.musicPlayer.musicQueue.Count == 0)
@@ -154,10 +157,14 @@ namespace CatBot.Music
 
         internal static async Task Enqueue(SlashCommandContext ctx, string input, MusicType musicType)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
 
             DiscordEmbedBuilder embed;
             await ctx.DeferResponseAsync();
@@ -202,10 +209,14 @@ namespace CatBot.Music
 
         internal static async Task PlayNextUp(SlashCommandContext ctx, string input, MusicType musicType)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
 
             DiscordEmbedBuilder embed;
             await ctx.DeferResponseAsync();
@@ -257,10 +268,14 @@ namespace CatBot.Music
 
         internal static async Task PlayRandomLocalMusic(SlashCommandContext ctx, long count)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
 
             await ctx.DeferResponseAsync();
             Random random = new Random();
@@ -284,10 +299,15 @@ namespace CatBot.Music
 
         internal static async Task PlayAllLocalMusic(SlashCommandContext ctx, string search = "")
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             await ctx.DeferResponseAsync();
             search = search.ToLower();
             List<FileInfo> musicFiles2 = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
@@ -311,10 +331,15 @@ namespace CatBot.Music
 
         internal static async Task NowPlaying(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync(new DiscordEmbedBuilder().WithTitle("Không có bài nào đang phát!").WithColor(DiscordColor.Red).Build());
@@ -335,10 +360,15 @@ namespace CatBot.Music
 
         internal static async Task Seek(SlashCommandContext ctx, long seconds)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -362,10 +392,15 @@ namespace CatBot.Music
 
         internal static async Task SeekTo(SlashCommandContext ctx, long seconds)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -389,10 +424,15 @@ namespace CatBot.Music
 
         internal static async Task Clear(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
                 await ctx.RespondAsync("Không có nhạc trong hàng đợi!");
@@ -416,10 +456,15 @@ namespace CatBot.Music
 
         internal static async Task Pause(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -432,10 +477,15 @@ namespace CatBot.Music
 
         internal static async Task Resume(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -448,10 +498,15 @@ namespace CatBot.Music
 
         internal static async Task Skip(SlashCommandContext ctx, long count)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -501,10 +556,15 @@ namespace CatBot.Music
 
         internal static async Task Remove(SlashCommandContext ctx, long startIndex, long count)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (startIndex >= serverInstance.musicPlayer.musicQueue.Count)
             {
                 await ctx.RespondAsync($"Hàng đợi chỉ có {serverInstance.musicPlayer.musicQueue.Count} bài!");
@@ -542,10 +602,15 @@ namespace CatBot.Music
 
         internal static async Task Stop(SlashCommandContext ctx, bool clearQueue)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");
@@ -588,10 +653,15 @@ namespace CatBot.Music
 
         internal static async Task Queue(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
                 await ctx.RespondAsync("Không có nhạc trong hàng đợi!");
@@ -611,10 +681,15 @@ namespace CatBot.Music
 
         internal static async Task SetPlayMode(SlashCommandContext ctx, PlayModeChoice playMode)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             switch (playMode)
             {
                 case PlayModeChoice.Queue:
@@ -645,10 +720,15 @@ namespace CatBot.Music
 
         internal static async Task ShuffleQueue(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
                 await ctx.RespondAsync("Không có nhạc trong hàng đợi!");
@@ -663,10 +743,15 @@ namespace CatBot.Music
 
         internal static async Task ReverseQueue(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
                 await ctx.RespondAsync("Không có nhạc trong hàng đợi!");
@@ -681,10 +766,15 @@ namespace CatBot.Music
 
         internal static async Task Lyric(SlashCommandContext ctx, string songName, string artistsName)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             await ctx.DeferResponseAsync();
             try
             {
@@ -740,10 +830,15 @@ namespace CatBot.Music
 
         internal static async Task AddOrRemoveSponsorBlockOption(SlashCommandContext ctx, SponsorBlockCategory type)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             string str = "";
             if (type == 0)
                 if (!serverInstance.musicPlayer.sponsorBlockOptions.Enabled)
@@ -767,10 +862,15 @@ namespace CatBot.Music
 
         internal static async Task ViewAlbumArtwork(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (string.IsNullOrEmpty(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink))
             {
                 await ctx.RespondAsync("Bài đang phát không có ảnh album!");
@@ -781,10 +881,15 @@ namespace CatBot.Music
 
         internal static async Task SetAutoSetVoiceChannelStatus(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             serverInstance.musicPlayer.isSetVCStatus = !serverInstance.musicPlayer.isSetVCStatus;
             if (serverInstance.musicPlayer.isSetVCStatus)
             {
@@ -800,10 +905,15 @@ namespace CatBot.Music
 
         internal static async Task Download(SlashCommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            await ctx.DeferResponseAsync();
+            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
             if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            {
+                await ctx.DeleteResponseAsync();
                 return;
+            }
+
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync("Không có bài nào đang phát!");

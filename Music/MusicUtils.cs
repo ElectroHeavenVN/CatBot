@@ -9,19 +9,21 @@ using CatBot.Music.Dummy;
 using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
 using Newtonsoft.Json.Linq;
-using SpotifyExplode.Albums;
 
 namespace CatBot.Music
 {
     internal static class MusicUtils
     {
+        static Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
+
+        static Type[] musicPlaylistTypes = typeof(IPlaylist).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPlaylist))).ToArray();
+
         internal static IMusic CreateMusicInstance(string keywordOrPath, MusicType musicType)
         {
             if (musicType == 0)
                 throw new NullReferenceException();
             try
             {
-                Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
                 foreach (Type type in musicTypes)
                 {
                     ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -42,7 +44,6 @@ namespace CatBot.Music
         internal static bool TryCreateMusicInstance(string link, out IMusic music)
         {
             music = null;
-            Type[] musicTypes = typeof(IMusic).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IMusic))).ToArray();
             foreach (Type musicType in musicTypes)
             {
                 ConstructorInfo[] constructors = musicType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -59,7 +60,6 @@ namespace CatBot.Music
         internal static bool TryCreateMusicPlaylistInstance(string link, MusicQueue musicQueue, out IPlaylist playlist)
         {
             playlist = null;
-            Type[] musicPlaylistTypes = typeof(IPlaylist).Assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(IPlaylist))).ToArray();
             foreach (Type musicPlaylistType in musicPlaylistTypes)
             {
                 ConstructorInfo[] constructors = musicPlaylistType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);

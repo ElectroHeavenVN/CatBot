@@ -19,7 +19,7 @@ namespace CatBot.Instance
     {
         DiscordChannel? lastChannel;
         DateTime lastTimeCheckVoiceChannel = DateTime.Now;
-        Thread? checkVoiceChannelThread;
+        Thread checkVoiceChannelThread;
         internal static List<BotServerInstance> serverInstances = new List<BotServerInstance>();
         internal MusicPlayerCore? musicPlayer;
         internal DiscordGuild? server;
@@ -101,7 +101,7 @@ namespace CatBot.Instance
 
         internal async Task<bool> InitializeVoiceNext(SnowflakeObject obj)
         {
-            VoiceNextConnection connection = await GetVoiceConnection(obj);
+            VoiceNextConnection? connection = await GetVoiceConnection(obj);
             if (connection == null)
                 return false;
             currentVoiceNextConnection = connection;
@@ -136,9 +136,9 @@ namespace CatBot.Instance
             }
             else if (obj is DiscordChannel ch)
                 channel = ch;
-            BotServerInstance serverInstance = GetBotServerInstance(channel.Guild);
+            BotServerInstance? serverInstance = GetBotServerInstance(channel.Guild);
             VoiceNextConnection? voiceNextConnection = null;
-            double volume = serverInstance.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
+            double volume = serverInstance?.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
             if (member != null)
             {
                 if (Utils.IsBotOwner(member.Id))
@@ -222,29 +222,28 @@ namespace CatBot.Instance
             return null;
         }
 
-        internal static BotServerInstance GetBotServerInstance(DiscordGuild server)
+        internal static BotServerInstance? GetBotServerInstance(DiscordGuild server)
         {
-            if (serverInstances.Any(s => s.server != null && s.server.Id == server.Id))
-                return serverInstances.First(s => s.server.Id == server.Id);
-            serverInstances.Add(new BotServerInstance(server));
-            serverInstances.Last().checkVoiceChannelThread.Start();
-            return serverInstances.Last();
+            BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.server?.Id == server.Id);
+            if (botServerInstance == null)
+            {
+                botServerInstance = new BotServerInstance(server);
+                botServerInstance.checkVoiceChannelThread.Start();
+                serverInstances.Add(botServerInstance);
+            }
+            return botServerInstance;
         }
 
-        internal static BotServerInstance GetBotServerInstance(MusicPlayerCore musicPlayer)
+        internal static MusicPlayerCore? GetMusicPlayer(DiscordGuild server)
         {
-            if (serverInstances.Any(s => s.server != null && s.musicPlayer == musicPlayer))
-                return serverInstances.First(s => s.musicPlayer == musicPlayer);
-            serverInstances.Add(new BotServerInstance());
-            return serverInstances.Last();
-        }
-
-        internal static MusicPlayerCore GetMusicPlayer(DiscordGuild server)
-        {
-            if (serverInstances.Any(s => s.server == server))
-                return serverInstances.First(s => s.server == server).musicPlayer;
-            serverInstances.Add(new BotServerInstance());
-            return serverInstances.Last().musicPlayer;
+            BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.server?.Id == server.Id);
+            if (botServerInstance == null)
+            {
+                botServerInstance = new BotServerInstance(server);
+                botServerInstance.checkVoiceChannelThread.Start();
+                serverInstances.Add(botServerInstance);
+            }
+            return botServerInstance.musicPlayer;
         }
 
         internal static async Task RemoveBotServerInstance(ulong serverID)
@@ -270,30 +269,32 @@ namespace CatBot.Instance
                 }                
         }
 
-        internal static BotServerInstance GetBotServerInstance(VoiceChannelSFXCore voiceChannelSFX)
+        internal static BotServerInstance? GetBotServerInstance(VoiceChannelSFXCore voiceChannelSFX)
         {
             if (voiceChannelSFX == null)
-                return null;
-            if (serverInstances.Any(s => s.voiceChannelSFX == voiceChannelSFX))
-                return serverInstances.First(s => s.voiceChannelSFX == voiceChannelSFX);
-            return null;
+                throw new ArgumentNullException(nameof(voiceChannelSFX));
+            BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.voiceChannelSFX == voiceChannelSFX);
+            if (botServerInstance == null)
+            {
+                botServerInstance = new BotServerInstance();
+                botServerInstance.voiceChannelSFX = voiceChannelSFX;
+                serverInstances.Add(botServerInstance);
+            }
+            return botServerInstance;
         }
 
-        internal static BotServerInstance GetBotServerInstance(VoiceNextConnection voiceNextConnection)
+        internal static BotServerInstance? GetBotServerInstance(VoiceNextConnection? voiceNextConnection)
         {
             if (voiceNextConnection == null)
                 return null;
-            if (serverInstances.Any(s => s.currentVoiceNextConnection == voiceNextConnection))
-                return serverInstances.First(s => s.currentVoiceNextConnection == voiceNextConnection);
-            return null;
-        }
-        
-        internal static VoiceChannelSFXCore GetVoiceChannelSFXCore(DiscordGuild server)
-        {
-            if (serverInstances.Any(s => s.server == server))
-                return serverInstances.First(s => s.server == server).voiceChannelSFX;
-            serverInstances.Add(new BotServerInstance());
-            return serverInstances.Last().voiceChannelSFX;
+            BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.currentVoiceNextConnection == voiceNextConnection);
+            if (botServerInstance == null)
+            {
+                botServerInstance = new BotServerInstance();
+                botServerInstance.currentVoiceNextConnection = voiceNextConnection;
+                serverInstances.Add(botServerInstance);
+            }
+            return botServerInstance;
         }
 
         internal static async Task<KeyValuePair<DiscordChannel, VoiceNextConnection>> JoinVoiceChannel(ulong channelID)
@@ -542,9 +543,9 @@ namespace CatBot.Instance
             //voiceNextConnection.UserLeft += VoiceNextConnection_UserChange; 
         }
 
-        private static async Task VoiceNextConnection_UserChange(VoiceNextConnection sender, DiscordEventArgs args)
+        private static async Task VoiceNextConnection_UserChange(VoiceNextConnection? sender, DiscordEventArgs args)
         {
-            BotServerInstance serverInstance = GetBotServerInstance(sender);
+            BotServerInstance? serverInstance = GetBotServerInstance(sender);
             if (serverInstance != null)
                 await serverInstance.CheckPeopleInVC();
         }
