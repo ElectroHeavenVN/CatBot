@@ -44,7 +44,7 @@ namespace CatBot.Music.SoundCloud
             link = track.PermalinkUrl.AbsoluteUri;
             title = track.Title;
             artists = [track.User.Username];
-            artistsWithLinks = [Formatter.MaskedUrl(track.User.Username, track.User.PermalinkUrl)];
+            artistsWithLinks = [Formatter.MaskedUrl(track.User.Username, new Uri(track.User.PermalinkUrl))];
             if (track.ArtworkUrl != null)
                 albumThumbnailLink = track.ArtworkUrl.AbsoluteUri;
         }

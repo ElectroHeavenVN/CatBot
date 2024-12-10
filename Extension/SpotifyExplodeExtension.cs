@@ -1,4 +1,10 @@
-﻿using System.Reflection;
+﻿#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8605 // Unboxing a possibly null value.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
+
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using SpotifyExplode.Artists;
@@ -9,7 +15,7 @@ namespace CatBot.Extension
 {
     internal static class SpotifyExplodeExtension
     {
-        internal static async ValueTask<List<Track>> GetTopTracks(this ArtistClient client, ArtistId artistId, string market = "US", CancellationToken cancellationToken = default)
+        internal static async ValueTask<List<Track>?> GetTopTracks(this ArtistClient client, ArtistId artistId, string market = "US", CancellationToken cancellationToken = default)
         {
             object _spotifyHttp = typeof(ArtistClient).GetField(nameof(_spotifyHttp), BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
             JsonSerializerOptions options = (JsonSerializerOptions)typeof(Track).Assembly.GetType("SpotifyExplode.Utils.JsonDefaults").GetProperty("Options", BindingFlags.Public | BindingFlags.Static).GetValue(null);
@@ -32,3 +38,9 @@ namespace CatBot.Extension
         }
     }
 }
+
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8605 // Unboxing a possibly null value.
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.

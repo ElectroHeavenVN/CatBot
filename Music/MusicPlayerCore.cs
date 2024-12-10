@@ -1,34 +1,37 @@
-﻿using System.Net;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using CatBot.Extension;
 using CatBot.Instance;
 using CatBot.Music.Dummy;
 using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
-using CatBot.Music.Spotify;
-using CatBot.Music.ZingMP3;
 using DSharpPlus;
 using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
-using Microsoft.VisualBasic;
-using Newtonsoft.Json.Linq;
+using DSharpPlus.VoiceNext;
 
 namespace CatBot.Music
 {
     internal class MusicPlayerCore
     {
-        DiscordChannel? lastChannel;
-        internal CancellationTokenSource? cts = new CancellationTokenSource();
-        internal MusicQueue musicQueue = new MusicQueue();
         internal bool isPaused;
         internal bool isStopped;
-        bool isPrevious;
         internal bool isSkipThisSong;
         internal bool sentOutOfTrack = true;
+        internal bool isMainPlayRunning;
+        internal bool isPreparingNextSong;
+        internal bool isPlaying;
+        internal long lastTimeSetLastChannel;
+        internal double volume = .75;
+        internal List<byte> sfxData = new List<byte>();
+        internal IMusic? currentlyPlayingSong;
+        internal PlayMode playMode = new PlayMode();
+        internal MusicQueue musicQueue = new MusicQueue();
+        internal SponsorBlockOptions sponsorBlockOptions = new SponsorBlockOptions();
+        internal CancellationTokenSource cts = new CancellationTokenSource();
+        internal CancellationTokenSource ctsPrepareNextSong = new CancellationTokenSource();
         internal DiscordChannel? LastChannel
         {
             get => lastChannel;
@@ -38,36 +41,31 @@ namespace CatBot.Music
                 lastChannel = value;
             }
         }
-        internal long lastTimeSetLastChannel;
-        internal bool isMainPlayRunning;
-        internal IMusic? currentlyPlayingSong;
-        internal bool isPreparingNextSong;
-        internal bool isPlaying;
-        internal SponsorBlockOptions sponsorBlockOptions = new SponsorBlockOptions();
-        internal List<byte> sfxData = new List<byte>();
-        Thread? prepareNextMusicStreamThread;
-        internal double volume = .75;
-        internal PlayMode playMode = new PlayMode();
+        internal DiscordMessage? lastNowPlayingMessage;
+        
+        bool isPrevious;
         bool isDownloading;
-        int currentIndex;
-        int nextIndex = -1;
-        Random random = new Random();
         bool isFirstTimeDequeue;
-        DiscordMessage? lastNowPlayingMessage;
-        CancellationTokenSource? addSongsInPlaylistCTS = new CancellationTokenSource();
-        BotServerInstance serverInstance;
-        DiscordEmbedBuilder? lastCurrentlyPlayingEmbed;
-        long lastStreamPosition;
-        string uniqueID = Utils.RandomString(10);
-        DateTime lastTimeRefresh = DateTime.Now;
         bool lyricsShown;
-        int currentQueuePage = 1;
-        DateTime lastTimeChangePageQueue = DateTime.MinValue;
-        DiscordMessage? browseQueueMessage;
         bool isDeleteBrowseQueueButtonThreadRunning;
         bool isSetVCStatus;
         bool isSongDownloaded;
+        bool isCurrentSessionLocked;
+        int currentIndex;
+        int nextIndex = -1;
+        int currentQueuePage = 1;
+        long lastStreamPosition;
+        string uniqueID = Utils.RandomString(10);
+        DateTime lastTimeRefresh = DateTime.Now;
+        DateTime lastTimeChangePageQueue = DateTime.MinValue;
+        Random random = new Random();
+        Thread? prepareNextMusicStreamThread;
+        BotServerInstance serverInstance;
         LyricData? lyricsFromLRCLIB;
+        CancellationTokenSource addSongsInPlaylistCTS = new CancellationTokenSource();
+        DiscordEmbedBuilder? lastCurrentlyPlayingEmbed;
+        DiscordChannel? lastChannel;
+        DiscordMessage? browseQueueMessage;
         DiscordMessage? viewLyricsMessage;
         List<DiscordMessage?> lyricsMessages = new List<DiscordMessage?>();
 
@@ -76,16 +74,18 @@ namespace CatBot.Music
             this.serverInstance = serverInstance;
         }
 
-        internal static async Task Play(SlashCommandContext ctx, string input, MusicType musicType)
+        internal static async Task Play(CommandContext ctx, string input, MusicType musicType)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             DiscordEmbedBuilder embed;
             if (string.IsNullOrWhiteSpace(input))
@@ -155,19 +155,20 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task Enqueue(SlashCommandContext ctx, string input, MusicType musicType)
+        internal static async Task Enqueue(CommandContext ctx, string input, MusicType musicType)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             DiscordEmbedBuilder embed;
-            await ctx.DeferResponseAsync();
             try
             {
                 if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
@@ -207,19 +208,20 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task PlayNextUp(SlashCommandContext ctx, string input, MusicType musicType)
+        internal static async Task PlayNextUp(CommandContext ctx, string input, MusicType musicType)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             DiscordEmbedBuilder embed;
-            await ctx.DeferResponseAsync();
             try
             {
                 if (MusicUtils.TryCreateMusicPlaylistInstance(input, serverInstance.musicPlayer.musicQueue, out IPlaylist playlist))
@@ -266,21 +268,22 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task PlayRandomLocalMusic(SlashCommandContext ctx, long count)
+        internal static async Task PlayRandomLocalMusic(CommandContext ctx, long count)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
-            await ctx.DeferResponseAsync();
             Random random = new Random();
             FileInfo[] musicFiles = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToArray();
-            IMusic music = null;
+            IMusic? music = null;
             for (int i = 0; i < count; i++)
             {
                 string musicFileName = Path.GetFileNameWithoutExtension(musicFiles[random.Next(0, musicFiles.Length)].Name);
@@ -291,24 +294,25 @@ namespace CatBot.Music
             serverInstance.isDisconnect = false;
             serverInstance.musicPlayer.InitMainPlay();
             if (count == 1)
-                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music.TitleWithLink}  -  {music.AllArtistsWithLinks} vào hàng đợi!").Build()));
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm bài {music?.TitleWithLink}  -  {music?.AllArtistsWithLinks} vào hàng đợi!").Build()));
             else
                 await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithDescription($"Đã thêm {count} bài vào hàng đợi!").Build()));
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task PlayAllLocalMusic(SlashCommandContext ctx, string search = "")
+        internal static async Task PlayAllLocalMusic(CommandContext ctx, string search = "")
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
-            await ctx.DeferResponseAsync();
             search = search.ToLower();
             List<FileInfo> musicFiles2 = new DirectoryInfo(Config.gI().MusicFolder).GetFiles().Where(f => f.Extension == ".mp3").ToList();
             musicFiles2.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
@@ -329,26 +333,27 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.UpdateCurrentlyPlayingButtons();
         }
 
-        internal static async Task NowPlaying(SlashCommandContext ctx)
+        internal static async Task NowPlaying(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
                 await ctx.RespondAsync(new DiscordEmbedBuilder().WithTitle("Không có bài nào đang phát!").WithColor(DiscordColor.Red).Build());
                 return;
             }
-            await ctx.DeferResponseAsync();
             DiscordEmbedBuilder embed = await serverInstance.musicPlayer.GetCurrentlyPlayingEmbed(true);
             IAsyncEnumerable<DiscordMessage> lastMessage = serverInstance.musicPlayer.LastChannel.GetMessagesAsync(1);
-            if (serverInstance.musicPlayer.lastNowPlayingMessage != null && await lastMessage.ElementAtAsync(0) != serverInstance.musicPlayer.lastNowPlayingMessage)
+            if (serverInstance.musicPlayer.lastNowPlayingMessage is not null && await lastMessage.ElementAtAsync(0) != serverInstance.musicPlayer.lastNowPlayingMessage)
                 try
                 {
                     await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
@@ -358,16 +363,18 @@ namespace CatBot.Music
             musicPlayer.lastNowPlayingMessage = await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed.Build()).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(1)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(2)).AddComponents(serverInstance.musicPlayer.GetMusicControlButtons(3)));
         }
 
-        internal static async Task Seek(SlashCommandContext ctx, long seconds)
+        internal static async Task Seek(CommandContext ctx, long seconds)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -377,9 +384,12 @@ namespace CatBot.Music
             try
             {
                 int bytesPerSeconds = 2 * 16 * 48000 / 8;
-                long bytesToSeek = Math.Max(Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length - serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position), -serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position);
+                Stream? musicPCMDataStream = serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream;
+                if (musicPCMDataStream is null)
+                    throw new NullReferenceException(nameof(musicPCMDataStream));
+                long bytesToSeek = Math.Max(Math.Min(bytesPerSeconds * seconds, musicPCMDataStream.Length - musicPCMDataStream.Position), -musicPCMDataStream.Position);
                 bytesToSeek -= bytesToSeek % 2;
-                serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
+                musicPCMDataStream.Position += bytesToSeek;
                 await ctx.RespondAsync($"Đã tua {(bytesToSeek < 0 ? "lùi " : "")}bài hiện tại {new TimeSpan(0, 0, (int)Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 await serverInstance.musicPlayer.SendOrEditCurrentlyPlayingSong(true);
             }
@@ -390,16 +400,18 @@ namespace CatBot.Music
             }
         }
 
-        internal static async Task SeekTo(SlashCommandContext ctx, long seconds)
+        internal static async Task SeekTo(CommandContext ctx, long seconds)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -409,9 +421,12 @@ namespace CatBot.Music
             try
             {
                 int bytesPerSeconds = 2 * 16 * 48000 / 8;
-                long bytesToSeek = Math.Min(bytesPerSeconds * seconds, serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Length);
+                Stream? musicPCMDataStream = serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream;
+                if (musicPCMDataStream is null)
+                    throw new NullReferenceException(nameof(musicPCMDataStream));
+                long bytesToSeek = Math.Min(bytesPerSeconds * seconds, musicPCMDataStream.Length);
                 bytesToSeek -= bytesToSeek % 2;
-                serverInstance.musicPlayer.currentlyPlayingSong.MusicPCMDataStream.Position = bytesToSeek;
+                musicPCMDataStream.Position = bytesToSeek;
                 await ctx.RespondAsync($"Đã tua bài hiện tại đến vị trí {new TimeSpan(0, 0, (int)Math.Abs(bytesToSeek / bytesPerSeconds)).toVietnameseString()}!");
                 await serverInstance.musicPlayer.SendOrEditCurrentlyPlayingSong(true);
             }
@@ -422,16 +437,18 @@ namespace CatBot.Music
             }
         }
 
-        internal static async Task Clear(SlashCommandContext ctx)
+        internal static async Task Clear(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
@@ -445,25 +462,27 @@ namespace CatBot.Music
                     music.Dispose();
             }
             serverInstance.musicPlayer.musicQueue.Clear();
-            if (serverInstance.musicPlayer.playMode.isLoopQueue || serverInstance.musicPlayer.playMode.isLoopASong)
+            if (serverInstance.musicPlayer.currentlyPlayingSong is not null && (serverInstance.musicPlayer.playMode.isLoopQueue || serverInstance.musicPlayer.playMode.isLoopASong))
                 serverInstance.musicPlayer.musicQueue.Add(serverInstance.musicPlayer.currentlyPlayingSong);
             serverInstance.musicPlayer.isPreparingNextSong = false;
-            if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+            if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
             serverInstance.musicPlayer.isPreparingNextSong = false;
             await ctx.RespondAsync("Đã xóa hết nhạc trong hàng đợi!");
         }
 
-        internal static async Task Pause(SlashCommandContext ctx)
+        internal static async Task Pause(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -475,16 +494,18 @@ namespace CatBot.Music
             await serverInstance.musicPlayer.SendOrEditCurrentlyPlayingSong(true);
         }
 
-        internal static async Task Resume(SlashCommandContext ctx)
+        internal static async Task Resume(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -496,16 +517,18 @@ namespace CatBot.Music
             await ctx.RespondAsync("Tiếp tục phát nhạc!");
         }
 
-        internal static async Task Skip(SlashCommandContext ctx, long count)
+        internal static async Task Skip(CommandContext ctx, long count)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -524,8 +547,8 @@ namespace CatBot.Music
             if (count > 1)
             {
                 serverInstance.musicPlayer.isPreparingNextSong = false;
-                if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                    serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                    serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
             }
             if (serverInstance.musicPlayer.playMode.isRandom)
                 serverInstance.musicPlayer.RandomIndex();
@@ -554,16 +577,18 @@ namespace CatBot.Music
             await ctx.RespondAsync($"Đã bỏ qua {(count > 1 ? (count.ToString() + " bài nhạc") : "bài nhạc hiện tại")}!");
         }
 
-        internal static async Task Remove(SlashCommandContext ctx, long startIndex, long count)
+        internal static async Task Remove(CommandContext ctx, long startIndex, long count)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (startIndex >= serverInstance.musicPlayer.musicQueue.Count)
             {
@@ -594,22 +619,24 @@ namespace CatBot.Music
             if (startIndex == serverInstance.musicPlayer.currentIndex + 1 || hasCurrentSong)
             {
                 serverInstance.musicPlayer.isPreparingNextSong = false;
-                if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                    serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                    serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
             }
             await ctx.RespondAsync($"Đã xóa {countRemoved} bài nhạc khỏi hàng đợi!");
         }
 
-        internal static async Task Stop(SlashCommandContext ctx, bool clearQueue)
+        internal static async Task Stop(CommandContext ctx, bool clearQueue)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -623,8 +650,8 @@ namespace CatBot.Music
             if (clearQueue)
             {
                 serverInstance.musicPlayer.isPreparingNextSong = false;
-                if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                    serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+                if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                    serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
                 for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                     serverInstance.musicPlayer.musicQueue.ElementAt(i)?.Dispose();
                 serverInstance.musicPlayer.musicQueue.Clear();
@@ -634,41 +661,45 @@ namespace CatBot.Music
             await ctx.RespondAsync(response + "!");
         }
 
-        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        internal static async Task SetVolume(CommandContext ctx, long volume)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
+            DiscordChannel? discordChannel = ctx.Channel;
+            if (discordChannel is null)
+                return;
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(discordChannel.Guild);
             if (volume == -1)
             {
-                await obj.TryRespondAsync("Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
+                await ctx.RespondAsync("Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
                 return;
             }
             if (volume < 0 || volume > 250)
             {
-                await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                await ctx.RespondAsync("Âm lượng không hợp lệ!");
                 return;
             }
             serverInstance.musicPlayer.volume = volume / 100d;
-            await obj.TryRespondAsync("Điều chỉnh âm lượng nhạc thành: " + volume + "%!");
+            await ctx.RespondAsync("Điều chỉnh âm lượng nhạc thành: " + volume + "%!");
         }
 
-        internal static async Task Queue(SlashCommandContext ctx)
+        internal static async Task Queue(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            //if (!await CheckPermissions(ctx, serverInstance))
+            //    return;
 
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
                 await ctx.RespondAsync("Không có nhạc trong hàng đợi!");
                 return;
             }
-            await ctx.DeferResponseAsync();
-            if (serverInstance.musicPlayer.browseQueueMessage != null)
+            if (serverInstance.musicPlayer.browseQueueMessage is not null)
                 try
                 {
                     await serverInstance.musicPlayer.browseQueueMessage.DeleteAsync();
@@ -679,16 +710,18 @@ namespace CatBot.Music
             new Thread(serverInstance.musicPlayer.DeleteBrowseQueueButton) { IsBackground = true }.Start();
         }
 
-        internal static async Task SetPlayMode(SlashCommandContext ctx, PlayModeChoice playMode)
+        internal static async Task SetPlayMode(CommandContext ctx, PlayModeChoice playMode)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             switch (playMode)
             {
@@ -718,16 +751,18 @@ namespace CatBot.Music
             await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Thay đổi chế độ phát thành: " + playMode.GetName()));
         }
 
-        internal static async Task ShuffleQueue(SlashCommandContext ctx)
+        internal static async Task ShuffleQueue(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
@@ -736,21 +771,23 @@ namespace CatBot.Music
             }
             serverInstance.musicPlayer.musicQueue.Shuffle();
             serverInstance.musicPlayer.isPreparingNextSong = false;
-            if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+            if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
             await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã trộn danh sách nhạc trong hàng đợi!"));
         }
 
-        internal static async Task ReverseQueue(SlashCommandContext ctx)
+        internal static async Task ReverseQueue(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             if (serverInstance.musicPlayer.musicQueue.Count == 0)
             {
@@ -759,23 +796,24 @@ namespace CatBot.Music
             }
             serverInstance.musicPlayer.musicQueue.Reverse();
             serverInstance.musicPlayer.isPreparingNextSong = false;
-            if (serverInstance.musicPlayer.prepareNextMusicStreamThread != null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
-                serverInstance.musicPlayer.prepareNextMusicStreamThread.Abort();
+            if (serverInstance.musicPlayer.prepareNextMusicStreamThread is not null && serverInstance.musicPlayer.prepareNextMusicStreamThread.IsAlive)
+                serverInstance.musicPlayer.ctsPrepareNextSong.Cancel();
             await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Đã đảo danh sách nhạc trong hàng đợi!"));
         }
 
-        internal static async Task Lyric(SlashCommandContext ctx, string songName, string artistsName)
+        internal static async Task Lyric(CommandContext ctx, string songName, string artistsName)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            //if (!await CheckPermissions(ctx, serverInstance))
+            //    return;
 
-            await ctx.DeferResponseAsync();
             try
             {
                 IMusic music;
@@ -797,7 +835,11 @@ namespace CatBot.Music
                     };
                 List<DiscordEmbed> embeds = GetLyricEmbeds(music);
                 if (serverInstance.musicPlayer.lyricsMessages.Count > 0)
-                    serverInstance.musicPlayer.lyricsMessages.ForEach(async m => await m.DeleteAsync());
+                    serverInstance.musicPlayer.lyricsMessages.ForEach(async m =>
+                    {
+                        if (m is not null)
+                            await m.DeleteAsync();
+                    });
                 serverInstance.musicPlayer.lyricsMessages.Clear();
                 if (embeds.Count > 1)
                 {
@@ -828,16 +870,18 @@ namespace CatBot.Music
             }
         }
 
-        internal static async Task AddOrRemoveSponsorBlockOption(SlashCommandContext ctx, SponsorBlockCategory type)
+        internal static async Task AddOrRemoveSponsorBlockOption(CommandContext ctx, SponsorBlockCategory type)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             string str = "";
             if (type == 0)
@@ -860,18 +904,20 @@ namespace CatBot.Music
             await ctx.RespondAsync(str);
         }
 
-        internal static async Task ViewAlbumArtwork(SlashCommandContext ctx)
+        internal static async Task ViewAlbumArtwork(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            //if (!await CheckPermissions(ctx, serverInstance))
+            //    return;
 
-            if (string.IsNullOrEmpty(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink))
+            if (string.IsNullOrEmpty(serverInstance.musicPlayer.currentlyPlayingSong?.AlbumThumbnailLink))
             {
                 await ctx.RespondAsync("Bài đang phát không có ảnh album!");
                 return;
@@ -879,16 +925,18 @@ namespace CatBot.Music
             await ctx.RespondAsync(serverInstance.musicPlayer.currentlyPlayingSong.AlbumThumbnailLink);
         }
 
-        internal static async Task SetAutoSetVoiceChannelStatus(SlashCommandContext ctx)
+        internal static async Task SetAutoSetVoiceChannelStatus(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            if (!await CheckPermissions(ctx, serverInstance))
+                return;
 
             serverInstance.musicPlayer.isSetVCStatus = !serverInstance.musicPlayer.isSetVCStatus;
             if (serverInstance.musicPlayer.isSetVCStatus)
@@ -899,20 +947,24 @@ namespace CatBot.Music
             else
             {
                 await ctx.RespondAsync("Không đặt trạng thái kênh thoại thành bài hát đang phát!");
-                await serverInstance.currentVoiceNextConnection.TargetChannel.ModifyVoiceStatusAsync("");
+                VoiceNextConnection? currentVoiceNextConnection = serverInstance.currentVoiceNextConnection;
+                if (currentVoiceNextConnection is not null)
+                    await currentVoiceNextConnection.TargetChannel.ModifyVoiceStatusAsync("");
             }
         }
 
-        internal static async Task Download(SlashCommandContext ctx)
+        internal static async Task Download(CommandContext ctx)
         {
             await ctx.DeferResponseAsync();
-            BotServerInstance? serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             serverInstance.musicPlayer.LastChannel = ctx.Channel;
-            if (!await serverInstance.InitializeVoiceNext(ctx.Interaction))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
             {
-                await ctx.DeleteResponseAsync();
+                await ctx.DeleteReplyAsync();
                 return;
             }
+            //if (!await CheckPermissions(ctx, serverInstance))
+            //    return;
 
             if (serverInstance.musicPlayer.currentlyPlayingSong == null)
             {
@@ -924,11 +976,30 @@ namespace CatBot.Music
                 await ctx.RespondAsync("Kích thước bài hát hiện tại lớn hơn 25MB!");
                 return;
             }
-            await ctx.DeferResponseAsync();
             await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddFile(serverInstance.musicPlayer.currentlyPlayingSong.AllArtists + " - " + serverInstance.musicPlayer.currentlyPlayingSong.Title + serverInstance.musicPlayer.currentlyPlayingSong.GetDownloadFile().Extension, serverInstance.musicPlayer.currentlyPlayingSong.GetDownloadFile().Stream));
         }
+        
+        internal static async Task LockSession(CommandContext ctx, bool value)
+        {
+            await ctx.DeferResponseAsync();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.musicPlayer.LastChannel = ctx.Channel;
+            if (!await serverInstance.InitializeVoiceNext(ctx))
+            {
+                await ctx.DeleteReplyAsync();
+                return;
+            }
 
-        async Task MainPlay(CancellationToken token)
+            if (!value && ctx.Member.Permissions.HasPermission(DiscordPermissions.MoveMembers))
+            {
+                await ctx.RespondAsync("Bạn không có quyền mở khoá phiên phát nhạc!");
+                return;
+            }
+            serverInstance.musicPlayer.isCurrentSessionLocked = value;
+            await ctx.FollowupAsync($"Đã {(value ? "khóa" : "mở khóa")} phiên phát nhạc hiện tại!");
+        }
+
+        async Task MainPlay()
         {
             try
             {
@@ -941,97 +1012,104 @@ namespace CatBot.Music
                         isPreparingNextSong = false;
                         try
                         {
-                            if (!playMode.isLoopASong && !playMode.isLoopQueue && !musicQueue.Contains(currentlyPlayingSong))
+                            if (currentlyPlayingSong is not null && !playMode.isLoopASong && !playMode.isLoopQueue && !musicQueue.Contains(currentlyPlayingSong))
                             {
                                 currentlyPlayingSong?.Dispose();
                                 currentlyPlayingSong = null;
                             }
                             currentlyPlayingSong = GetCurrentSong();
                             nextIndex = -1;
-                            if (currentlyPlayingSong.MusicPCMDataStream == null && !isDownloading)
+                            if (currentlyPlayingSong.MusicPCMDataStream is null && !isDownloading)
                                 currentlyPlayingSong.Download();
                             while (isDownloading)
                                 await Task.Delay(200);
-                            currentlyPlayingSong.MusicPCMDataStream.Position = 0;
+                            if (currentlyPlayingSong.MusicPCMDataStream is not null)
+                                currentlyPlayingSong.MusicPCMDataStream.Position = 0;
                             lyricsShown = false;
                             isSongDownloaded = false;
                         }
                         catch (MusicException ex)
                         {
-                            await LastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), currentlyPlayingSong.Title)).WithColor(DiscordColor.Red).Build());
+                            if (LastChannel is not null)
+                                await LastChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(string.Format(ex.GetErrorMessage(), currentlyPlayingSong?.Title)).WithColor(DiscordColor.Red).Build());
                             continue;
                         }
                         catch (Exception ex)
                         {
                             Utils.LogException(ex);
-                            await LastChannel.SendMessageAsync($"Có lỗi xảy ra!");
+                            if (LastChannel is not null)
+                                await LastChannel.SendMessageAsync($"Có lỗi xảy ra!");
                             continue;
                         }
                         await SendOrEditCurrentlyPlayingSong();
                         await SetCurrentVCStatus();
-                        byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
+                        VoiceNextConnection? currentVoiceNextConnection = serverInstance.currentVoiceNextConnection;
+                        if (currentVoiceNextConnection is null)
+                            continue;
+                        byte[] buffer = new byte[currentVoiceNextConnection.GetTransmitSink().SampleLength];
                         try
                         {
-                            while (currentlyPlayingSong.MusicPCMDataStream.Read(buffer, 0, buffer.Length) != 0)
-                            {
-                                if (token.IsCancellationRequested)
-                                    goto exit;
-                                if (isStopped || isSkipThisSong || serverInstance.currentVoiceNextConnection.isDisposed())
-                                    break;
-                                if (!isPreparingNextSong && musicQueue.Count > 0 && currentlyPlayingSong.Duration.Ticks * (1 - currentlyPlayingSong.MusicPCMDataStream.Position / (float)currentlyPlayingSong.MusicPCMDataStream.Length) <= 300000000)
+                            if (currentlyPlayingSong.MusicPCMDataStream is not null)
+                                while (currentlyPlayingSong.MusicPCMDataStream.Read(buffer, 0, buffer.Length) != 0)
                                 {
-                                    isPreparingNextSong = true;
-                                    prepareNextMusicStreamThread = new Thread(PrepareNextSong) { IsBackground = true };
-                                    prepareNextMusicStreamThread.Start();
-                                }
-                                bool lastPaused = isPaused || !serverInstance.canSpeak;
-                                if (lastPaused)
-                                    await SetCurrentVCStatus();
-                                while (isPaused || !serverInstance.canSpeak)
-                                    await Task.Delay(500);
-                                if (lastPaused)
-                                    await SetCurrentVCStatus();
-                                tryagain:;
-                                try
-                                {
-                                    if (serverInstance.currentVoiceNextConnection.isDisposed())
+                                    if (cts.IsCancellationRequested)
+                                        goto exit;
+                                    if (isStopped || isSkipThisSong || currentVoiceNextConnection.IsDisposed())
+                                        break;
+                                    if (!isPreparingNextSong && musicQueue.Count > 0 && currentlyPlayingSong.Duration.Ticks * (1 - currentlyPlayingSong.MusicPCMDataStream.Position / (float)currentlyPlayingSong.MusicPCMDataStream.Length) <= 300000000)
                                     {
+                                        isPreparingNextSong = true;
+                                        prepareNextMusicStreamThread = new Thread(PrepareNextSong) { IsBackground = true };
+                                        prepareNextMusicStreamThread.Start();
+                                    }
+                                    bool lastPaused = isPaused || !serverInstance.canSpeak;
+                                    if (lastPaused)
+                                        await SetCurrentVCStatus();
+                                    while (isPaused || !serverInstance.canSpeak)
                                         await Task.Delay(500);
-                                        continue;
-                                    }
-                                    int i = 0;
-                                    if (sfxData.Count > 0)
+                                    if (lastPaused)
+                                        await SetCurrentVCStatus();
+                                    tryagain:;
+                                    try
                                     {
-                                        byte[] data = sfxData.ToArray();
-                                        for (; i < buffer.Length && i < data.Length; i += 2)
+                                        if (currentVoiceNextConnection.IsDisposed())
                                         {
-                                            int a = (int)(BitConverter.ToInt16(buffer, i) * volume) + 32768;
-                                            int b = BitConverter.ToInt16(data, i) + 32768;
-                                            int m = 0;
-                                            if (a < 32768 || b < 32768)
-                                                m = a * b / 32768;
-                                            else
-                                                m = 2 * (a + b) - a * b / 32768 - 65536;
-                                            if (m == 65536)
-                                                m = 65535;
-                                            m -= 32768;
-                                            Array.Copy(BitConverter.GetBytes((short)m), 0, buffer, i, sizeof(short));
+                                            await Task.Delay(500);
+                                            continue;
                                         }
-                                        sfxData.RemoveRange(0, Math.Min(buffer.Length, data.Length));
+                                        int i = 0;
+                                        if (sfxData.Count > 0)
+                                        {
+                                            byte[] data = sfxData.ToArray();
+                                            for (; i < buffer.Length && i < data.Length; i += 2)
+                                            {
+                                                int a = (int)(BitConverter.ToInt16(buffer, i) * volume) + 32768;
+                                                int b = BitConverter.ToInt16(data, i) + 32768;
+                                                int m = 0;
+                                                if (a < 32768 || b < 32768)
+                                                    m = a * b / 32768;
+                                                else
+                                                    m = 2 * (a + b) - a * b / 32768 - 65536;
+                                                if (m == 65536)
+                                                    m = 65535;
+                                                m -= 32768;
+                                                Array.Copy(BitConverter.GetBytes((short)m), 0, buffer, i, sizeof(short));
+                                            }
+                                            sfxData.RemoveRange(0, Math.Min(buffer.Length, data.Length));
+                                        }
+                                        for (; i < buffer.Length; i += 2)
+                                            Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
+                                        await serverInstance.WriteTransmitData(buffer);
                                     }
-                                    for (; i < buffer.Length; i += 2)
-                                        Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, i) * volume)), 0, buffer, i, sizeof(short));
-                                    await serverInstance.WriteTransmitData(buffer);
+                                    catch (Exception ex)
+                                    {
+                                        Utils.LogException(ex);
+                                        goto tryagain;
+                                    }
                                 }
-                                catch (Exception ex)
-                                {
-                                    Utils.LogException(ex);
-                                    goto tryagain;
-                                }
-                            }
                         }
                         catch (ObjectDisposedException) { }
-                        if (token.IsCancellationRequested)
+                        if (cts.IsCancellationRequested)
                             goto exit;
                         if (isSkipThisSong)
                         {
@@ -1043,7 +1121,7 @@ namespace CatBot.Music
                             addSongsInPlaylistCTS.Cancel();
                             await Task.Delay(500);
                         }
-                        if (serverInstance.currentVoiceNextConnection.isDisposed())
+                        if (currentVoiceNextConnection.IsDisposed())
                             sentOutOfTrack = true;
                     }
                     else
@@ -1054,35 +1132,45 @@ namespace CatBot.Music
                         lastCurrentlyPlayingEmbed = null;
                         if (!sentOutOfTrack)
                         {
-                            if (token.IsCancellationRequested)
+                            if (cts.IsCancellationRequested)
                                 goto exit;
                             sentOutOfTrack = true;
                             await SetCurrentVCStatus();
-                            IAsyncEnumerable<DiscordMessage> lastMessage = LastChannel.GetMessagesAsync(1);
-                            DiscordEmbed embed = new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build();
-                            if (lastNowPlayingMessage == null || await lastMessage.ElementAtAsync(0) != lastNowPlayingMessage)
+                            if (LastChannel is not null) 
                             {
-                                if (lastNowPlayingMessage != null)
-                                    try
-                                    {
-                                        await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
-                                    }
-                                    catch (NotFoundException) { }
-                                lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
-                            }
-                            else
-                                try
+                                DiscordMessage? lastMessage = await LastChannel.GetMessagesAsync(1).ElementAtAsync(0);
+                                DiscordEmbed embed = new DiscordEmbedBuilder().WithTitle("Đã hết nhạc trong hàng đợi").WithDescription("Vui lòng thêm nhạc vào hàng đợi để nghe tiếp!").WithColor(DiscordColor.Red).Build();
+                                if (lastNowPlayingMessage == null || lastMessage != lastNowPlayingMessage)
                                 {
-                                    lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed));
-                                }
-                                catch (NotFoundException)
-                                {
+                                    if (lastNowPlayingMessage is not null && serverInstance.musicPlayer.lastNowPlayingMessage is not null)
+                                        try
+                                        {
+                                            await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                                        }
+                                        catch (NotFoundException) { }
                                     lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
                                 }
+                                else
+                                {
+                                    try
+                                    {
+                                        lastNowPlayingMessage = await lastNowPlayingMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                                    }
+                                    catch (NotFoundException)
+                                    {
+                                        lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed));
+                                    }
+                                }
+                            }
+                        }
+                        if (lastNowPlayingMessage?.CreationTimestamp.AddMinutes(5) < DateTimeOffset.Now)
+                        {
+                            await lastNowPlayingMessage.DeleteAsync();
+                            lastNowPlayingMessage = null;
                         }
                         if (addSongsInPlaylistCTS.IsCancellationRequested)
                             addSongsInPlaylistCTS = new CancellationTokenSource();
-                        while (sfxData.Count != 0)
+                        while (sfxData.Count != 0 && serverInstance.currentVoiceNextConnection is not null)
                         {
                             byte[] buffer = new byte[serverInstance.currentVoiceNextConnection.GetTransmitSink().SampleLength];
                             sfxData.CopyTo(0, buffer, 0, Math.Min(buffer.Length, sfxData.Count));
@@ -1090,17 +1178,19 @@ namespace CatBot.Music
                             await serverInstance.WriteTransmitData(buffer);
                         }
                     }
-                    if (viewLyricsMessage != null)
+                    if (viewLyricsMessage is not null)
                     {
                         await viewLyricsMessage.ModifyAsync(new DiscordMessageBuilder().WithContent(viewLyricsMessage.Content).AddEmbeds(viewLyricsMessage.Embeds));
                         viewLyricsMessage = null;
                     }
                     if (lyricsMessages.Count > 0)
                     {
-                        await lyricsMessages.Last()?.ModifyAsync(new DiscordMessageBuilder().WithContent(lyricsMessages.Last()?.Content).AddEmbeds(lyricsMessages.Last()?.Embeds));
+                        DiscordMessage? lyricMessage = lyricsMessages.Last();
+                        if (lyricMessage is not null)
+                            await lyricMessage.ModifyAsync(new DiscordMessageBuilder().WithContent(lyricMessage.Content).AddEmbeds(lyricMessage.Embeds));
                         lyricsMessages.Clear();
                     }
-                    if (token.IsCancellationRequested)
+                    if (cts.IsCancellationRequested)
                         goto exit;
                     await Task.Delay(1000);
                 }
@@ -1111,14 +1201,16 @@ namespace CatBot.Music
             }
         exit:;
             await SetCurrentVCStatus();
-            if (viewLyricsMessage != null)
+            if (viewLyricsMessage is not null)
             {
                 await viewLyricsMessage.ModifyAsync(new DiscordMessageBuilder().WithContent(viewLyricsMessage.Content).AddEmbeds(viewLyricsMessage.Embeds));
                 viewLyricsMessage = null;
             }
             if (lyricsMessages.Count > 0)
             {
-                await lyricsMessages.Last()?.ModifyAsync(new DiscordMessageBuilder().WithContent(lyricsMessages.Last()?.Content).AddEmbeds(lyricsMessages.Last()?.Embeds));
+                DiscordMessage? lyricMessage = lyricsMessages.Last();
+                if (lyricMessage is not null)
+                    await lyricMessage.ModifyAsync(new DiscordMessageBuilder().WithContent(lyricMessage.Content).AddEmbeds(lyricMessage.Embeds));
                 lyricsMessages.Clear();
             }
             currentlyPlayingSong?.Dispose();
@@ -1128,14 +1220,16 @@ namespace CatBot.Music
 
         async Task SendOrEditCurrentlyPlayingSong(bool hasTimeStamp = false)
         {
+            if (LastChannel is null)
+                return;
             DiscordEmbedBuilder embed = await GetCurrentlyPlayingEmbed(hasTimeStamp);
             IAsyncEnumerable<DiscordMessage> lastMessage = LastChannel.GetMessagesAsync(1);
             if (lastNowPlayingMessage == null || await lastMessage.ElementAtAsync(0) != lastNowPlayingMessage)
             {
-                if (lastNowPlayingMessage != null)
+                if (lastNowPlayingMessage is not null)
                     try
                     {
-                        await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                        await lastNowPlayingMessage.DeleteAsync();
                     }
                     catch (NotFoundException) { }
                 lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
@@ -1155,9 +1249,9 @@ namespace CatBot.Music
         {
             if (!isSetVCStatus)
                 return;
-            if (serverInstance.currentVoiceNextConnection.TargetChannel?.Type == DiscordChannelType.Stage)
+            if (serverInstance.currentVoiceNextConnection?.TargetChannel?.Type == DiscordChannelType.Stage)
                 return;
-            if (serverInstance.currentVoiceNextConnection.TargetChannel == null)
+            if (serverInstance.currentVoiceNextConnection?.TargetChannel is null)
                 return;
             try
             {
@@ -1186,13 +1280,14 @@ namespace CatBot.Music
             }
             catch (NotFoundException)
             {
-                lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
+                if (LastChannel is not null)
+                    lastNowPlayingMessage = await LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(lastCurrentlyPlayingEmbed.Build()).AddComponents(GetMusicControlButtons(1)).AddComponents(GetMusicControlButtons(2)).AddComponents(GetMusicControlButtons(3)));
             }
         }
 
         async Task<DiscordEmbedBuilder> GetCurrentlyPlayingEmbed(bool hasTimeStamp = false)
         {
-            while (currentlyPlayingSong.MusicPCMDataStream == null)
+            while (currentlyPlayingSong?.MusicPCMDataStream is null)
                 await Task.Delay(500);
             if (currentlyPlayingSong.MusicPCMDataStream.Position - lastStreamPosition == 0 && hasTimeStamp && lastCurrentlyPlayingEmbed != null)
                 return lastCurrentlyPlayingEmbed;
@@ -1203,7 +1298,7 @@ namespace CatBot.Music
             if (!string.IsNullOrEmpty(albumThumbnailLink))
                 embed2 = embed2.WithThumbnail(albumThumbnailLink);
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile("waveform.png", MusicUtils.GetMusicWaveform(currentlyPlayingSong, !hasTimeStamp));
-            embed2 = lastCurrentlyPlayingEmbed = embed2.WithImageUrl((await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder)).Attachments[0].Url);
+            embed2 = lastCurrentlyPlayingEmbed = embed2.WithImageUrl((await Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder)).Attachments[0].Url ?? "");
             lastStreamPosition = currentlyPlayingSong.MusicPCMDataStream.Position;
             return embed2;
         }
@@ -1217,6 +1312,8 @@ namespace CatBot.Music
             if (string.IsNullOrWhiteSpace(currentlyPlayingSong.Title))
                 throw new LyricException("Bài hát đang phát không có tiêu đề!");
             lyricData = currentlyPlayingSong.GetLyric();
+            if (lyricData == null)
+                throw new LyricException("Không tìm thấy lời bài hát!");
             if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
                 throw new LyricException(lyricData.NotFoundMessage);
             if (currentlyPlayingSong is LocalMusic)
@@ -1232,6 +1329,8 @@ namespace CatBot.Music
             LyricData? lyricData = null;
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
             lyricData = music.GetLyric();
+            if (lyricData == null)
+                throw new LyricException("Không tìm thấy lời bài hát!");
             if (!string.IsNullOrEmpty(lyricData.NotFoundMessage))
                 throw new LyricException(lyricData.NotFoundMessage);
             if (music is LocalMusic || music is DummyMusic)
@@ -1242,7 +1341,7 @@ namespace CatBot.Music
             return embed.SplitLongEmbed().Select(e => e.Build()).ToList();
         }
 
-        List<DiscordButtonComponent> GetLyricButtons(IMusic? track)
+        List<DiscordButtonComponent> GetLyricButtons(IMusic track)
         {
             List<DiscordButtonComponent> buttons = new List<DiscordButtonComponent>();
             LyricData? lyricData = track.GetLyric();
@@ -1269,11 +1368,13 @@ namespace CatBot.Music
                 string id = args.Id.Substring(0, args.Id.IndexOf('_'));
                 if (args.Id.EndsWith(uniqueID + "_player_controls_" + serverInstance.server.Id))
                 {
-                    if (!serverInstance.currentVoiceNextConnection.TargetChannel.Users.Any((DiscordMember u) => args.User == u) && !Utils.IsBotOwner(args.User.Id))
+                    if (serverInstance.currentVoiceNextConnection is not null && !serverInstance.currentVoiceNextConnection.TargetChannel.Users.Any((DiscordMember u) => args.User == u) && !Utils.IsBotOwner(args.User.Id))
                     {
                         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Bạn không ở cùng kênh thoại với bot!").AsEphemeral());
                         return;
                     }
+                    if (id != "download" && id != "lyric" && !await CheckPermissions(args.Interaction, serverInstance))
+                        return;
                     //row 1
                     if (id == "previous")
                     {
@@ -1290,10 +1391,14 @@ namespace CatBot.Music
                         int bytesPerSeconds = 192000;
                         long bytesToSeek = bytesPerSeconds * 10;
                         bytesToSeek -= bytesToSeek % 2;
-                        if (bytesToSeek > currentlyPlayingSong.MusicPCMDataStream.Position)
-                            currentlyPlayingSong.MusicPCMDataStream.Position = 0L;
-                        else
-                            currentlyPlayingSong.MusicPCMDataStream.Position -= bytesToSeek;
+                        Stream? musicPCMDataStream = currentlyPlayingSong?.MusicPCMDataStream;
+                        if (musicPCMDataStream is not null)
+                        {
+                            if (bytesToSeek > musicPCMDataStream.Position)
+                                musicPCMDataStream.Position = 0L;
+                            else
+                                musicPCMDataStream.Position -= bytesToSeek;
+                        }
                     }
                     else if (id == "pauseplay")
                     {
@@ -1311,10 +1416,14 @@ namespace CatBot.Music
                     {
                         long bytesToSeek = 192000 * 10;
                         bytesToSeek -= bytesToSeek % 2;
-                        if (bytesToSeek + currentlyPlayingSong.MusicPCMDataStream.Position > currentlyPlayingSong.MusicPCMDataStream.Length)
-                            currentlyPlayingSong.MusicPCMDataStream.Position = currentlyPlayingSong.MusicPCMDataStream.Length;
-                        else
-                            currentlyPlayingSong.MusicPCMDataStream.Position += bytesToSeek;
+                        Stream? musicPCMDataStream = currentlyPlayingSong?.MusicPCMDataStream;
+                        if (musicPCMDataStream != null)
+                        {
+                            if (bytesToSeek + musicPCMDataStream.Position > musicPCMDataStream.Length)
+                                musicPCMDataStream.Position = musicPCMDataStream.Length;
+                            else
+                                musicPCMDataStream.Position += bytesToSeek;
+                        }
                     }
                     else if (id == "next")
                     {
@@ -1351,8 +1460,8 @@ namespace CatBot.Music
                         await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.UpdateMessage);
                         isStopped = true;
                         isPreparingNextSong = false;
-                        if (prepareNextMusicStreamThread != null && prepareNextMusicStreamThread.IsAlive)
-                            prepareNextMusicStreamThread.Abort();
+                        if (prepareNextMusicStreamThread is not null && prepareNextMusicStreamThread.IsAlive)
+                            ctsPrepareNextSong.Cancel();
                         for (int i = musicQueue.Count - 1; i >= 0; i--)
                             musicQueue.ElementAt(i)?.Dispose();
                         musicQueue.Clear();
@@ -1361,6 +1470,8 @@ namespace CatBot.Music
                     }
                     else if (id == "download")
                     {
+                        if (currentlyPlayingSong is null)
+                            return;
                         if (currentlyPlayingSong.GetDownloadFile().Stream.Length > 25 * 1024 * 1024)
                         {
                             await args.Interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Kích thước bài hát hiện tại lớn hơn 25MB!"));
@@ -1393,10 +1504,11 @@ namespace CatBot.Music
                             foreach (DiscordEmbed embed in embeds.Skip(1).Take(embeds.Count - 2))
                                 lyricsMessages.Add(await args.Channel.SendMessageAsync(embed));
                             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-                            foreach (DiscordButtonComponent button in GetLyricButtons(currentlyPlayingSong))
-                            {
-                                messageBuilder = messageBuilder.AddComponents(button);
-                            }
+                            if (currentlyPlayingSong is not null)
+                                foreach (DiscordButtonComponent button in GetLyricButtons(currentlyPlayingSong))
+                                {
+                                    messageBuilder = messageBuilder.AddComponents(button);
+                                }
                             lyricsMessages.Add(await args.Channel.SendMessageAsync(messageBuilder.AddEmbed(embeds.Last())));
                         }
                         catch (LyricException ex)
@@ -1463,6 +1575,8 @@ namespace CatBot.Music
                     await args.Interaction.DeferAsync();
                     if (id == "view-lrclib")
                     {
+                        if (currentlyPlayingSong is null)
+                            return;
                         try
                         {
                             DummyMusic music = new DummyMusic()
@@ -1509,7 +1623,7 @@ namespace CatBot.Music
                         {
                             await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent(ex.Message));
                         }
-                        if (viewLyricsMessage != null)
+                        if (viewLyricsMessage is not null)
                         {
                             await viewLyricsMessage.ModifyAsync(new DiscordMessageBuilder().WithContent(viewLyricsMessage.Content).AddEmbeds(viewLyricsMessage.Embeds));
                             viewLyricsMessage = null;
@@ -1519,19 +1633,21 @@ namespace CatBot.Music
                     LyricData? lyrics = currentlyPlayingSong?.GetLyric();
                     if (!string.IsNullOrEmpty(lyrics?.NotFoundMessage))
                         lyrics = lyricsFromLRCLIB;
+                    if (lyrics is null)
+                        return;
                     if (id == "view-plain")
                     {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".txt", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.PlainLyrics))));
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".txt", new MemoryStream(Encoding.UTF8.GetBytes(lyrics.PlainLyrics))));
                         return;
                     }
                     if (id == "view-synced")
                     {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.SyncedLyrics))));
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics.SyncedLyrics))));
                         return;
                     }
                     if (id == "view-enhanced")
                     {
-                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics?.EnhancedLyrics))));
+                        await args.Interaction.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().AddFile(currentlyPlayingSong?.AllArtists + " - " + currentlyPlayingSong?.Title + ".lrc", new MemoryStream(Encoding.UTF8.GetBytes(lyrics.EnhancedLyrics))));
                         return;
                     }
                 }
@@ -1597,7 +1713,7 @@ namespace CatBot.Music
 
         static async Task ReportMusicException(CommandContext ctx, string input, Exception ex)
         {
-            MusicException mEx = null;
+            MusicException? mEx = null;
             if (ex is MusicException)
                 mEx = ex as MusicException;
             if (ex is TargetInvocationException)
@@ -1605,6 +1721,38 @@ namespace CatBot.Music
             if (mEx == null)
                 throw ex;
             await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(new DiscordEmbedBuilder().WithTitle(string.Format(mEx.GetErrorMessage(), input)).WithColor(DiscordColor.Red).Build()));
+        }
+
+        static async Task<bool> CheckPermissions(CommandContext ctx, BotServerInstance serverInstance)
+        {
+            if (serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage && (ctx.Member.VoiceState.IsSuppressed || ctx.Member.VoiceState.IsServerMuted))
+            {
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không phải là người nói trên sân khấu!"));
+                return false;
+            }
+            if (serverInstance.musicPlayer.isCurrentSessionLocked && !ctx.Channel.PermissionsFor(ctx.Member).HasPermission(DiscordPermissions.MoveMembers))
+            {
+                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Phiên phát nhạc hiện tại đang bị khóa!"));
+                return false;
+            }
+            return true;
+        }
+
+        static async Task<bool> CheckPermissions(DiscordInteraction interaction, BotServerInstance serverInstance)
+        {
+            if (interaction.User is not DiscordMember member)
+                return false;
+            if (serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage && (member.VoiceState.IsSuppressed || member.VoiceState.IsServerMuted))
+            {
+                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Bạn không phải là người nói trên sân khấu!").AsEphemeral());
+                return false;
+            }
+            if (serverInstance.musicPlayer.isCurrentSessionLocked && !interaction.Channel.PermissionsFor(member).HasPermission(DiscordPermissions.MoveMembers))
+            {
+                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Phiên phát nhạc hiện tại đang bị khóa!").AsEphemeral());
+                return false;
+            }
+            return true;
         }
 
         void DeleteBrowseQueueButton()
@@ -1616,7 +1764,7 @@ namespace CatBot.Music
                 Thread.Sleep(5000);
             try
             {
-                browseQueueMessage.ModifyAsync(new DiscordMessageBuilder().AddEmbeds(browseQueueMessage.Embeds));
+                browseQueueMessage?.ModifyAsync(new DiscordMessageBuilder().AddEmbeds(browseQueueMessage.Embeds));
             }
             catch (NotFoundException) { }
             isDeleteBrowseQueueButtonThreadRunning = false;
@@ -1636,7 +1784,11 @@ namespace CatBot.Music
                 isDownloading = true;
                 nextSong.Download();
                 while (nextSong.MusicPCMDataStream == null)
+                {
+                    if (ctsPrepareNextSong.IsCancellationRequested)
+                        return;
                     Thread.Sleep(200);
+                }
                 nextSong.MusicPCMDataStream.Position = 0;
             }
             catch (Exception ex) { Utils.LogException(ex); }
@@ -1649,7 +1801,7 @@ namespace CatBot.Music
             if (!isMainPlayRunning)
             {
                 isMainPlayRunning = true;
-                new Thread(async () => await MainPlay(cts.Token)) { IsBackground = true }.Start();
+                new Thread(async () => await MainPlay()) { IsBackground = true }.Start();
             }
         }
 

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace CatBot
 {
@@ -13,7 +10,7 @@ namespace CatBot
         internal static Config gI() => singletonInstance;
 
         /// <summary>
-        /// ID Server chính dùng để điều khiển bot (dùng lệnh /admin, báo lỗi, cache ảnh cho <see cref="Music.Local.LocalMusic"/>)
+        /// ID Server chính dùng để điều khiển bot (dùng lệnh admin, báo lỗi, cache ảnh cho <see cref="Music.Local.LocalMusic"/>)
         /// </summary>
         [JsonProperty("MainServer")]
         internal ulong MainServerID { get; set; }
@@ -23,7 +20,7 @@ namespace CatBot
         ///  Danh sách các thành viên được sử dụng SFX đặc biệt
         /// </summary>
         [JsonProperty("AdminUsers")]
-        internal ulong[] AdminUserIDs { get; set; }
+        internal ulong[] AdminUserIDs { get; set; } = [];
 
         /// <summary>
         /// ID kênh cache ảnh
@@ -50,13 +47,13 @@ namespace CatBot
         /// ID chủ của bot
         /// </summary>
         [JsonProperty("BotOwners")]
-        internal ulong[] BotOwnerIDs { get; set; } = new ulong[0];
+        internal ulong[] BotOwnerIDs { get; set; } = [];
 
         /// <summary>
         /// ID bot loại trừ
         /// </summary>
         [JsonProperty("ExcludeBots")]
-        internal ulong[] ExcludeBotIDs { get; set; } = new ulong[0];
+        internal ulong[] ExcludeBotIDs { get; set; } = [];
 
         /// <summary>
         /// Đường dẫn tới thư mục chứa nhạc
@@ -73,11 +70,6 @@ namespace CatBot
         /// </summary>
         [JsonProperty(nameof(SFXFolderSpecial))]
         internal string SFXFolderSpecial { get; set; } = "SFX\\Special";
-        /// <summary>
-        /// Cho biết lệnh chat điều khiển bot có được kích hoạt hay không
-        /// </summary>
-        [JsonProperty(nameof(EnableCommandsNext))]
-        internal bool EnableCommandsNext { get; set; } = true;
 
         #region Zing MP3
         /// <summary>
@@ -170,18 +162,20 @@ namespace CatBot
         [JsonProperty(nameof(DefaultPresences))]
         internal CustomDiscordActivity[] DefaultPresences { get; set; } = 
         [
-            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "Zing MP3"),
-            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "NhacCuaTui"),
-            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "YouTube Music"),
-            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "SoundCloud"),
-            new CustomDiscordActivity(DiscordActivityType.ListeningTo, "Spotify"),
-            new CustomDiscordActivity(DiscordActivityType.Watching, "YouTube")
+            new CustomDiscordActivity(0, DiscordActivityType.ListeningTo, "Zing MP3"),
+            new CustomDiscordActivity(0, DiscordActivityType.ListeningTo, "NhacCuaTui"),
+            new CustomDiscordActivity(0, DiscordActivityType.ListeningTo, "YouTube Music"),
+            new CustomDiscordActivity(0, DiscordActivityType.ListeningTo, "SoundCloud"),
+            new CustomDiscordActivity(0, DiscordActivityType.ListeningTo, "Spotify"),
+            new CustomDiscordActivity(0, DiscordActivityType.Watching, "YouTube")
         ];
 
         internal string LyricAPI => "https://lrclib.net/api/";
 
-        internal static void ImportConfig(string configPath) => singletonInstance = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath));
+        internal static void ImportConfig(string configPath) => singletonInstance = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath)) ?? throw new NullReferenceException();
 
         internal static void ExportConfig(string configPath) => File.WriteAllText(configPath, JsonConvert.SerializeObject(singletonInstance, Formatting.Indented));
     }
 }
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.

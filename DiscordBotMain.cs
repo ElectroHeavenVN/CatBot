@@ -22,13 +22,14 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace CatBot
 {
-    internal class DiscordBotMain
+    internal static class DiscordBotMain
     {
-        internal static DiscordClient? botClient;
+#pragma warning disable CS8618
+        internal static DiscordClient botClient;
+#pragma warning restore CS8618
 
         //internal static DiscordRestClient botRESTClient = new DiscordRestClient(new DiscordConfiguration()
         //{
@@ -42,9 +43,6 @@ namespace CatBot
 
         internal static void Main()
         {
-            //ServicePointManager.Expect100Continue = true;
-            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback((_, _, _, _) => true);
-            //ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
             try
             {
                 new Harmony("Hook").PatchAll();
@@ -81,7 +79,7 @@ namespace CatBot
                     handler.HandleComponentInteractionCreated(BotClient_ComponentInteractionCreated);
                 });
 
-            botClientBuilder.UseCommands(cmd =>
+            botClientBuilder.UseCommands((_, cmd) =>
             {
                 cmd.CommandErrored += (_, args) =>
                 {
@@ -89,30 +87,16 @@ namespace CatBot
                         return Task.CompletedTask;
                     return LogException(args.Exception);
                 };
-                cmd.AddProcessor<SlashCommandProcessor>();
-                foreach (MethodInfo method in typeof(VoiceChannelSFXSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                    cmd.AddCommands(CommandBuilder.From(method));
-                foreach (MethodInfo method in typeof(MusicPlayerSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                    cmd.AddCommands(CommandBuilder.From(method));
-                foreach (MethodInfo method in typeof(GlobalSlashCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                    cmd.AddCommands(CommandBuilder.From(method));
-                if (Config.gI().EnableCommandsNext)
+                cmd.AddProcessor(new SlashCommandProcessor(new SlashCommandConfiguration()));
+                cmd.AddProcessor(new TextCommandProcessor(new TextCommandConfiguration()
                 {
-                    cmd.AddProcessor(new TextCommandProcessor(new TextCommandConfiguration()
-                    {
-                        IgnoreBots = false,
-                        PrefixResolver = new DefaultPrefixResolver(true, [Config.gI().DefaultPrefix]).ResolvePrefixAsync
-                    }));
-                    foreach (MethodInfo method in typeof(AdminBaseCommand).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                        cmd.AddCommands(CommandBuilder.From(method));
-                    foreach (MethodInfo method in typeof(GlobalBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                        cmd.AddCommands(CommandBuilder.From(method));
-                    foreach (MethodInfo method in typeof(MusicPlayerBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                        cmd.AddCommands(CommandBuilder.From(method));
-                    foreach (MethodInfo method in typeof(VoiceChannelSFXBaseCommands).GetMethods().Where(m => m.GetCustomAttribute<CommandAttribute>() != null))
-                        cmd.AddCommands(CommandBuilder.From(method));
-                }
-                cmd.AddCommands<AdminSlashCommands>(Config.gI().MainServerID);
+                    IgnoreBots = false,
+                    PrefixResolver = new DefaultPrefixResolver(true, [Config.gI().DefaultPrefix]).ResolvePrefixAsync
+                }));
+                cmd.AddCommands<GlobalCommands>();
+                cmd.AddCommands<MusicPlayerCommands>();
+                cmd.AddCommands<VoiceChannelSFXCommands>();
+                cmd.AddCommands<AdminCommands>([Config.gI().MainServerID]);
             }, new CommandsConfiguration());
 
 
@@ -210,11 +194,13 @@ namespace CatBot
             await Task.Run(() =>
             {
                 Config.gI().mainServer = botClient.Guilds.FirstOrDefault(g => g.Key == Config.gI().MainServerID).Value;
-                Config.gI().cacheImageChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID) ?? throw new NullReferenceException();
-                Config.gI().exceptionReportChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID) ?? throw new NullReferenceException();
-                Config.gI().debugChannel = Config.gI().mainServer.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID) ?? throw new NullReferenceException();
+                if (Config.gI().mainServer is null)
+                    throw new NullReferenceException();
+                Config.gI().cacheImageChannel = Config.gI().mainServer?.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().CacheImageChannelID) ?? throw new NullReferenceException();
+                Config.gI().exceptionReportChannel = Config.gI().mainServer?.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().LogExceptionChannelID) ?? throw new NullReferenceException();
+                Config.gI().debugChannel = Config.gI().mainServer?.Channels.Values.FirstOrDefault(ch => ch.Id == Config.gI().DebugChannelID) ?? throw new NullReferenceException();
             });
-            await GlobalSlashCommands.GetMentionStrings();
+            await GlobalCommands.GetMentionStrings();
             new Thread(async () => await ChangeStatus()) { IsBackground = true }.Start();
         }
 

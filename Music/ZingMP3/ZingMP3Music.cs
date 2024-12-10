@@ -301,8 +301,12 @@ namespace CatBot.Music.ZingMP3
                     Thread.Sleep(2000);
             }
             while (string.IsNullOrWhiteSpace(ver));
-            zingMP3Version = ver;
-            UpdateCookies();
+            if (ver != zingMP3Version)
+            {
+                zingMP3Version = ver;
+                UpdateCookies();
+                httpRequestWithCookie.GetAsync(zingMP3Link).Wait();
+            }
             lastTimeCheckZingMP3Version = DateTime.Now;
         }
 
@@ -314,7 +318,6 @@ namespace CatBot.Music.ZingMP3
             httpRequestWithCookie.DefaultRequestHeaders.Add("Referer", zingMP3Link);
             httpRequestWithCookie.DefaultRequestHeaders.Add("Accept", "*/*");
             httpRequestWithCookie.DefaultRequestHeaders.Add("Accept-Language", "vi-VN,vi;q=0.9");
-            httpRequestWithCookie.DefaultRequestHeaders.Add("Host", "zingmp3.vn");
         }
 
         public string GetPCMFilePath() => pcmFile;

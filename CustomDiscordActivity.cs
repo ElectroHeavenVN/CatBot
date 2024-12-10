@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using System;
+using DSharpPlus.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -6,6 +7,9 @@ namespace CatBot
 {
     internal class CustomDiscordActivity 
     {
+        [JsonProperty(nameof(ApplicationID))]
+        internal ulong ApplicationID { get; set; }
+
         [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
         internal DiscordActivityType ActivityType { get; set; }
@@ -18,13 +22,14 @@ namespace CatBot
 
         CustomDiscordActivity() { }
 
-        internal CustomDiscordActivity(DiscordActivityType type = DiscordActivityType.Playing, string name = "", string state = " ")
+        internal CustomDiscordActivity(ulong applicationID = 0, DiscordActivityType type = DiscordActivityType.Playing, string name = "", string state = " ")
         {
+            ApplicationID = applicationID;
             ActivityType = type;
             Name = name;
             State = state;
         }
-        
+
         internal class TransportActivity
         {
             [JsonIgnore]
@@ -39,7 +44,7 @@ namespace CatBot
             }
 
             [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
-            public DiscordActivityType DiscordActivityType { get; set; }
+            public DiscordActivityType ActivityType { get; set; }
 
             [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
             public required string Name { get; set; }

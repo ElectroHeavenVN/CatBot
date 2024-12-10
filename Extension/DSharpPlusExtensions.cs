@@ -1,5 +1,13 @@
-﻿using System.Reflection;
+﻿#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8605 // Unboxing a possibly null value.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+
+using System.Reflection;
 using DSharpPlus;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
+using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
 using DSharpPlus.Net.Abstractions;
@@ -11,11 +19,6 @@ namespace CatBot.Extension
     {
         internal static async Task UpdateStatusAsync(this DiscordClient discordClient, CustomDiscordActivity customActivity, DiscordUserStatus? userStatus = null, DateTimeOffset? idleSince = null)
         {
-            if (string.IsNullOrEmpty(customActivity.State))
-            {
-                await discordClient.UpdateStatusAsync(new DiscordActivity(customActivity.Name, customActivity.ActivityType), userStatus, idleSince);
-                return;
-            }
             long num = (idleSince != null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
             StatusUpdate statusUpdate = new StatusUpdate
             {
@@ -23,8 +26,8 @@ namespace CatBot.Extension
                 {
                     new TransportActivity()
                     {
-                        ApplicationId = discordClient.CurrentApplication.Id,
-                        DiscordActivityType = customActivity.ActivityType,
+                        ApplicationId = customActivity.ApplicationID,
+                        ActivityType = customActivity.ActivityType,
                         Name = customActivity.Name,
                         State = customActivity.State
                     }
@@ -33,61 +36,71 @@ namespace CatBot.Extension
                 IsAFK = idleSince != null,
                 Status = userStatus ?? DiscordUserStatus.Online,
             };
-#pragma warning disable DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-            await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate, 0);
-#pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        }
-        
-        internal static async Task UpdateStatusAsync(this DiscordClient discordClient, List<CustomDiscordActivity> customActivities, DiscordUserStatus? userStatus = null, DateTimeOffset? idleSince = null)
-        {
-            if (customActivities.Any(customActivity => string.IsNullOrEmpty(customActivity.State)))
-                return;
-            long num = (idleSince != null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
-            StatusUpdate statusUpdate = new StatusUpdate
-            {
-                Activities = new List<TransportActivity>(),
-                IdleSince = num,
-                IsAFK = idleSince != null,
-                Status = userStatus ?? DiscordUserStatus.Online,
-            };
-            foreach (CustomDiscordActivity customActivity in customActivities)
-            {
-                statusUpdate.Activities.Add(new TransportActivity()
-                {
-                    ApplicationId = discordClient.CurrentApplication.Id,
-                    DiscordActivityType = customActivity.ActivityType,
-                    Name = customActivity.Name,
-                    State = customActivity.State
-                });
-            }
+            if (customActivity.ApplicationID == 0)
+                statusUpdate.Activities[0].ApplicationId = discordClient.CurrentApplication.Id;
 #pragma warning disable DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate, 0);
 #pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
-        internal static ValueTask<RestResponse> ModifyVoiceStatusAsync(this DiscordChannel discordChannel, string status)
+        internal static async ValueTask ModifyVoiceStatusAsync(this DiscordChannel discordChannel, string status)
         {
-            /*
-            RestRequest request = new()
-            {
-                Route = $"{Endpoints.CHANNELS}/{channelId}",
-                Url = new($"{Endpoints.CHANNELS}/{channelId}"),
-                Method = HttpMethod.Put
-            };
+            BaseDiscordClient client = (BaseDiscordClient)typeof(SnowflakeObject).GetProperty("Discord", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(discordChannel);
+            DiscordApiClient apiClient = (DiscordApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
+            object rest = typeof(DiscordApiClient).GetField("rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
+            Type restRequest = typeof(DiscordClient).Assembly.GetType("DSharpPlus.Net.RestRequest");
+            object restRequestInst = Activator.CreateInstance(restRequest, true);
+            restRequest.GetProperty("Route").SetValue(restRequestInst, "/channels/:channel_id/voice-status");
+            restRequest.GetProperty("Url").SetValue(restRequestInst, $"/channels/{discordChannel.Id}/voice-status");
+            restRequest.GetProperty("Method").SetValue(restRequestInst, HttpMethod.Put);
+            restRequest.GetProperty("Payload").SetValue(restRequestInst, $"{{\"status\":\"{status}\"}}");
+            ValueTask<RestResponse> response = (ValueTask<RestResponse>)rest.GetType().GetMethod("ExecuteRequestAsync", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(restRequest).Invoke(rest, [restRequestInst]);
+            await response.ConfigureAwait(false);
+        }
 
-            await this.rest.ExecuteRequestAsync(request);
-            */
+        internal static async Task DeferAsync(this CommandContext ctx, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                await sctx.DeferResponseAsync(ephemeral);
+            else
+                await ctx.DeferResponseAsync();
+        }
 
-            string route = $"channels/{discordChannel.Id}/voice-status";
-            DiscordApiClient apiClient = (DiscordApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(DiscordBotMain.botClient);
-            RestClient rest = (RestClient)typeof(DiscordApiClient).GetField("rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
-            Type? restRequest = typeof(DiscordApiClient).Assembly.GetType("DSharpPlus.Net.RestRequest");
-            object restRequestObj = Activator.CreateInstance(restRequest, true);
-            restRequest.GetProperty("Route", BindingFlags.Public | BindingFlags.Instance).SetValue(restRequestObj, route);
-            restRequest.GetProperty("Url", BindingFlags.Public | BindingFlags.Instance).SetValue(restRequestObj, route);
-            restRequest.GetProperty("Method", BindingFlags.Public | BindingFlags.Instance).SetValue(restRequestObj, HttpMethod.Put);
-            restRequest.GetProperty("Payload", BindingFlags.Public | BindingFlags.Instance).SetValue(restRequestObj, $"{{\"status\":\"{status}\"}}");
-            return (ValueTask<RestResponse>)typeof(RestClient).GetMethod("ExecuteRequestAsync", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod([restRequest]).Invoke(rest, [restRequestObj]);
+        internal static async Task ReplyAsync(this CommandContext ctx, string content, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                await sctx.RespondAsync(content, ephemeral);
+            else
+                await ctx.RespondAsync(content);
+        }
+
+        internal static async Task ReplyAsync(this CommandContext ctx, DiscordEmbed embed, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                await sctx.RespondAsync(embed, ephemeral);
+            else
+                await ctx.RespondAsync(embed);
+        }
+
+        internal static async Task ReplyAsync(this CommandContext ctx, string content, DiscordEmbed embed, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                await sctx.RespondAsync(content, embed, ephemeral);
+            else
+                await ctx.RespondAsync(content, embed);
+        }
+
+        internal static async Task DeleteReplyAsync(this CommandContext ctx)
+        {
+            if (ctx is SlashCommandContext sctx)
+                await sctx.DeleteResponseAsync();
+            else if (ctx is TextCommandContext tctx && tctx.Response is not null)
+                await ctx.DeleteResponseAsync();
         }
     }
 }
+
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8605 // Unboxing a possibly null value.
+#pragma warning restore CS8604 // Possible null reference argument.

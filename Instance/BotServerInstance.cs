@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CatBot.Extension;
 using CatBot.Music;
 using CatBot.Voice;
 using DSharpPlus;
+using DSharpPlus.Commands;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.VoiceNext;
@@ -21,8 +23,8 @@ namespace CatBot.Instance
         DateTime lastTimeCheckVoiceChannel = DateTime.Now;
         Thread checkVoiceChannelThread;
         internal static List<BotServerInstance> serverInstances = new List<BotServerInstance>();
-        internal MusicPlayerCore? musicPlayer;
-        internal DiscordGuild? server;
+        internal MusicPlayerCore musicPlayer;
+        internal DiscordGuild server;
         internal VoiceNextConnection? currentVoiceNextConnection;
         internal bool isDisconnect;
         internal bool canSpeak = true;
@@ -39,171 +41,132 @@ namespace CatBot.Instance
         internal VoiceChannelSFXCore voiceChannelSFX = new VoiceChannelSFXCore();
         internal bool suppressOnVoiceStateUpdatedEvent;
         internal bool isVoicePlaying;
-        DiscordMember? botMember;
+        internal DiscordMember BotMember => botMember;
+        DiscordMember botMember;
         private int lastNumberOfUsersInVC;
         DiscordMessage? lastNoOneInVCMessage;
+        CancellationTokenSource ctsCheckVC = new CancellationTokenSource();
 
-        internal BotServerInstance() 
-        {
-            musicPlayer = new MusicPlayerCore(this);
-            checkVoiceChannelThread = new Thread(() => CheckVoiceChannel(this));
-        }
-
-        internal BotServerInstance(DiscordGuild server) : this()
+        internal BotServerInstance(DiscordGuild server)
         {
             this.server = server;
             botMember = server.GetMemberAsync(DiscordBotMain.botClient.CurrentUser.Id).Result;
+            musicPlayer = new MusicPlayerCore(this);
+            checkVoiceChannelThread = new Thread(CheckVoiceChannel);
         }
 
-        static void CheckVoiceChannel(BotServerInstance self)
+        async void CheckVoiceChannel()
         {
             while(true)
             {
-                if (self.currentVoiceNextConnection != null && !self.currentVoiceNextConnection.isDisposed())
+                if (ctsCheckVC.IsCancellationRequested)
+                    return;
+                if (currentVoiceNextConnection != null && !currentVoiceNextConnection.IsDisposed())
                 {
-                    if (self.currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot || m.IsBotExcluded()))
-                        self.lastTimeCheckVoiceChannel = DateTime.Now;
-                    else if ((DateTime.Now - self.lastTimeCheckVoiceChannel).TotalMinutes > 30)
+                    if (currentVoiceNextConnection.TargetChannel.Users.Any(m => !m.IsBot || m.IsBotExcluded()))
+                        lastTimeCheckVoiceChannel = DateTime.Now;
+                    else if ((DateTime.Now - lastTimeCheckVoiceChannel).TotalMinutes > 30)
                     {
-                        self.suppressOnVoiceStateUpdatedEvent = true;
+                        suppressOnVoiceStateUpdatedEvent = true;
                         string content = "Bot tự động rời kênh thoại do không có ai trong kênh thoại trong 30 phút!";
-                        if (self.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
+                        if (currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                             content = "Bot tự động rời sân khấu do không có người nghe trong 30 phút!";
-                        self.GetLastChannel().SendMessageAsync(new DiscordEmbedBuilder().WithTitle(content).WithColor(DiscordColor.Red));
-                        if (self.musicPlayer.isPlaying)
+                        DiscordChannel? discordChannel = GetLastChannel();
+                        if (discordChannel is not null)
+                            await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(content).WithColor(DiscordColor.Red));
+                        if (musicPlayer.isPlaying)
 						{
-							self.musicPlayer.isPaused = false;
-							self.musicPlayer.isStopped = true;
+							musicPlayer.isPaused = false;
+							musicPlayer.isStopped = true;
 						}
                         Thread.Sleep(500);
-						for (int i = self.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
-							self.musicPlayer.musicQueue.ElementAt(i).Dispose();
-						self.musicPlayer.musicQueue.Clear();
-						self.musicPlayer.isPlaying = false;
-						self.isDisconnect = true;
-						self.musicPlayer.isMainPlayRunning = false;
-						self.musicPlayer.sentOutOfTrack = true;
-						self.musicPlayer.cts.Cancel();
-						self.musicPlayer.cts = new CancellationTokenSource();
-						self.isVoicePlaying = false;
-						self.currentVoiceNextConnection.Disconnect();
-						self.lastNumberOfUsersInVC = int.MaxValue;
-						self.musicPlayer.playMode = new PlayMode();
-						self.lastTimeCheckVoiceChannel = DateTime.Now;
-                        self.canSpeak = true;
+						for (int i = musicPlayer.musicQueue.Count - 1; i >= 0; i--)
+							musicPlayer.musicQueue.ElementAt(i).Dispose();
+						musicPlayer.musicQueue.Clear();
+						musicPlayer.isPlaying = false;
+						isDisconnect = true;
+						musicPlayer.isMainPlayRunning = false;
+                        if (musicPlayer.lastNowPlayingMessage is not null)
+                            await musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                        musicPlayer.lastNowPlayingMessage = null;
+                        musicPlayer.sentOutOfTrack = true;
+						musicPlayer.cts.Cancel();
+						musicPlayer.cts = new CancellationTokenSource();
+						isVoicePlaying = false;
+						currentVoiceNextConnection.Disconnect();
+						lastNumberOfUsersInVC = int.MaxValue;
+						musicPlayer.playMode = new PlayMode();
+						lastTimeCheckVoiceChannel = DateTime.Now;
+                        canSpeak = true;
 						Thread.Sleep(3000);
-						self.suppressOnVoiceStateUpdatedEvent = false;
+						suppressOnVoiceStateUpdatedEvent = false;
                     }
                 }
-                Thread.Sleep(10000);
+                await Task.Delay(1000);
             }
         }
 
-        internal async Task<bool> InitializeVoiceNext(SnowflakeObject obj)
+        internal async Task<bool> InitializeVoiceNext(CommandContext ctx, bool isInteractionDeferred = false)
         {
-            VoiceNextConnection? connection = await GetVoiceConnection(obj);
+            VoiceNextConnection? connection = await GetVoiceConnection(ctx, isInteractionDeferred);
             if (connection == null)
                 return false;
             currentVoiceNextConnection = connection;
             return true;
         }
 
-        internal DiscordChannel GetLastChannel()
+        internal DiscordChannel? GetLastChannel()
         {
-            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && lastChannel != null)
+            if (lastTimeSetLastChannel > musicPlayer.lastTimeSetLastChannel && lastChannel is not null)
                 return LastChannel;
-            else if (musicPlayer.LastChannel != null)
+            else if (musicPlayer.LastChannel is not null)
                 return musicPlayer.LastChannel;
             else
                 return null;
         }
 
-        static async Task<VoiceNextConnection?> GetVoiceConnection(SnowflakeObject obj)
+        static async Task<VoiceNextConnection?> GetVoiceConnection(CommandContext ctx, bool isInteractionDeferred)
         {
-            DiscordMember? member = null;
-            DiscordChannel? channel = null;
-            if (obj is DiscordMessage message)
-            {
-                if (message.Author is DiscordMember mem)
-                    member = mem;
-                channel = message.Channel;
-            }
-            else if (obj is DiscordInteraction interaction)
-            {
-                if (interaction.User is DiscordMember mem2)
-                    member = mem2;
-                channel = interaction.Channel;
-            }
-            else if (obj is DiscordChannel ch)
-                channel = ch;
-            BotServerInstance? serverInstance = GetBotServerInstance(channel.Guild);
+            DiscordMember? member = ctx.Member;
+            if (member is null)
+                throw new Exception("Can't find member");
+            BotServerInstance serverInstance = GetBotServerInstance(ctx.Guild);
             VoiceNextConnection? voiceNextConnection = null;
-            double volume = serverInstance?.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
-            if (member != null)
+            double volume = serverInstance.currentVoiceNextConnection == null ? 1 : serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
+            if (Utils.IsBotOwner(member.Id))
             {
-                if (Utils.IsBotOwner(member.Id))
+                if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.IsDisposed() && ctx.Guild! == bSI.currentVoiceNextConnection.TargetChannel.Guild))
+                    return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.IsDisposed() && ctx.Guild! == bSI.currentVoiceNextConnection.TargetChannel.Guild).currentVoiceNextConnection;
+                else if (member.VoiceState == null || member.VoiceState.Channel is null)
                 {
-                    if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild))
-                        return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild).currentVoiceNextConnection;
-                    else if (member.VoiceState == null || member.VoiceState.Channel == null)
-                    {
-                        await obj.TryRespondAsync("Bot không ở trong kênh thoại nào trong server này!");
-                        return null;
-                    }
-                }
-                if (member.VoiceState == null || member.VoiceState.Channel == null)
-                {
-                    await obj.TryRespondAsync("Bạn không ở trong kênh thoại nào trong server này!");
+                    await ctx.ReplyAsync("Bot không ở trong kênh thoại nào trong server này!", isInteractionDeferred);
                     return null;
                 }
-                if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild))
-                    voiceNextConnection = serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && channel.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild).currentVoiceNextConnection;
-                else if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && member.VoiceState.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild))
-                {
-                    await obj.TryRespondAsync("Bạn đang ở kênh thoại khác!");
-                    return null;
-                }
-                else
-                {
-                    DiscordChannel voiceChannel = member.VoiceState.Channel;
-                    DiscordPermissions DiscordPermissions = voiceChannel.PermissionsFor(serverInstance.botMember);
-                    if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
-                    {
-                        if (voiceChannel.Type == DiscordChannelType.Stage)
-                            serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                        voiceNextConnection = await voiceChannel.ConnectAsync();
-                        if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
-                        {
-                            if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
-                                await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
-                            serverInstance.suppressOnVoiceStateUpdatedEvent = false;
-                        }
-                        voiceNextConnection.SetVolume(volume);
-                        serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
-                        serverInstance.lastNumberOfUsersInVC = int.MaxValue;
-                        AddEvent(voiceNextConnection);
-                    }
-                    else
-                    {
-                        await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
-                        return null;
-                    }
-                }
-                return voiceNextConnection;
             }
-            else if (channel != null)
+            if (member.VoiceState == null || member.VoiceState.Channel is null)
             {
-                if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id))
-                    return serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.isDisposed() && bSI.currentVoiceNextConnection.TargetChannel.Id == channel.Id).currentVoiceNextConnection;
-                DiscordPermissions DiscordPermissions = channel.PermissionsFor(serverInstance.botMember);
-                if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
+                await ctx.ReplyAsync("Bạn không ở trong kênh thoại nào trong server này!", isInteractionDeferred);
+                return null;
+            }
+            if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.IsDisposed() && ctx.Guild! == bSI.currentVoiceNextConnection.TargetChannel.Guild))
+                voiceNextConnection = serverInstances.First(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.IsDisposed() && ctx.Guild! == bSI.currentVoiceNextConnection.TargetChannel.Guild).currentVoiceNextConnection;
+            else if (serverInstances.Any(bSI => bSI.currentVoiceNextConnection != null && !bSI.currentVoiceNextConnection.IsDisposed() && member.VoiceState.Guild is not null && member.VoiceState.Guild == bSI.currentVoiceNextConnection.TargetChannel.Guild))
+            {
+                await ctx.ReplyAsync("Bạn đang ở kênh thoại khác!", isInteractionDeferred);
+                return null;
+            }
+            else
+            {
+                DiscordChannel voiceChannel = member.VoiceState.Channel;
+                DiscordPermissions permissions = voiceChannel.PermissionsFor(serverInstance.botMember);
+                if (permissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
                 {
-                    if (channel.Type == DiscordChannelType.Stage)
+                    if (voiceChannel.Type == DiscordChannelType.Stage)
                         serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                    voiceNextConnection = await channel.ConnectAsync();
+                    voiceNextConnection = await voiceChannel.ConnectAsync();
                     if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     {
-                        if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                        if (permissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                             await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                         serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     }
@@ -211,19 +174,48 @@ namespace CatBot.Instance
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                     serverInstance.lastNumberOfUsersInVC = int.MaxValue;
                     AddEvent(voiceNextConnection);
-                    return voiceNextConnection;
                 }
                 else
                 {
-                    await obj.TryRespondAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!");
+                    await ctx.ReplyAsync($"Bot bị thiếu quyền để kết nối tới {(member.VoiceState.Channel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{member.VoiceState.Channel.Id}>!", isInteractionDeferred);
                     return null;
                 }
             }
-            return null;
+            return voiceNextConnection;
+        }
+    
+        async Task<VoiceNextConnection?> GetVoiceConnection(DiscordChannel? voiceChannel)
+        {
+            if (voiceChannel is null)
+                return null;
+            if (voiceChannel.Type != DiscordChannelType.Voice || voiceChannel.Type != DiscordChannelType.Stage)
+                return null;
+            VoiceNextConnection? result = null;
+            DiscordPermissions permissions = voiceChannel.PermissionsFor(botMember);
+            if (permissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
+            {
+                if (voiceChannel.Type == DiscordChannelType.Stage)
+                    suppressOnVoiceStateUpdatedEvent = true;
+                result = await voiceChannel.ConnectAsync();
+                if (result.TargetChannel.Type == DiscordChannelType.Stage)
+                {
+                    if (permissions.HasPermission(DiscordPermissions.MoveMembers) && botMember.VoiceState.IsSuppressed)
+                        await botMember.UpdateVoiceStateAsync(result.TargetChannel, false);
+                    suppressOnVoiceStateUpdatedEvent = false;
+                }
+                double volume = currentVoiceNextConnection == null ? 1 : currentVoiceNextConnection.GetTransmitSink().VolumeModifier;
+                result.SetVolume(volume);
+                lastTimeCheckVoiceChannel = DateTime.Now;
+                lastNumberOfUsersInVC = int.MaxValue;
+                AddEvent(result);
+            }
+            return result;
         }
 
-        internal static BotServerInstance? GetBotServerInstance(DiscordGuild server)
+        internal static BotServerInstance GetBotServerInstance(DiscordGuild? server)
         {
+            if (server is null)
+                throw new ArgumentNullException(nameof(server));
             BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.server?.Id == server.Id);
             if (botServerInstance == null)
             {
@@ -253,33 +245,34 @@ namespace CatBot.Instance
                 {
                     try
                     {
-                        if (!serverInstances[i].currentVoiceNextConnection.isDisposed())
+                        if (serverInstances[i].currentVoiceNextConnection is not null && !serverInstances[i].currentVoiceNextConnection.IsDisposed())
                         {
                             serverInstances[i].suppressOnVoiceStateUpdatedEvent = true;
-                            serverInstances[i].currentVoiceNextConnection.Disconnect();
+                            serverInstances[i].currentVoiceNextConnection?.Disconnect();
                             serverInstances[i].musicPlayer.playMode = new PlayMode();
-                            serverInstances[i].checkVoiceChannelThread.Abort();
+                            serverInstances[i].ctsCheckVC.Cancel();
                             await Task.Delay(1000);
                         }
-                        serverInstances[i] = null;
                         serverInstances.RemoveAt(i);
                         return;
                     }
                     catch { }
-                }                
+                }
         }
 
-        internal static BotServerInstance? GetBotServerInstance(VoiceChannelSFXCore voiceChannelSFX)
+        internal static BotServerInstance GetBotServerInstance(VoiceChannelSFXCore voiceChannelSFX)
         {
             if (voiceChannelSFX == null)
                 throw new ArgumentNullException(nameof(voiceChannelSFX));
             BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.voiceChannelSFX == voiceChannelSFX);
+            //if (botServerInstance == null)
+            //{
+            //    botServerInstance = new BotServerInstance();
+            //    botServerInstance.voiceChannelSFX = voiceChannelSFX;
+            //    serverInstances.Add(botServerInstance);
+            //}
             if (botServerInstance == null)
-            {
-                botServerInstance = new BotServerInstance();
-                botServerInstance.voiceChannelSFX = voiceChannelSFX;
-                serverInstances.Add(botServerInstance);
-            }
+                throw new ArgumentNullException(nameof(botServerInstance));
             return botServerInstance;
         }
 
@@ -288,26 +281,28 @@ namespace CatBot.Instance
             if (voiceNextConnection == null)
                 return null;
             BotServerInstance? botServerInstance = serverInstances.FirstOrDefault(s => s.currentVoiceNextConnection == voiceNextConnection);
+            //if (botServerInstance == null)
+            //{
+            //    botServerInstance = new BotServerInstance();
+            //    botServerInstance.currentVoiceNextConnection = voiceNextConnection;
+            //    serverInstances.Add(botServerInstance);
+            //}
             if (botServerInstance == null)
-            {
-                botServerInstance = new BotServerInstance();
-                botServerInstance.currentVoiceNextConnection = voiceNextConnection;
-                serverInstances.Add(botServerInstance);
-            }
+                throw new ArgumentNullException(nameof(botServerInstance));
             return botServerInstance;
         }
 
-        internal static async Task<KeyValuePair<DiscordChannel, VoiceNextConnection>> JoinVoiceChannel(ulong channelID)
+        internal static async Task<KeyValuePair<DiscordChannel?, VoiceNextConnection?>> JoinVoiceChannel(ulong channelID)
         {
-            DiscordChannel channel = null;
-            VoiceNextConnection voiceNextConnection = null;
+            DiscordChannel? channel = null;
+            VoiceNextConnection? voiceNextConnection = null;
             foreach (DiscordGuild server in DiscordBotMain.botClient.Guilds.Values)
                 foreach (DiscordChannel voiceChannel in server.Channels.Values.Where(c => c.Type == DiscordChannelType.Voice))
                     if (voiceChannel.Id == channelID)
                     {
                         channel = voiceChannel;
                         BotServerInstance serverInstance = GetBotServerInstance(channel.Guild);
-                        if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
+                        if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.IsDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == channel.GuildId)
                         {
                             serverInstance.currentVoiceNextConnection.Disconnect();
                             serverInstance.musicPlayer.playMode = new PlayMode();
@@ -330,50 +325,54 @@ namespace CatBot.Instance
                         }
                         else
                         {
-                            return new KeyValuePair<DiscordChannel, VoiceNextConnection>();
+                            return new KeyValuePair<DiscordChannel?, VoiceNextConnection?>();
                         }
-                        return new KeyValuePair<DiscordChannel, VoiceNextConnection>(channel, voiceNextConnection);
+                        return new KeyValuePair<DiscordChannel?, VoiceNextConnection?>(channel, voiceNextConnection);
                     }
-            return new KeyValuePair<DiscordChannel, VoiceNextConnection>(channel, voiceNextConnection);
+            return new KeyValuePair<DiscordChannel?, VoiceNextConnection?>(channel, voiceNextConnection);
         }
 
-        internal static async Task<KeyValuePair<DiscordChannel, bool>> LeaveVoiceChannel(ulong serverID)
+        internal static async Task<KeyValuePair<DiscordChannel?, bool>> LeaveVoiceChannel(ulong serverID)
         {
-            DiscordChannel channel = null;
+            DiscordChannel? channel = null;
             foreach (BotServerInstance serverInstance in serverInstances)
             {
-                if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.isDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == serverID)
+                if (serverInstance.currentVoiceNextConnection != null && !serverInstance.currentVoiceNextConnection.IsDisposed() && serverInstance.currentVoiceNextConnection.TargetChannel.GuildId == serverID)
                 {
                     channel = serverInstance.currentVoiceNextConnection.TargetChannel;
                     serverInstance.currentVoiceNextConnection.Disconnect();
                     serverInstance.musicPlayer.playMode = new PlayMode();
                     serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                     await Task.Delay(200);
-                    return new KeyValuePair<DiscordChannel, bool>(channel, true);
+                    return new KeyValuePair<DiscordChannel?, bool>(channel, true);
                 }
             }
-            return new KeyValuePair<DiscordChannel, bool>(channel, false);
+            return new KeyValuePair<DiscordChannel?, bool>(channel, false);
         }
 
-        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        internal static async Task SetVolume(CommandContext ctx, long volume)
         {
-            BotServerInstance serverInstance = GetBotServerInstance(obj.TryGetChannel().Guild);
-            if (!await serverInstance.InitializeVoiceNext(obj))
+            BotServerInstance serverInstance = GetBotServerInstance(ctx.Guild);
+            if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
+            if (serverInstance.currentVoiceNextConnection is null)
+            {
+                await ctx.RespondAsync("Bot không kết nối với kênh thoại nào!");
+                return;
+            }
             if (volume == -1)
             {
-                await obj.TryRespondAsync("Âm lượng hiện tại: " + (int)(serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier * 100) + Environment.NewLine + 
-                    "Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100) + Environment.NewLine +
-                    "Âm lượng nhạc hiện tại: " + (int)(serverInstance.musicPlayer.volume * 100));
+                string nl = Environment.NewLine;
+                await ctx.RespondAsync($"Âm lượng hiện tại: {(int)(serverInstance.currentVoiceNextConnection.GetTransmitSink().VolumeModifier * 100)}{nl}Âm lượng SFX hiện tại: {(int)(serverInstance.voiceChannelSFX.volume * 100)}{nl}Âm lượng nhạc hiện tại: {(int)(serverInstance.musicPlayer.volume * 100)}");
                 return;
             }
             if (volume < 0 || volume > 250)
             {
-                await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                await ctx.RespondAsync("Âm lượng không hợp lệ!");
                 return;
             }
             serverInstance.currentVoiceNextConnection.SetVolume(volume / 100d);
-            await obj.TryRespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
+            await ctx.RespondAsync("Điều chỉnh âm lượng thành: " + volume + "%!");
         }
 
         internal static async Task OnVoiceStateUpdated(VoiceStateUpdatedEventArgs args)
@@ -381,14 +380,14 @@ namespace CatBot.Instance
             BotServerInstance serverInstance = GetBotServerInstance(args.Guild);
             if (args.User.Id != DiscordBotMain.botClient.CurrentUser.Id)
             {
-                if (serverInstance.currentVoiceNextConnection == null || serverInstance.currentVoiceNextConnection.isDisposed())
+                if (serverInstance.currentVoiceNextConnection == null || serverInstance.currentVoiceNextConnection.IsDisposed())
                     return;
-                DiscordChannel voiceChannel = null;
-                if (args.Before != null && args.Before.Channel != null)
+                DiscordChannel? voiceChannel = null;
+                if (args.Before != null && args.Before.Channel is not null)
                     voiceChannel = args.Before.Channel;
-                else if (args.After != null && args.After.Channel != null)
+                else if (args.After != null && args.After.Channel is not null)
                     voiceChannel = args.After.Channel;
-                if (voiceChannel != null && voiceChannel == serverInstance.currentVoiceNextConnection.TargetChannel)
+                if (voiceChannel is not null && voiceChannel == serverInstance.currentVoiceNextConnection.TargetChannel)
                     await serverInstance.CheckPeopleInVC();
                 return;
             }
@@ -396,7 +395,7 @@ namespace CatBot.Instance
                 return;
             try
             {
-                if (args.After == null || args.After.Channel == null)
+                if (args.After == null || args.After.Channel is null)
                 {
                     //leave
                     if (!serverInstance.isDisconnect)
@@ -409,17 +408,20 @@ namespace CatBot.Instance
                         serverInstance.isDisconnect = true;
                         serverInstance.musicPlayer.isMainPlayRunning = false;
                         serverInstance.musicPlayer.sentOutOfTrack = true;
+                        if (serverInstance.musicPlayer.lastNowPlayingMessage is not null)
+                            await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
+                        serverInstance.musicPlayer.lastNowPlayingMessage = null;
                         serverInstance.musicPlayer.cts.Cancel();
                         serverInstance.musicPlayer.cts = new CancellationTokenSource();
                         serverInstance.isVoicePlaying = false;
                         serverInstance.lastNumberOfUsersInVC = int.MaxValue;
-                        DiscordChannel channel = serverInstance.GetLastChannel();
+                        DiscordChannel? channel = serverInstance.GetLastChannel();
                         bool isDelete = false;
-                        DiscordMessage discordMessage = null;
+                        DiscordMessage? discordMessage = null;
                         string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel?.Id}>!";
                         if (args.Before.Channel?.Type == DiscordChannelType.Stage)
                             message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel?.Id}>!";
-                        if (channel != null)
+                        if (channel is not null)
                         {
                             discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
                         }
@@ -439,12 +441,13 @@ namespace CatBot.Instance
                         if (isDelete)
                         {
                             await Task.Delay(3000);
-                            await discordMessage?.DeleteAsync();
+                            if (discordMessage is not null)
+                                await discordMessage.DeleteAsync();
                         }
                         serverInstance.musicPlayer.isStopped = false;
                     }
                 }
-                else if (args.Before == null || args.Before.Channel == null)
+                else if (args.Before == null || args.Before.Channel is null)
                 {
                     //join
                     serverInstance.isDisconnect = false;
@@ -460,9 +463,9 @@ namespace CatBot.Instance
                         bool isPaused = serverInstance.musicPlayer.isPaused;
                         serverInstance.musicPlayer.isPaused = true;
                         await Task.Delay(600);
-                        VoiceNextConnection connection = serverInstance.currentVoiceNextConnection ?? await GetVoiceConnection(args.After.Channel);
-                        connection.Disconnect();
-                        serverInstance.currentVoiceNextConnection = await GetVoiceConnection(args.After.Channel);
+                        VoiceNextConnection? connection = serverInstance.currentVoiceNextConnection ?? await serverInstance.GetVoiceConnection(args.After.Channel);
+                        connection?.Disconnect();
+                        serverInstance.currentVoiceNextConnection = await serverInstance.GetVoiceConnection(args.After.Channel);
                         serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                         serverInstance.musicPlayer.isPaused = isPaused;
                     }
@@ -478,18 +481,18 @@ namespace CatBot.Instance
                         {
                             //mute
                             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                            DiscordChannel channel = serverInstance.GetLastChannel();
+                            DiscordChannel? channel = serverInstance.GetLastChannel();
                             bool isDelete = false;
-                            DiscordMessage discordMessage = null;
+                            DiscordMessage? discordMessage = null;
                             string message = "Bot bị tắt tiếng! Nhạc sẽ được tạm dừng đến khi bot được bật tiếng!";
-                            DiscordChannel targetChannel;
-                            if (args.After.Channel != null)
+                            DiscordChannel? targetChannel = null;
+                            if (args.After.Channel is not null)
                                 targetChannel = args.After.Channel;
-                            else
+                            else if (serverInstance.currentVoiceNextConnection is not null)
                                 targetChannel = serverInstance.currentVoiceNextConnection.TargetChannel;
-                            if (targetChannel.Type == DiscordChannelType.Stage && args.After.IsSuppressed)
+                            if (targetChannel is not null && targetChannel.Type == DiscordChannelType.Stage && args.After.IsSuppressed)
                                 message = "Bot đang là người nghe! Nhạc sẽ được tạm dừng đến khi bot được chuyển thành người nói!";
-                            if (channel != null)
+                            if (channel is not null)
                             {
                                 discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
                             }
@@ -510,7 +513,8 @@ namespace CatBot.Instance
                             if (isDelete)
                             {
                                 await Task.Delay(3000);
-                                await discordMessage?.DeleteAsync();
+                                if (discordMessage is not null)
+                                    await discordMessage.DeleteAsync();
                             }
                             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                         }
@@ -543,7 +547,7 @@ namespace CatBot.Instance
             //voiceNextConnection.UserLeft += VoiceNextConnection_UserChange; 
         }
 
-        private static async Task VoiceNextConnection_UserChange(VoiceNextConnection? sender, DiscordEventArgs args)
+        private static async Task VoiceNextConnection_UserChange(VoiceNextConnection? sender, DiscordEventArgs? args)
         {
             BotServerInstance? serverInstance = GetBotServerInstance(sender);
             if (serverInstance != null)
@@ -554,26 +558,26 @@ namespace CatBot.Instance
         {
             if (currentVoiceNextConnection == null)
                 return;
-            if (currentVoiceNextConnection.isDisposed())
+            if (currentVoiceNextConnection.IsDisposed())
                 return;
             int userCount = currentVoiceNextConnection.TargetChannel.Users.Where(u => !u.IsBot || u.IsBotExcluded()).Count() + 1;
             bool result = userCount >= 2;
             canSpeak = result;
             if (!result && lastNumberOfUsersInVC >= 2 && (musicPlayer.isPlaying || isVoicePlaying))
             {
-                if (LastChannel != null)
+                if (LastChannel is not null)
                 {
                     IAsyncEnumerable<DiscordMessage> lastMessage = LastChannel.GetMessagesAsync(1);
-                    if (lastNoOneInVCMessage != null && lastNoOneInVCMessage == await lastMessage.ElementAtAsync(0))
+                    if (lastNoOneInVCMessage is not null && lastNoOneInVCMessage == await lastMessage.ElementAtAsync(0))
                         return;
-                    if (lastNoOneInVCMessage != null)
+                    if (lastNoOneInVCMessage is not null)
                         await lastNoOneInVCMessage.DeleteAsync();
                 }
                 string message = "Không có người trong kênh thoại! Nhạc sẽ được tạm dừng cho đến khi có người khác vào kênh thoại!";
                 if (currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     message = "Không có người trong sân khấu! Nhạc sẽ được tạm dừng cho đến khi có người khác vào sân khấu!";
-                DiscordChannel discordChannel = GetLastChannel();
-                if (discordChannel != null)
+                DiscordChannel? discordChannel = GetLastChannel();
+                if (discordChannel is not null)
                     lastNoOneInVCMessage = await discordChannel.SendMessageAsync(new DiscordEmbedBuilder().WithDescription(message).WithColor(DiscordColor.Orange).Build());
             }
             lastNumberOfUsersInVC = userCount;

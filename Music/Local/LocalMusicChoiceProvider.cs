@@ -1,11 +1,12 @@
 ﻿using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
+using DSharpPlus.Entities;
 
 namespace CatBot.Music.Local
 {
     internal class LocalMusicChoiceProvider : IAutoCompleteProvider
     {
-        static Dictionary<string, object> cachedLocalMusicChoices = new Dictionary<string, object>();
+        static List<DiscordAutoCompleteChoice> cachedLocalMusicChoices = new List<DiscordAutoCompleteChoice>();
 
         static DateTime lastTimeCachedLocalMusic = DateTime.MinValue;
 
@@ -28,41 +29,43 @@ namespace CatBot.Music.Local
             if (cachedLocalMusicChoices.Count == musicFiles.Count)
                 return;
             musicFiles.Sort((f1, f2) => -f1.LastWriteTime.Ticks.CompareTo(f2.LastWriteTime.Ticks));
-            Dictionary<string, object> cachedLocalMusics = new Dictionary<string, object>();
-                foreach (FileInfo musicFile in musicFiles)
+            List<DiscordAutoCompleteChoice> cachedLocalMusics = new List<DiscordAutoCompleteChoice>();
+            foreach (FileInfo musicFile in musicFiles)
+            {
+                try
                 {
-                    try
+                    string musicFileName = Path.GetFileNameWithoutExtension(musicFile.Name);
+                    TagLib.File taglibMusicFile = TagLib.File.Create(Path.Combine(Config.gI().MusicFolder, musicFileName + ".mp3"));
+                    string title = string.IsNullOrWhiteSpace(taglibMusicFile.Tag.Title) ? musicFileName : taglibMusicFile.Tag.Title;
+                    string artists = string.Join(", ", taglibMusicFile.Tag.Performers);
+                    string name = title + " - " + artists;
+                    if (name.Length > 100)
                     {
-                        string musicFileName = Path.GetFileNameWithoutExtension(musicFile.Name);
-                        TagLib.File taglibMusicFile = TagLib.File.Create(Path.Combine(Config.gI().MusicFolder, musicFileName + ".mp3"));
-                        string title = string.IsNullOrWhiteSpace(taglibMusicFile.Tag.Title) ? musicFileName : taglibMusicFile.Tag.Title;
-                        string artists = string.Join(", ", taglibMusicFile.Tag.Performers);
-                        string name = title + " - " + artists;
-                        if (name.Length > 100)
-                        {
-                            if (artists.Length <= title.Length)
-                                name = title.Substring(0, 100 - 3 - artists.Length - 3) + "..." + " - " + artists;
-                            else
-                                name = name.Substring(0, 97) + "...";
-                        }
-                        if (!cachedLocalMusics.ContainsKey(name))
-                            cachedLocalMusics.Add(name, Path.GetFileNameWithoutExtension(musicFile.Name).Min(100));
+                        if (artists.Length <= title.Length)
+                            name = title.Substring(0, 100 - 3 - artists.Length - 3) + "..." + " - " + artists;
+                        else
+                            name = name.Substring(0, 97) + "...";
                     }
-                    catch (Exception ex) { Utils.LogException(ex); }
+                    if (!cachedLocalMusics.Any(c => c.Name == name))
+                        cachedLocalMusics.Add(new DiscordAutoCompleteChoice(name, Path.GetFileNameWithoutExtension(musicFile.Name).Min(100)));
+                }
+                catch (Exception ex) { Utils.LogException(ex); }
             }
             cachedLocalMusicChoices = cachedLocalMusics;
         }
 
-        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
+        public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            var result = new Dictionary<string, object>();
+            var result = new List<DiscordAutoCompleteChoice>();
+            if (context.UserInput is null)
+                return result;
             await Task.Run(() =>
             {
                 for (int i = 0; i < cachedLocalMusicChoices.Count; i++)
                 {
-                    var choice = cachedLocalMusicChoices.ElementAt(i);
-                    if (choice.Key.Contains(context.UserInput, StringComparison.CurrentCultureIgnoreCase))
-                        result.Add(choice.Key, choice.Value);
+                    DiscordAutoCompleteChoice choice = cachedLocalMusicChoices.ElementAt(i);
+                    if (choice.Name.Contains(context.UserInput, StringComparison.CurrentCultureIgnoreCase))
+                        result.Add(choice);
                     if (result.Count >= 25)
                         break;
                 }

@@ -68,8 +68,8 @@ namespace CatBot.Music.Local
                 if (Data.gI().CachedLocalSongAlbumArtworks.TryGetValue(hash, out string? cachedLink))
                     return cachedLink;
                 DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder().AddFile($"image.{albumThumbnailExt}", new MemoryStream(albumThumbnailData));
-                DiscordMessage message = Config.gI().cacheImageChannel.SendMessageAsync(messageBuilder).Result;
-                string url = message.Attachments[0].Url ?? "";
+                DiscordMessage? message = Config.gI().cacheImageChannel?.SendMessageAsync(messageBuilder).Result;
+                string url = message?.Attachments[0].Url ?? "";
                 if (string.IsNullOrWhiteSpace(url))
                     return "";
                 Data.gI().CachedLocalSongAlbumArtworks.Add(hash, url);
@@ -105,6 +105,8 @@ namespace CatBot.Music.Local
 
         public string GetSongDesc(bool hasTimeStamp = false)
         {
+            if (MusicPCMDataStream is null)
+                throw new NullReferenceException(nameof(MusicPCMDataStream));
             string musicDesc = "Bài hát: " + TitleWithLink + Environment.NewLine;
             if (!string.IsNullOrWhiteSpace(AllArtistsWithLinks))
                 musicDesc += "Nghệ sĩ: " + AllArtistsWithLinks + Environment.NewLine;

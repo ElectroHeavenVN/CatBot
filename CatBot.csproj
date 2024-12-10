@@ -6,28 +6,37 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <StartupObject>CatBot.Program</StartupObject>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Platforms>x86</Platforms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.1.2" />
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02356" />
-    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02356" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02356" />
-    <PackageReference Include="DSharpPlus.Rest" Version="5.0.0-nightly-02356" />
-    <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02356" />
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02404" />
+    <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02404" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02404" />
+    <PackageReference Include="DSharpPlus.Rest" Version="5.0.0-nightly-02404" />
+    <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02404" />
     <PackageReference Include="DSharpPlus.VoiceNext.Natives" Version="1.0.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.63" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
-    <PackageReference Include="MyNihongo.KanaConverter" Version="1.0.2" />
-    <PackageReference Include="MyNihongo.KanaDetector" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SoundCloudExplode" Version="1.6.4" />
+    <PackageReference Include="SoundCloudExplode" Version="1.6.5" />
     <PackageReference Include="SpotifyExplode" Version="1.1.2" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
-    <PackageReference Include="YoutubeExplode" Version="6.4.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.0" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

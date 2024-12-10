@@ -1,5 +1,8 @@
-﻿using CatBot.Instance;
+﻿using CatBot.Extension;
+using CatBot.Instance;
 using CatBot.Music;
+using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
 
@@ -11,61 +14,38 @@ namespace CatBot.Voice
         internal int delay = 500;
         internal double volume = 1;
 
-        internal static async Task Speak(SnowflakeObject message, params string[] fileNames)
+        internal static async Task Speak(CommandContext ctx, params string[] fileNames)
         {
-            if (fileNames.Length == 1)
-            {
-                if (fileNames[0] == "dict")
-                {
-                    await Dictionary(message);
-                    return;
-                }
-                else if (fileNames[0] == "stop")
-                {
-                    await StopSpeaking(message);
-                    return;
-                } 
-                else if (fileNames[0] == "leave" || fileNames[0] == "disconnect")
-                {
-                    await Disconnect(message);
-                    return;
-                } 
-                else if (fileNames[0] == "reconnect")
-                {
-                    await Reconnect(message);
-                    return;
-                }
-            }
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(message.TryGetChannel().Guild);
-            serverInstance.LastChannel = message.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             if (serverInstance.voiceChannelSFX == null)
                 return;
             serverInstance.voiceChannelSFX.isStop = false;
-            await serverInstance.voiceChannelSFX.InternalSpeak(message, fileNames);
+            await serverInstance.voiceChannelSFX.InternalSpeak(ctx, fileNames);
         }
 
-        internal static async Task Reconnect(SnowflakeObject messageToReact)
+        internal static async Task Reconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.LastChannel = messageToReact.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             if (serverInstance.voiceChannelSFX == null)
                 return;
-            await serverInstance.voiceChannelSFX.InternalReconnect(messageToReact);
+            await serverInstance.voiceChannelSFX.InternalReconnect(ctx);
         }
 
-        internal static async Task StopSpeaking(SnowflakeObject messageToReact)
+        internal static async Task StopSpeaking(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.LastChannel = messageToReact.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             if (serverInstance.voiceChannelSFX == null)
                 return;
-            await serverInstance.voiceChannelSFX.InternalStopSpeaking(messageToReact);
+            await serverInstance.voiceChannelSFX.InternalStopSpeaking(ctx);
         }
 
-        internal static async Task Dictionary(SnowflakeObject messageToReply)
+        internal static async Task Dictionary(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReply.TryGetChannel().Guild);
-            serverInstance.LastChannel = messageToReply.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             FileInfo[] sfxs = new DirectoryInfo(Config.gI().SFXFolder).GetFiles();
             List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
             string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
@@ -82,18 +62,15 @@ namespace CatBot.Voice
                 embeds.Last().Description = description;
             }
             embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
-            if (!((DiscordMember)messageToReply.TryGetUser()).isInAdminUser())
+            if (!ctx.User.IsInAdminUser())
                 embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
-            if (messageToReply is DiscordMessage message)
-                await message.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
-            else if (messageToReply is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embeds[0].Build()));
+            await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
             foreach (DiscordEmbedBuilder embed in embeds.Skip(1))
             {
                 await Task.Delay(200);
                 await serverInstance.LastChannel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embed.Build()));
             }
-            if (((DiscordMember)messageToReply.TryGetUser()).isInAdminUser())
+            if (ctx.User.IsInAdminUser())
             {
                 List<FileInfo> sfxSpecials = new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles().ToList();
                 List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
@@ -120,58 +97,57 @@ namespace CatBot.Voice
             }
         }
 
-        internal static async Task Disconnect(SnowflakeObject messageToReact)
+        internal static async Task Disconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.LastChannel = messageToReact.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             if (serverInstance.voiceChannelSFX == null)
                 return;
-            await serverInstance.voiceChannelSFX.InternalDisconnect(messageToReact);
+            await serverInstance.voiceChannelSFX.InternalDisconnect(ctx);
         }
 
-        internal static async Task Delay(SnowflakeObject messageToReact, int delayValue)
+        internal static async Task Delay(CommandContext ctx, int delayValue)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            serverInstance.LastChannel = messageToReact.TryGetChannel();
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            serverInstance.LastChannel = ctx.Channel;
             if (serverInstance.voiceChannelSFX == null)
                 return;
-            await serverInstance.voiceChannelSFX.InternalDelay(messageToReact, delayValue);
+            await serverInstance.voiceChannelSFX.InternalDelay(ctx, delayValue);
         }
 
-        internal static async Task SetVolume(SnowflakeObject obj, long volume)
+        internal static async Task SetVolume(CommandContext ctx, long volume)
         {
             try
             {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(obj.TryGetChannel().Guild);
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
                 if (volume == -1)
                 {
-                    await obj.TryRespondAsync("Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100));
+                    await ctx.RespondAsync("Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100));
                     return;
                 }
                 if (volume < 0 || volume > 250)
                 {
-                    await obj.TryRespondAsync("Âm lượng không hợp lệ!");
+                    await ctx.RespondAsync("Âm lượng không hợp lệ!");
                     return;
                 }
                 serverInstance.voiceChannelSFX.volume = volume / 100d;
-                await obj.TryRespondAsync("Điều chỉnh âm lượng SFX thành: " + volume + "%!");
+                await ctx.RespondAsync("Điều chỉnh âm lượng SFX thành: " + volume + "%!");
             }
             catch (Exception ex) { Utils.LogException(ex); }
         }
 
-        async Task InternalSpeak(SnowflakeObject message, string[] fileNames)
+        async Task InternalSpeak(CommandContext ctx, string[] fileNames)
         {
             if (BotServerInstance.GetBotServerInstance(this).isVoicePlaying)
             {
-                await message.TryRespondAsync("Có người đang dùng lệnh rồi!");
+                await ctx.RespondAsync("Có người đang dùng lệnh rồi!");
                 return;
             }
-            if (message is DiscordInteraction interaction)
-                await interaction.DeferAsync();
+            await ctx.DeferResponseAsync();
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
-            if (!await serverInstance.InitializeVoiceNext(message))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
-            MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(message.TryGetChannel().Guild);
+            MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(ctx.Guild);
             VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             string filesNotFound = "";
@@ -195,7 +171,7 @@ namespace CatBot.Voice
                 }
                 catch (IOException)
                 {
-                    if (message.TryGetUser() is DiscordMember member && member.isInAdminUser())
+                    if (ctx.User.IsInAdminUser())
                     {
                         try
                         {
@@ -249,23 +225,18 @@ namespace CatBot.Voice
             if (!string.IsNullOrWhiteSpace(filesNotFound))
                 response += "Không tìm thấy file " + filesNotFound + "!";
             if (!string.IsNullOrEmpty(response))
-            {
-                if (message is DiscordInteraction interaction2)
-                    await interaction2.CreateFollowupMessageAsync(new DiscordFollowupMessageBuilder().WithContent(response));
-                else
-                    await message.TryRespondAsync(response);
-            }
-            else if (message is DiscordInteraction interaction2)
-                await interaction2.DeleteOriginalResponseAsync();
+                await ctx.RespondAsync(new DiscordFollowupMessageBuilder().WithContent(response));
+            else 
+                await ctx.DeleteReplyAsync();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
         }
         
-        async Task InternalDisconnect(SnowflakeObject messageToReact)
+        async Task InternalDisconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
             try
             {
-                if (!await serverInstance.InitializeVoiceNext(messageToReact))
+                if (!await serverInstance.InitializeVoiceNext(ctx))
                     return;
                 serverInstance.musicPlayer.isStopped = true;
                 await Task.Delay(500);
@@ -280,34 +251,35 @@ namespace CatBot.Voice
                 serverInstance.musicPlayer.isStopped = false;
             }
             catch (Exception ex) { Utils.LogException(ex); }
-            if (!await serverInstance.InitializeVoiceNext(messageToReact))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             isStop = true;
             serverInstance.isVoicePlaying = false;
-            await messageToReact.TryRespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await ctx.RespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
             serverInstance.currentVoiceNextConnection.Disconnect();
             serverInstance.musicPlayer.playMode = new PlayMode();
             await Task.Delay(1000);
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
         }
 
-        async Task InternalStopSpeaking(SnowflakeObject messageToReact)
+        async Task InternalStopSpeaking(CommandContext ctx)
         {
             isStop = true;
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
             serverInstance.isVoicePlaying = false;
             serverInstance.musicPlayer.sfxData.Clear();
-            if (messageToReact is DiscordMessage message)
-                await message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
-            else if (messageToReact is DiscordInteraction interaction)
-                await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:")));
+            if (ctx is TextCommandContext tctx)
+                await tctx.Message.CreateReactionAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
+            else
+                await ctx.RespondAsync(DiscordEmoji.FromName(DiscordBotMain.botClient, ":white_check_mark:"));
+
         }
 
-        async Task InternalReconnect(SnowflakeObject messageToReact)
+        async Task InternalReconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(messageToReact.TryGetChannel().Guild);
-            if (!await serverInstance.InitializeVoiceNext(messageToReact))
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
             isStop = true;
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
@@ -316,23 +288,23 @@ namespace CatBot.Voice
             await Task.Delay(600);
             serverInstance.currentVoiceNextConnection.Disconnect();
             serverInstance.currentVoiceNextConnection?.Dispose();
-            if (!await serverInstance.InitializeVoiceNext(messageToReact))
+            if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
             serverInstance.musicPlayer.isPaused = isPaused;
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
 
             isStop = false;
-            await messageToReact.TryRespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await ctx.RespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
         }
 
-        async Task InternalDelay(SnowflakeObject messageToReact, int delayValue)
+        async Task InternalDelay(CommandContext ctx, int delayValue)
         {
             if (delayValue < 0 || delayValue > 5000)
-                await messageToReact.TryRespondAsync($"Delay không hợp lệ!");
+                await ctx.RespondAsync($"Delay không hợp lệ!");
             else
             {
                 delay = delayValue;
-                await messageToReact.TryRespondAsync($"Đã thay đổi delay thành {delay} mili giây!");
+                await ctx.RespondAsync($"Đã thay đổi delay thành {delay} mili giây!");
             }
         }
 

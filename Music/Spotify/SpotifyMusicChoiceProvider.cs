@@ -6,9 +6,11 @@ namespace CatBot.Music.Spotify
 {
     internal class SpotifyMusicChoiceProvider : IAutoCompleteProvider
     {
-        public async ValueTask<IReadOnlyDictionary<string, object>> AutoCompleteAsync(AutoCompleteContext context)
+        public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext context)
         {
-            var result = new Dictionary<string, object>();
+            var result = new List<DiscordAutoCompleteChoice>();
+            if (context.UserInput is null)
+                return result;
             await Task.Run(() =>
             {
                 string linkOrKeyword = context.UserInput;
@@ -24,8 +26,8 @@ namespace CatBot.Music.Spotify
                         else
                             name = name.Substring(0, 97) + "...";
                     }
-                    if (!result.ContainsKey(name))
-                        result.Add(name, sR.LinkOrID);
+                    if (!result.Any(c => c.Name == name))
+                        result.Add(new DiscordAutoCompleteChoice(name, sR.LinkOrID));
                 });
             });
             return result;
