@@ -8,7 +8,9 @@ jobs:
     runs-on: windows-latest
 
     env:
-      Solution_Name: CatBot.sln
+      SolutionName: CatBot.sln
+      Architecture: x86
+      DotNetVersion: net8.0
 
     steps:
       - name: Checkout
@@ -23,16 +25,16 @@ jobs:
         uses: nuget/setup-nuget@v2
         
       - name: Restore the application
-        run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release
+        run: msbuild $env:SolutionName /t:Restore /p:Configuration=Release
 
       - name: Restore NuGet Packages
-        run: nuget restore $env:Solution_Name
+        run: nuget restore $env:SolutionName
 
       - name: Build solution
-        run: msbuild $env:Solution_Name /t:rebuild /p:Configuration=Release
+        run: msbuild $env:SolutionName /t:rebuild /p:Configuration=Release
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: CatBot
-          path: bin/x86/Release
+          path: bin/${{ env.Architecture }}/Release/${{ env.DotNetVersion }}
