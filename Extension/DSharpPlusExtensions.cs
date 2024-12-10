@@ -95,7 +95,75 @@ namespace CatBot.Extension
             if (ctx is SlashCommandContext sctx)
                 await sctx.DeleteResponseAsync();
             else if (ctx is TextCommandContext tctx && tctx.Response is not null)
-                await ctx.DeleteResponseAsync();
+                await tctx.DeleteResponseAsync();
+        }
+
+        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, string content, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                return await sctx.FollowupAsync(content, ephemeral);
+            else if (ctx is TextCommandContext tctx)
+            {
+                if (tctx.Response is not null)
+                    return await tctx.FollowupAsync(content);
+                else
+                {
+                    await tctx.RespondAsync(content);
+                    return tctx.Response;
+                }
+            }
+            return null;
+        }
+
+        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, DiscordEmbed embed, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                return await sctx.FollowupAsync(embed, ephemeral);
+            else if (ctx is TextCommandContext tctx)
+            {
+                if (tctx.Response is not null)
+                    return await tctx.FollowupAsync(embed);
+                else
+                {
+                    await tctx.RespondAsync(embed);
+                    return tctx.Response;
+                }
+            }
+            return null;
+        }
+
+        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, string content, DiscordEmbed embed, bool ephemeral = false)
+        {
+            if (ctx is SlashCommandContext sctx)
+                return await sctx.FollowupAsync(content, embed, ephemeral);
+            else if (ctx is TextCommandContext tctx)
+            {
+                if (tctx.Response is not null)
+                    return await tctx.FollowupAsync(content, embed);
+                else
+                {
+                    await tctx.RespondAsync(content, embed);
+                    return tctx.Response;
+                }
+            }
+            return null;
+        }
+
+        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, IDiscordMessageBuilder messageBuilder)
+        {
+            if (ctx is SlashCommandContext sctx)
+                return await sctx.FollowupAsync(messageBuilder);
+            else if (ctx is TextCommandContext tctx)
+            {
+                if (tctx.Response is not null)
+                    return await tctx.FollowupAsync(messageBuilder);
+                else
+                {
+                    await tctx.RespondAsync(messageBuilder);
+                    return tctx.Response;
+                }
+            }
+            return null;
         }
     }
 }

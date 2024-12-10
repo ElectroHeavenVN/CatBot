@@ -79,6 +79,7 @@ namespace CatBot.Instance
 							musicPlayer.isPaused = false;
 							musicPlayer.isStopped = true;
 						}
+                        musicPlayer.isCurrentSessionLocked = false;
                         Thread.Sleep(500);
 						for (int i = musicPlayer.musicQueue.Count - 1; i >= 0; i--)
 							musicPlayer.musicQueue.ElementAt(i).Dispose();
@@ -401,6 +402,7 @@ namespace CatBot.Instance
                     if (!serverInstance.isDisconnect)
                     {
                         serverInstance.musicPlayer.isStopped = true;
+                        serverInstance.musicPlayer.isCurrentSessionLocked = false;
                         await Task.Delay(500);
                         for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                             serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
@@ -416,34 +418,32 @@ namespace CatBot.Instance
                         serverInstance.isVoicePlaying = false;
                         serverInstance.lastNumberOfUsersInVC = int.MaxValue;
                         DiscordChannel? channel = serverInstance.GetLastChannel();
-                        bool isDelete = false;
+                        //bool isDelete = false;
                         DiscordMessage? discordMessage = null;
                         string message = $"Bot đã bị kick khỏi kênh thoại <#{args.Before.Channel?.Id}>!";
                         if (args.Before.Channel?.Type == DiscordChannelType.Stage)
                             message = $"Bot đã bị kick khỏi sân khấu <#{args.Before.Channel?.Id}>!";
                         if (channel is not null)
-                        {
                             discordMessage = await channel.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                        }
-                        else
-                        {
-                            isDelete = true;
-                            foreach (DiscordChannel ch in args.Guild.Channels.Values)
-                            {
-                                try
-                                {
-                                    discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
-                                    break;
-                                }
-                                catch (Exception) { }
-                            }
-                        }
-                        if (isDelete)
-                        {
-                            await Task.Delay(3000);
-                            if (discordMessage is not null)
-                                await discordMessage.DeleteAsync();
-                        }
+                        //else
+                        //{
+                        //    isDelete = true;
+                        //    foreach (DiscordChannel ch in args.Guild.Channels.Values)
+                        //    {
+                        //        try
+                        //        {
+                        //            discordMessage = await ch.SendMessageAsync(new DiscordEmbedBuilder().WithTitle(message).WithColor(DiscordColor.Red).Build());
+                        //            break;
+                        //        }
+                        //        catch (Exception) { }
+                        //    }
+                        //}
+                        //if (isDelete)
+                        //{
+                        //    await Task.Delay(3000);
+                        //    if (discordMessage is not null)
+                        //        await discordMessage.DeleteAsync();
+                        //}
                         serverInstance.musicPlayer.isStopped = false;
                     }
                 }

@@ -89,6 +89,9 @@ namespace CatBot.Music
 
         [Command("skip"), Description("Bỏ qua bài hát")]
         public async Task Skip(CommandContext ctx, [Parameter("count"), Description("Số bài bỏ qua (mặc định: 1)"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Skip(ctx, count);
+        
+        [Command("next"), Description("Bỏ qua bài hát hiện tại")]
+        public async Task NextSong(CommandContext ctx) => await MusicPlayerCore.Skip(ctx, 1);
 
         [Command("remove"), Description("Xóa nhạc trong hàng đợi")]
         public async Task Remove(CommandContext ctx, [Parameter("index"), Description("Vị trí xóa bài hát"), MinMaxValue((long)0, (long)int.MaxValue)] long startIndex = 0, [Parameter("count"), Description("Số lượng bài hát"), MinMaxValue((long)1, (long)int.MaxValue)] long count = 1) => await MusicPlayerCore.Remove(ctx, startIndex, count);
@@ -126,7 +129,6 @@ namespace CatBot.Music
 
         [Command("download"), Description("Tải bài hát hiện tại xuống")]
         public async Task Download(CommandContext ctx) => await MusicPlayerCore.Download(ctx);
-
 
         [Command("locksession"), Description("Khoá phiên phát nhạc (chỉ quản trị viên có quyền điểu khiển nhạc)")]
         public async Task LockSession(CommandContext ctx, [Parameter(nameof(value)), Description("Khoá hay mở?")] bool value = true) => await MusicPlayerCore.LockSession(ctx, value);

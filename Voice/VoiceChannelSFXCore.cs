@@ -239,6 +239,7 @@ namespace CatBot.Voice
                 if (!await serverInstance.InitializeVoiceNext(ctx))
                     return;
                 serverInstance.musicPlayer.isStopped = true;
+                serverInstance.musicPlayer.isCurrentSessionLocked = false;
                 await Task.Delay(500);
                 for (int i = serverInstance.musicPlayer.musicQueue.Count - 1; i >= 0; i--)
                     serverInstance.musicPlayer.musicQueue.ElementAt(i).Dispose();
