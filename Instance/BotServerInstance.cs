@@ -87,12 +87,11 @@ namespace CatBot.Instance
 						musicPlayer.isPlaying = false;
 						isDisconnect = true;
 						musicPlayer.isMainPlayRunning = false;
+						musicPlayer.cts.Cancel();
                         if (musicPlayer.lastNowPlayingMessage is not null)
                             await musicPlayer.lastNowPlayingMessage.DeleteAsync();
                         musicPlayer.lastNowPlayingMessage = null;
                         musicPlayer.sentOutOfTrack = true;
-						musicPlayer.cts.Cancel();
-						musicPlayer.cts = new CancellationTokenSource();
 						isVoicePlaying = false;
 						currentVoiceNextConnection.Disconnect();
 						lastNumberOfUsersInVC = int.MaxValue;
@@ -409,12 +408,11 @@ namespace CatBot.Instance
                         serverInstance.musicPlayer.musicQueue.Clear();
                         serverInstance.isDisconnect = true;
                         serverInstance.musicPlayer.isMainPlayRunning = false;
+                        serverInstance.musicPlayer.cts.Cancel();
                         serverInstance.musicPlayer.sentOutOfTrack = true;
                         if (serverInstance.musicPlayer.lastNowPlayingMessage is not null)
                             await serverInstance.musicPlayer.lastNowPlayingMessage.DeleteAsync();
                         serverInstance.musicPlayer.lastNowPlayingMessage = null;
-                        serverInstance.musicPlayer.cts.Cancel();
-                        serverInstance.musicPlayer.cts = new CancellationTokenSource();
                         serverInstance.isVoicePlaying = false;
                         serverInstance.lastNumberOfUsersInVC = int.MaxValue;
                         DiscordChannel? channel = serverInstance.GetLastChannel();

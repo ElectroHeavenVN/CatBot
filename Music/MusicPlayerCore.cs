@@ -1165,7 +1165,11 @@ namespace CatBot.Music
                         }
                         if (sentOutOfTrack && lastNowPlayingMessage?.CreationTimestamp.AddMinutes(1) < DateTimeOffset.Now)
                         {
-                            await lastNowPlayingMessage.DeleteAsync();
+                            try
+                            {
+                                await lastNowPlayingMessage.DeleteAsync();
+                            }
+                            catch { }
                             lastNowPlayingMessage = null;
                         }
                         if (addSongsInPlaylistCTS.IsCancellationRequested)
@@ -1216,6 +1220,7 @@ namespace CatBot.Music
             currentlyPlayingSong?.Dispose();
             isPlaying = false;
             isMainPlayRunning = false;
+            cts = new CancellationTokenSource();
         }
 
         async Task SendOrEditCurrentlyPlayingSong(bool hasTimeStamp = false)
