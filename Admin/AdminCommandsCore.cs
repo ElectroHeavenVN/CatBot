@@ -229,6 +229,7 @@ namespace CatBot.Admin
             await DiscordBotMain.botClient.DisconnectAsync();
             string location = Path.GetFullPath(typeof(Program).Assembly.Location);
             Process.Start(Path.Combine(Path.GetDirectoryName(location), Path.GetFileNameWithoutExtension(location) + ".exe"));
+            Environment.Exit(0);
         }
     }
 }
