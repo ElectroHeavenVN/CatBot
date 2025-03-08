@@ -30,7 +30,7 @@ jobs:
       run: Rename-Item –Path dist\__main__.exe -NewName Zotify.exe
        
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Zotify
         path: dist/Zotify.exe
