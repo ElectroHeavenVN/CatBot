@@ -15,7 +15,7 @@ jobs:
         python-version: 3.12
           
     - name: Clone Zotify repository
-      run: git clone https://github.com/zotify-dev/zotify.git
+      run: git clone --single-branch --branch v1.0-dev https://github.com/zotify-dev/zotify.git 
       
     - name: Install PyInstaller 
       run: pip install -U pyinstaller
@@ -30,7 +30,7 @@ jobs:
       run: Rename-Item –Path dist\__main__.exe -NewName Zotify.exe
        
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Zotify
         path: dist/Zotify.exe
