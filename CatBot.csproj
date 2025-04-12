@@ -2,12 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.22000.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <StartupObject>CatBot.Program</StartupObject>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <Platforms>x86</Platforms>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -19,24 +20,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    <PackageReference Include="AngleSharp" Version="1.2.0" />
     <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02404" />
     <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02404" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02404" />
+    <PackageReference Include="DSharpPlus.Natives.Opus" Version="1.5.2.20" />
     <PackageReference Include="DSharpPlus.Rest" Version="5.0.0-nightly-02404" />
     <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02404" />
-    <PackageReference Include="DSharpPlus.VoiceNext.Natives" Version="1.0.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
-    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.5" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SoundCloudExplode" Version="1.6.5" />
     <PackageReference Include="SpotifyExplode" Version="1.1.2" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.4" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.4" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
-    <PackageReference Include="YoutubeExplode" Version="6.5.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.4" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

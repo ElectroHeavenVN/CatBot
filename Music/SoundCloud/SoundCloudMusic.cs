@@ -13,7 +13,7 @@ namespace CatBot.Music.SoundCloud
         [GeneratedRegex("^(?:https?:\\/\\/)?((?:(?:(?:m|on)\\.)?soundcloud\\.com)|(?:snd\\.sc))\\/([\\w-]*)\\/?([\\w-]*)\\??.*$", RegexOptions.Compiled)]
         internal static partial Regex GetRegexMatchSoundCloudLink();
         internal static readonly string soundCloudIconLink = "https://cdn.discordapp.com/emojis/1137041961669378241.webp?quality=lossless";
-        internal static SoundCloudClient scClient = new SoundCloudClient(Config.gI().SoundCloudClientID);
+        internal static SoundCloudClient scClient;
         Track? track;
         string link = "";
         TimeSpan duration;
@@ -26,6 +26,17 @@ namespace CatBot.Music.SoundCloud
         FileStream? musicPCMDataStream;
         bool canGetStream;
         bool _disposed;
+
+        static SoundCloudMusic()
+        {
+            if (!string.IsNullOrEmpty(Config.gI().SoundCloudClientID))
+                scClient = new SoundCloudClient(Config.gI().SoundCloudClientID);
+            else
+            {
+                scClient = new SoundCloudClient();
+                scClient.InitializeAsync().Wait();
+            }
+        }
 
         public SoundCloudMusic() { }
         public SoundCloudMusic(string linkOrKeyword)

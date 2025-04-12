@@ -163,6 +163,11 @@ namespace CatBot.Instance
                 {
                     if (voiceChannel.Type == DiscordChannelType.Stage)
                         serverInstance.suppressOnVoiceStateUpdatedEvent = true;
+                    if (!permissions.HasPermission(DiscordPermissions.MoveMembers) && voiceChannel.Users.Count() >= voiceChannel.UserLimit)
+                    {
+                        await ctx.ReplyAsync($"Kênh thoại <#{voiceChannel.Id}> đã đầy!", isInteractionDeferred);
+                        return null;
+                    }
                     voiceNextConnection = await voiceChannel.ConnectAsync();
                     if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     {
