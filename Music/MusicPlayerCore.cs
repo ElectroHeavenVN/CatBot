@@ -990,7 +990,7 @@ namespace CatBot.Music
                 return;
             }
 
-            if (!value && ctx.Member.Permissions.HasPermission(DiscordPermissions.MoveMembers))
+            if (!value && ctx.Member.Permissions.HasPermission(DiscordPermission.MoveMembers))
             {
                 await ctx.FollowUpAsync("Bạn không có quyền mở khoá phiên phát nhạc!");
                 return;
@@ -1735,7 +1735,7 @@ namespace CatBot.Music
                 await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Bạn không phải là người nói trên sân khấu!"));
                 return false;
             }
-            if (serverInstance.musicPlayer.isCurrentSessionLocked && !ctx.Channel.PermissionsFor(ctx.Member).HasPermission(DiscordPermissions.MoveMembers))
+            if (serverInstance.musicPlayer.isCurrentSessionLocked && !ctx.Channel.PermissionsFor(ctx.Member).HasPermission(DiscordPermission.MoveMembers))
             {
                 await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent("Phiên phát nhạc hiện tại đang bị khóa!"));
                 return false;
@@ -1752,7 +1752,7 @@ namespace CatBot.Music
                 await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Bạn không phải là người nói trên sân khấu!").AsEphemeral());
                 return false;
             }
-            if (serverInstance.musicPlayer.isCurrentSessionLocked && !interaction.Channel.PermissionsFor(member).HasPermission(DiscordPermissions.MoveMembers))
+            if (serverInstance.musicPlayer.isCurrentSessionLocked && !interaction.Channel.PermissionsFor(member).HasPermission(DiscordPermission.MoveMembers))
             {
                 await interaction.CreateResponseAsync(DiscordInteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent("Phiên phát nhạc hiện tại đang bị khóa!").AsEphemeral());
                 return false;

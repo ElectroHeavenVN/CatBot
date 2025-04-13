@@ -159,11 +159,11 @@ namespace CatBot.Instance
             {
                 DiscordChannel voiceChannel = member.VoiceState.Channel;
                 DiscordPermissions permissions = voiceChannel.PermissionsFor(serverInstance.botMember);
-                if (permissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
+                if (permissions.HasPermission(DiscordPermission.ViewChannel | DiscordPermission.Connect))
                 {
                     if (voiceChannel.Type == DiscordChannelType.Stage)
                         serverInstance.suppressOnVoiceStateUpdatedEvent = true;
-                    if (!permissions.HasPermission(DiscordPermissions.MoveMembers) && voiceChannel.Users.Count() >= voiceChannel.UserLimit)
+                    if (!permissions.HasPermission(DiscordPermission.MoveMembers) && voiceChannel.Users.Count() >= voiceChannel.UserLimit)
                     {
                         await ctx.ReplyAsync($"Kênh thoại <#{voiceChannel.Id}> đã đầy!", isInteractionDeferred);
                         return null;
@@ -171,7 +171,7 @@ namespace CatBot.Instance
                     voiceNextConnection = await voiceChannel.ConnectAsync();
                     if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                     {
-                        if (permissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                        if (permissions.HasPermission(DiscordPermission.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                             await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                         serverInstance.suppressOnVoiceStateUpdatedEvent = false;
                     }
@@ -197,14 +197,14 @@ namespace CatBot.Instance
                 return null;
             VoiceNextConnection? result = null;
             DiscordPermissions permissions = voiceChannel.PermissionsFor(botMember);
-            if (permissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
+            if (permissions.HasPermission(DiscordPermission.ViewChannel | DiscordPermission.Connect))
             {
                 if (voiceChannel.Type == DiscordChannelType.Stage)
                     suppressOnVoiceStateUpdatedEvent = true;
                 result = await voiceChannel.ConnectAsync();
                 if (result.TargetChannel.Type == DiscordChannelType.Stage)
                 {
-                    if (permissions.HasPermission(DiscordPermissions.MoveMembers) && botMember.VoiceState.IsSuppressed)
+                    if (permissions.HasPermission(DiscordPermission.MoveMembers) && botMember.VoiceState.IsSuppressed)
                         await botMember.UpdateVoiceStateAsync(result.TargetChannel, false);
                     suppressOnVoiceStateUpdatedEvent = false;
                 }
@@ -314,13 +314,13 @@ namespace CatBot.Instance
                             serverInstance.lastTimeCheckVoiceChannel = DateTime.Now;
                             await Task.Delay(300);
                         }
-                        DiscordPermissions DiscordPermissions = channel.PermissionsFor(serverInstance.botMember);
-                        if (DiscordPermissions.HasPermission(DiscordPermissions.AccessChannels | DiscordPermissions.UseVoice))
+                        DiscordPermissions perm = channel.PermissionsFor(serverInstance.botMember);
+                        if (perm.HasPermission(DiscordPermission.ViewChannel | DiscordPermission.Connect))
                         {
                             voiceNextConnection = await channel.ConnectAsync();
                             if (voiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage)
                             {
-                                if (DiscordPermissions.HasPermission(DiscordPermissions.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
+                                if (perm.HasPermission(DiscordPermission.MoveMembers) && serverInstance.botMember.VoiceState.IsSuppressed)
                                     await serverInstance.botMember.UpdateVoiceStateAsync(voiceNextConnection.TargetChannel, false);
                             }
                             serverInstance.currentVoiceNextConnection = voiceNextConnection;

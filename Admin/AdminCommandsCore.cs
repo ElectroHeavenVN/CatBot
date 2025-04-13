@@ -174,7 +174,7 @@ namespace CatBot.Admin
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
             }
-            if (!ctx.Member.Permissions.HasFlag(DiscordPermissions.Administrator))
+            if (!ctx.Member.Permissions.HasFlag(DiscordPermission.Administrator))
             {
                 await ctx.RespondAsync(new DiscordInteractionResponseBuilder().WithContent("Bạn không có quyền sử dụng lệnh này!").AsEphemeral());
                 return;
