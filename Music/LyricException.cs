@@ -1,4 +1,6 @@
-﻿namespace CatBot.Music
+﻿using System;
+
+namespace CatBot.Music
 {
     [Serializable]
     internal class LyricException : Exception

@@ -1,5 +1,11 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -58,20 +64,20 @@ namespace CatBot.Music.ZingMP3
                 songDesc = GetSongInfo(FindSongID(linkOrKeyword));
                 link = zingMP3Link.TrimEnd('/') + songDesc["link"];
             }
-            title = songDesc["title"].Value<string>();
-            if (songDesc["artists"] != null)
+            title = songDesc["title"]?.Value<string>() ?? "";
+            if (songDesc["artists"] is not null)
             {
-                artistsWithLinks = songDesc["artists"].Select(artist => Formatter.MaskedUrl(artist["name"].Value<string>(), new Uri(zingMP3Link.TrimEnd('/') + artist["link"]))).ToArray();
-                artists = songDesc["artists"].Select(artist => artist["name"].Value<string>()).ToArray();
+                artistsWithLinks = songDesc["artists"]?.Select(artist => Formatter.MaskedUrl(artist["name"].Value<string>() ?? "", new Uri(zingMP3Link.TrimEnd('/') + artist["link"])))?.ToArray() ?? [];
+                artists = songDesc["artists"]?.Select(artist => artist["name"]?.Value<string>() ?? "")?.ToArray() ?? [];
             }
             else
-                artists = artistsWithLinks = songDesc["artistsNames"].Value<string>().Split(",").Select(artist => artist.Trim()).ToArray();
-            if (songDesc["album"] != null)
+                artists = artistsWithLinks = (songDesc["artistsNames"]?.Value<string>() ?? "").Split(",").Select(artist => artist.Trim()).ToArray();
+            if (songDesc["album"] is not null)
             {
-                albumWithLink = Formatter.MaskedUrl(songDesc["album"]["title"].Value<string>(), new Uri(zingMP3Link.TrimEnd('/') + songDesc["album"]["link"]));
-                album = songDesc["album"]["title"].Value<string>();
+                albumWithLink = Formatter.MaskedUrl(songDesc["album"]?["title"]?.Value<string>() ?? "", new Uri(zingMP3Link.TrimEnd('/') + songDesc["album"]?["link"]));
+                album = songDesc["album"]?["title"]?.Value<string>() ?? "";
             }
-            albumThumbnailLink = songDesc["thumbnailM"].Value<string>();
+            albumThumbnailLink = songDesc["thumbnailM"]?.Value<string>() ?? "";
         }
 
         public void Download()
@@ -123,7 +129,7 @@ namespace CatBot.Music.ZingMP3
 
         public LyricData? GetLyric()
         {
-            if (lyric != null)
+            if (lyric is not null)
                 return lyric;
             JObject jsonLyricData = (JObject)GetSongLyricInfo(link);
             if (!jsonLyricData.ContainsKey("file") && !jsonLyricData.ContainsKey("sentences"))
@@ -134,19 +140,23 @@ namespace CatBot.Music.ZingMP3
             if (jsonLyricData.ContainsKey("file"))
             {
                 HttpClient httpClient = new HttpClient();
-                syncedLyrics = httpClient.GetStringAsync(jsonLyricData["file"].Value<string>()).Result;
+                syncedLyrics = httpClient.GetStringAsync(jsonLyricData["file"]?.Value<string>()).Result;
                 plainLyrics = MusicUtils.RemoveLyricTimestamps(syncedLyrics);
             }
             if (jsonLyricData.ContainsKey("sentences"))
             {
                 long lastSentenceTimestamp = 0;
-                foreach (JToken sentence in jsonLyricData["sentences"])
+                if (jsonLyricData["sentences"] is null || jsonLyricData["sentences"]!.Count() == 0)
+                    return new LyricData("Bài hát này không có lời trên Zing MP3!");
+                foreach (JToken sentence in jsonLyricData["sentences"]!)
                 {
                     string lyricSentence = "";
                     long lastTimestamp = 0;
-                    foreach (JToken word in sentence["words"])
+                    if (sentence["words"] is null || sentence["words"]!.Count() == 0)
+                        continue;
+                    foreach (JToken word in sentence["words"]!)
                     {
-                        long timestamp = word["startTime"].Value<long>();
+                        long timestamp = word["startTime"]?.Value<long>() ?? 0;
                         if (timestamp != lastTimestamp)
                         {
                             if (string.IsNullOrEmpty(lyricSentence))
@@ -155,17 +165,17 @@ namespace CatBot.Music.ZingMP3
                                 lyricSentence += $"<{TimeSpan.FromMilliseconds(timestamp):mm\\:ss\\.ff}>";
                             lastTimestamp = timestamp;
                         }
-                        lyricSentence += word["data"].Value<string>() + ' ';
+                        lyricSentence += word["data"]?.Value<string>() + ' ';
                     }
                     lyricSentence = lyricSentence.Trim();
-                    long lastWordTimestamp = sentence["words"].Last()["endTime"].Value<long>();
+                    long lastWordTimestamp = sentence["words"]!.Last()["endTime"]?.Value<long>() ?? 0;
                     lyricSentence += $"<{TimeSpan.FromMilliseconds(lastWordTimestamp):mm\\:ss\\.ff}>";
                     if (lastWordTimestamp - lastSentenceTimestamp > 5000)
                         enhancedLyrics += $"[{TimeSpan.FromMilliseconds(lastSentenceTimestamp + 500):mm\\:ss\\.ff}]♪{Environment.NewLine}";
                     lastSentenceTimestamp = lastWordTimestamp;
                     enhancedLyrics += lyricSentence + Environment.NewLine;
                 }
-                enhancedLyrics += $"[{TimeSpan.FromMilliseconds(jsonLyricData["sentences"].Last()["words"].Last()["endTime"].Value<long>()):mm\\:ss\\.ff}]♪";
+                enhancedLyrics += $"[{TimeSpan.FromMilliseconds(jsonLyricData["sentences"]!.Last()["words"]!.Last()["endTime"]?.Value<long>() ?? duration.TotalMilliseconds):mm\\:ss\\.ff}]♪";
             }
             return lyric = new LyricData(title, AllArtists, album, albumThumbnailLink)
             {
@@ -201,40 +211,40 @@ namespace CatBot.Music.ZingMP3
         internal static JToken GetSongInfo(string linkOrID)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/page/get/song", $"id={GetSongID(linkOrID)}");
-            if (obj["err"].ToString() == "0")
-                return obj["data"];
+            if (obj["err"]?.ToString() == "0" && obj["data"] is not null)
+                return obj["data"]!;
             throw new MusicException(MusicType.ZingMP3, obj["err"] + ": " + obj["msg"]);
         }
 
         static JToken GetSongLyricInfo(string linkOrID)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/lyric/get/lyric", $"id={GetSongID(linkOrID)}");
-            if (obj["err"].ToString() == "0")
-                return obj["data"];
+            if (obj["err"]?.ToString() == "0" && obj["data"] is not null)
+                return obj["data"]!;
             throw new MusicException(MusicType.ZingMP3, obj["err"] + ": " + obj["msg"]);
         }
 
         static string GetMP3Link(string zingMP3Link)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/song/get/streaming", $"id={GetSongID(zingMP3Link)}");
-            if (obj["err"].ToString() == "0")
-                return obj["data"]["128"].ToString();
+            if (obj["err"]?.ToString() == "0" && obj["data"] is not null)
+                return obj["data"]!["128"]?.ToString() ?? "";
             throw new MusicException(MusicType.ZingMP3, obj["err"] + ": " + obj["msg"]);
         }
 
         internal static string FindSongID(string name)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/search", $"q={Uri.EscapeDataString(name)}", "type=song", "page=1", $"count=1");
-            if (obj["err"].ToString() != "0")
+            if (obj["err"]?.ToString() != "0" || obj["data"] is null)
                 throw new MusicException("songs not found");
-            return obj["data"]["items"][0]["encodeId"].ToString();
+            return obj["data"]!["items"]?[0]?["encodeId"]?.ToString() ?? throw new MusicException("songs not found");
         }
 
         internal static JToken SearchSongs(string query, int count)
         {
             JObject obj = GetInfoFromZingMP3("/api/v2/search", $"q={query}", "type=song", "page=1", $"count={count}");
-            if (obj["err"].ToString() == "0")
-                return obj["data"];
+            if (obj["err"]?.ToString() == "0" && obj["data"] is not null)
+                return obj["data"]!;
             throw new MusicException(MusicType.ZingMP3, obj["err"] + ": " + obj["msg"]);
         }
 
@@ -268,13 +278,13 @@ namespace CatBot.Music.ZingMP3
 
         static HttpClient GetHttpClientWithCookie()
         {
-            if (httpRequestWithCookie == null)
+            if (httpRequestWithCookie is null)
             {
                 zingMP3Version = "1.10.50";
                 UpdateCookies();
             }
             CheckZingMP3Version();
-            return httpRequestWithCookie;
+            return httpRequestWithCookie!;
         }
 
         internal static void CheckZingMP3Version()
@@ -290,7 +300,7 @@ namespace CatBot.Music.ZingMP3
                     ver = "1.10.50";
                     break;
                 }
-                string zingMP3Web = httpRequestWithCookie.GetStringAsync(zingMP3Link).Result;
+                string zingMP3Web = httpRequestWithCookie!.GetStringAsync(zingMP3Link).Result;
                 int startIndex = zingMP3Web.LastIndexOf("/static/js/main.min.js") - 100;
                 if (startIndex >= 0)
                 {
@@ -305,7 +315,7 @@ namespace CatBot.Music.ZingMP3
             {
                 zingMP3Version = ver;
                 UpdateCookies();
-                httpRequestWithCookie.GetAsync(zingMP3Link).Wait();
+                httpRequestWithCookie!.GetAsync(zingMP3Link).Wait();
             }
             lastTimeCheckZingMP3Version = DateTime.Now;
         }

@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
+using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
+using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace CatBot.Admin
 {
@@ -11,13 +13,25 @@ namespace CatBot.Admin
         [Description("Thêm SFX vào danh sách SFX")]
         public async Task AddSFX(TextCommandContext ctx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx, sfxName, false);
 
+        [Command("add-sfx")]
+        [Description("Thêm SFX vào danh sách SFX")]
+        public async Task AddSFX(SlashCommandContext ctx, [Description("Tệp SFX")] DiscordAttachment sfx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx, sfx, sfxName, false);
+
         [Command("add-special-sfx")]
         [Description("Thêm SFX vào danh sách SFX đặc biệt")]
         public async Task AddSpecialSFX(TextCommandContext ctx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx, sfxName, true);
 
+        [Command("add-special-sfx")]
+        [Description("Thêm SFX vào danh sách SFX đặc biệt")]
+        public async Task AddSpecialSFX(SlashCommandContext ctx, [Description("Tệp SFX")] DiscordAttachment sfx, [Description("Tên SFX")] string sfxName = "") => await AdminCommandsCore.AddSFX(ctx, sfx, sfxName, true);
+
         [Command("download-music")]
         [Description("Tải nhạc vào thư mục nhạc local")]
         public async Task DownloadMusic(TextCommandContext ctx) => await AdminCommandsCore.DownloadMusic(ctx);
+
+        [Command("download-music")]
+        [Description("Tải nhạc vào thư mục nhạc local")]
+        public async Task DownloadMusic(SlashCommandContext ctx, [Description("Tệp nhạc")] DiscordAttachment file) => await AdminCommandsCore.DownloadMusic(ctx, file);
 
         [Command("delete-sfx")]
         [Description("Xóa SFX khỏi danh sách SFX")]

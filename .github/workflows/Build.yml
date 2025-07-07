@@ -37,7 +37,7 @@ jobs:
         run: git clone --single-branch --branch v1.0-dev https://github.com/zotify-dev/zotify.git
 
       - name: Download yt-dlp executable
-        run: New-Item -ItemType Directory -Path bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\yt-dlp && Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\yt-dlp\yt-dlp.exe
+        run: New-Item -ItemType Directory -Path bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Files\yt-dlp && Invoke-WebRequest https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -OutFile bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Files\yt-dlp\yt-dlp.exe
 
       - name: Install PyInstaller
         run: pip install -U pyinstaller
@@ -62,7 +62,7 @@ jobs:
         run: pyinstaller --onefile -F zotify\zotify\__main__.py
 
       - name: Move Zotify to output folder
-        run: New-Item -ItemType Directory -Path bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Zotify && Move-Item -Path dist\__main__.exe -Destination bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Zotify\Zotify.exe
+        run: New-Item -ItemType Directory -Path bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Files\Zotify && Move-Item -Path dist\__main__.exe -Destination bin\${{ env.Architecture }}\${{ matrix.configuration }}\${{ env.DotNetVersion }}\Files\Zotify\Zotify.exe
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

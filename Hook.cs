@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Reflection.Emit;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using TagLib;

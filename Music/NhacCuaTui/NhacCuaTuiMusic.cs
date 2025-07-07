@@ -1,10 +1,15 @@
-﻿using System.Net;
-using System.Text.RegularExpressions;
-using System.Xml;
-using CatBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml;
 
 namespace CatBot.Music.NhacCuaTui
 {
@@ -43,28 +48,31 @@ namespace CatBot.Music.NhacCuaTui
             else
             {
                 JToken obj = FindSongInfo(linkOrKeyword);
-                link = obj["url"].ToString();
-                title = obj["name"].ToString();
-                artists = obj["singer"].Select(singer => singer["name"].ToString()).ToArray();
-                artistsWithLinks = obj["singer"].Select(singer => Formatter.MaskedUrl(singer["name"].ToString(), new Uri(singer["url"].ToString()))).ToArray();
+                link = obj["url"]?.ToString() ?? "";
+                title = obj["name"]?.ToString() ?? "";
+                artists = obj["singer"]?.Select(singer => singer["name"]?.ToString() ?? "")?.ToArray() ?? [];
+                artistsWithLinks = obj["singer"]?.Select(singer => Formatter.MaskedUrl(singer["name"]?.ToString() ?? "", new Uri(singer["url"]?.ToString() ?? ""))).ToArray() ?? [];
             }
             XmlDocument xmlDoc = GetXML(link);
             if (linkOrKeyword.StartsWith("ID: "))
-                link = xmlDoc.DocumentElement["track"].SelectSingleNode("info").InnerText;
+                link = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("info")?.InnerText ?? link;
             if (string.IsNullOrWhiteSpace(title))
-                title = xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText;
+                title = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("title")?.InnerText ?? "";
             if (artists.Length == 0)
             {
-                string[] array = xmlDoc.DocumentElement["track"].SelectSingleNode("creator").InnerText.Split(",".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                string[] array = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("creator")?.InnerText?.Split(',') ?? [];
                 artists = new string[array.Length];
                 artistsWithLinks = new string[array.Length];
                 for (int i = 0; i < array.Length; i++)
                 {
                     if (i == 0)
                     {
-                        string firstArtistsLink = xmlDoc.DocumentElement["track"].SelectSingleNode("newtab").InnerText;
+                        string? firstArtistsLink = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("newtab")?.InnerText;
                         artists[i] = array[i].Trim();
-                        artistsWithLinks[i] = Formatter.MaskedUrl(array[i].Trim(), new Uri(firstArtistsLink));
+                        if (string.IsNullOrWhiteSpace(firstArtistsLink))
+                            artistsWithLinks[i] = Formatter.MaskedUrl(array[i].Trim(), new Uri(findArtistLink + Uri.EscapeDataString(array[i].Trim())));
+                        else
+                            artistsWithLinks[i] = Formatter.MaskedUrl(array[i].Trim(), new Uri(firstArtistsLink));
                     }
                     else
                     {
@@ -73,11 +81,11 @@ namespace CatBot.Music.NhacCuaTui
                     }
                 }
             }
-            albumThumbnailLink = xmlDoc.DocumentElement["track"].SelectSingleNode("avatar").InnerText;
-            mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("location").InnerText;
-            string hasHQ = xmlDoc.DocumentElement["track"].SelectSingleNode("hasHQ").InnerText;
+            albumThumbnailLink = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("avatar")?.InnerText ?? "";
+            mp3Link = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("location")?.InnerText ?? "";
+            string hasHQ = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("hasHQ")?.InnerText ?? "";
             if (!string.IsNullOrWhiteSpace(hasHQ) && bool.Parse(hasHQ))
-                mp3Link = xmlDoc.DocumentElement["track"].SelectSingleNode("locationHQ").InnerText;
+                mp3Link = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("locationHQ")?.InnerText ?? mp3Link;
         }
 
         public void Download()
@@ -131,10 +139,10 @@ namespace CatBot.Music.NhacCuaTui
 
         public LyricData? GetLyric()
         {
-            if (lyric != null)
+            if (lyric is not null)
                 return lyric;
             XmlDocument xmlDoc = GetXML(link);
-            string lyricLink = xmlDoc.DocumentElement["track"].SelectSingleNode("lyric").InnerText;
+            string lyricLink = xmlDoc.DocumentElement?["track"]?.SelectSingleNode("lyric")?.InnerText ?? "";
 
             string plainLyrics = "";
             if (string.IsNullOrWhiteSpace(lyricLink) || lyricLink == "https://lrc-nct.nixcdn.com/null")
@@ -211,11 +219,11 @@ namespace CatBot.Music.NhacCuaTui
         static JToken FindSongInfo(string keyword)
         {
             JObject obj = JObject.Parse(GetHttpClientWithCookie().GetStringAsync(searchLink + Uri.EscapeDataString(keyword)).Result);
-            if (obj["error_code"].ToString() != "0")
+            if (obj["error_code"]?.ToString() != "0")
                 throw new MusicException("songs not found");
-            if (obj["data"]["song"].Count() == 0)
+            if (obj["data"]?["song"]?.Count() == 0)
                 throw new MusicException("songs not found");
-            return obj["data"]["song"][0];
+            return obj["data"]?["song"]?[0] ?? throw new MusicException("songs not found");
         }
 
         static string DecryptLyric(string encryptedLyric)
@@ -224,8 +232,8 @@ namespace CatBot.Music.NhacCuaTui
             var a = PUtils.HexToArray(encryptedLyric);
             var b = PUtils.HexToArray(PUtils.HexFromString("Lyr1cjust4"));
             var c = new ARC4();
-            c.Load(b);
-            var d = c.Decrypt(a);
+            c.LoadKey(b);
+            var d = c.DecryptBlock(a);
             return PUtils.HexFromArray(d);
         }
 
@@ -238,7 +246,7 @@ namespace CatBot.Music.NhacCuaTui
 
         static HttpClient GetHttpClientWithCookie()
         {
-            if (httpRequestWithCookie == null)
+            if (httpRequestWithCookie is null)
             {
                 httpRequestWithCookie = MusicUtils.CreateHttpClientWithCookies("");
                 httpRequestWithCookie.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);

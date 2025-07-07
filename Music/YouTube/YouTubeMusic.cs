@@ -1,5 +1,10 @@
-﻿using System.Net;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
@@ -62,29 +67,28 @@ namespace CatBot.Music.YouTube
                     artists = [video.Author.ChannelTitle];
                     artistsWithLinks = [Formatter.MaskedUrl(video.Author.ChannelTitle, new Uri(video.Author.ChannelUrl))];
                     albumThumbnailLink = video.Thumbnails.TryGetWithHighestResolution()?.Url ?? "";
-                    durationBeforeSponsorBlock = video.Duration.Value;
+                    durationBeforeSponsorBlock = video.Duration ?? TimeSpan.Zero;
                 }
                 catch (Exception) { throw new MusicException(MusicType.YouTube, "video not found"); }
             }
             else
             {
                 HttpClient httpClient = new HttpClient();
-                JToken searchResource = JObject.Parse(httpClient.GetStringAsync(string.Format(searchVideoAPI, Config.gI().GoogleAPIKey, Uri.EscapeDataString(linkOrKeyword))).Result)["items"][0];
-                videoID = searchResource["id"]["videoId"].ToString();
-                link = $"https://www.youtube.com/watch?v={searchResource["id"]["videoId"]}";
-                title = WebUtility.HtmlDecode(searchResource["snippet"]["title"].ToString());
-                artists = [WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString())];
-                artistsWithLinks = [Formatter.MaskedUrl(WebUtility.HtmlDecode(searchResource["snippet"]["channelTitle"].ToString()), new Uri($"https://www.youtube.com/channel/{searchResource["snippet"]["channelId"]}"))];
-                albumThumbnailLink = searchResource["snippet"]["thumbnails"]["high"]["url"].ToString();
-                string json = httpClient.GetStringAsync(string.Format(getVideoInfoAPI, Config.gI().GoogleAPIKey, Uri.EscapeDataString(searchResource["id"]["videoId"].ToString()))).Result;
-                JToken videoResource = JObject.Parse(json)["items"][0];
-                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan(videoResource["contentDetails"]["duration"].ToString());
+                JToken searchResource = JObject.Parse(httpClient.GetStringAsync(string.Format(searchVideoAPI, Config.gI().GoogleAPIKey, Uri.EscapeDataString(linkOrKeyword))).Result)?["items"]?[0] ?? throw new MusicException(MusicType.YouTube, "video not found");
+                videoID = searchResource["id"]?["videoId"]?.ToString() ?? throw new MusicException(MusicType.YouTube, "video not found");
+                link = $"https://www.youtube.com/watch?v={searchResource["id"]?["videoId"]}";
+                title = WebUtility.HtmlDecode(searchResource["snippet"]?["title"]?.ToString() ?? "");
+                artists = [WebUtility.HtmlDecode(searchResource["snippet"]?["channelTitle"]?.ToString() ?? "")];
+                artistsWithLinks = [Formatter.MaskedUrl(WebUtility.HtmlDecode(searchResource["snippet"]?["channelTitle"]?.ToString() ?? ""), new Uri($"https://www.youtube.com/channel/{searchResource["snippet"]?["channelId"]}"))];
+                albumThumbnailLink = searchResource["snippet"]?["thumbnails"]?["high"]?["url"].ToString() ?? "";
+                string json = httpClient.GetStringAsync(string.Format(getVideoInfoAPI, Config.gI().GoogleAPIKey, Uri.EscapeDataString(searchResource["id"]?["videoId"]?.ToString() ?? ""))).Result;
+                durationBeforeSponsorBlock = XmlConvert.ToTimeSpan((JObject.Parse(json)?["items"]?[0])?["contentDetails"]?["duration"]?.ToString() ?? "PT0S");
             }
         }
 
         public void Download()
         {
-            while (sponsorBlockOptions == null)
+            while (sponsorBlockOptions is null)
                 Thread.Sleep(100);
             try
             {
@@ -93,7 +97,7 @@ namespace CatBot.Music.YouTube
                 if (response.IsSuccessStatusCode)
                 {
                     string sponsorBlockJSON = response.Content.ReadAsStringAsync().Result;
-                    sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON);
+                    sponsorBlockSkipSegments = JsonConvert.DeserializeObject<SponsorBlockSkipSegment[]>(sponsorBlockJSON) ?? [];
                     hasSponsorBlockSegment = sponsorBlockSkipSegments.Length > 0;
                 }
             }
@@ -138,7 +142,7 @@ namespace CatBot.Music.YouTube
             }
         }
 
-        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : "") + (sponsorBlockOptions != null && sponsorBlockOptions.Enabled && hasSponsorBlockSegment ? " x SponsorBlock" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
+        public DiscordEmbedBuilder AddFooter(DiscordEmbedBuilder embed) => embed.WithFooter("Powered by YouTube" + (isYouTubeMusicVideo ? " Music" : "") + (sponsorBlockOptions is not null && sponsorBlockOptions.Enabled && hasSponsorBlockSegment ? " x SponsorBlock" : ""), isYouTubeMusicVideo ? youTubeMusicIconLink : youTubeIconLink);
 
         public string GetPCMFilePath() => pcmFile;
 
@@ -166,7 +170,7 @@ namespace CatBot.Music.YouTube
                 musicDesc += new TimeSpan((long)(MusicPCMDataStream.Position / (float)MusicPCMDataStream.Length * Duration.Ticks)).toString() + " / " + Duration.toString();
             else
                 musicDesc += "Thời lượng: " + Duration.toString();
-            if (sponsorBlockOptions != null && sponsorBlockOptions.Enabled && hasSponsorBlockSegment)
+            if (sponsorBlockOptions is not null && sponsorBlockOptions.Enabled && hasSponsorBlockSegment)
                 musicDesc += $" ({durationBeforeSponsorBlock.toString()})"; 
             return musicDesc;
         }

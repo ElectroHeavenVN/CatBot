@@ -1,6 +1,9 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+using CatBot.Extensions;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
+using System;
+using System.IO;
 
 namespace CatBot
 {
@@ -64,12 +67,12 @@ namespace CatBot
         /// Đường dẫn tới thư mục chứa SFX
         /// </summary>
         [JsonProperty(nameof(SFXFolder))]
-        internal string SFXFolder { get; set; } = "SFX";
+        internal string SFXFolder { get; set; } = "Files\\SFX";
         /// <summary>
         /// Đường dẫn tới thư mục chứa SFX đặc biệt
         /// </summary>
         [JsonProperty(nameof(SFXFolderSpecial))]
-        internal string SFXFolderSpecial { get; set; } = "SFX\\Special";
+        internal string SFXFolderSpecial { get; set; } = "Files\\SFX\\Special";
 
         #region Zing MP3
         /// <summary>
@@ -105,16 +108,17 @@ namespace CatBot
         internal string SpotifyCookie { get; set; } = "";
 
         /// <summary>
-        /// Tài khoản Spotify
+        /// Spotify Client ID
         /// </summary>
-        [JsonProperty(nameof(SpotifyUsername))]
-        internal string SpotifyUsername { get; set; } = "";
+        [JsonProperty(nameof(SpotifyClientID))]
+        internal string SpotifyClientID { get; set; } = "";
 
         /// <summary>
-        /// Mật khẩu Spotify
+        /// Spotify Client Secret
         /// </summary>
-        [JsonProperty(nameof(SpotifyPassword))]
-        internal string SpotifyPassword { get; set; } = "";
+        [JsonProperty(nameof(SpotifyClientSecret))]
+        internal string SpotifyClientSecret { get; set; } = "";
+
         #endregion
 
         #region SoundCloud
@@ -172,7 +176,12 @@ namespace CatBot
 
         internal string LyricAPI => "https://lrclib.net/api/";
 
-        internal static void ImportConfig(string configPath) => singletonInstance = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath)) ?? throw new NullReferenceException();
+        internal static void ImportConfig(string configPath)
+        {
+            singletonInstance = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath)) ?? throw new NullReferenceException();
+            if (!Directory.Exists(singletonInstance.MusicFolder))
+                singletonInstance.MusicFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        }
 
         internal static void ExportConfig(string configPath) => File.WriteAllText(configPath, JsonConvert.SerializeObject(singletonInstance, Formatting.Indented));
     }

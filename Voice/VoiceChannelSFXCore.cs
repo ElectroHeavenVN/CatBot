@@ -1,10 +1,14 @@
-﻿using CatBot.Extension;
-using CatBot.Instance;
+﻿using CatBot.Instance;
 using CatBot.Music;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.VoiceNext;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CatBot.Voice
 {
@@ -16,9 +20,14 @@ namespace CatBot.Voice
 
         internal static async Task Speak(CommandContext ctx, params string[] fileNames)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
-            if (serverInstance.voiceChannelSFX == null)
+            if (serverInstance.voiceChannelSFX is null)
                 return;
             serverInstance.voiceChannelSFX.isStop = false;
             await serverInstance.voiceChannelSFX.InternalSpeak(ctx, fileNames);
@@ -26,28 +35,43 @@ namespace CatBot.Voice
 
         internal static async Task Reconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
-            if (serverInstance.voiceChannelSFX == null)
+            if (serverInstance.voiceChannelSFX is null)
                 return;
             await serverInstance.voiceChannelSFX.InternalReconnect(ctx);
         }
 
         internal static async Task StopSpeaking(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
-            if (serverInstance.voiceChannelSFX == null)
+            if (serverInstance.voiceChannelSFX is null)
                 return;
             await serverInstance.voiceChannelSFX.InternalStopSpeaking(ctx);
         }
 
         internal static async Task Dictionary(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
             FileInfo[] sfxs = new DirectoryInfo(Config.gI().SFXFolder).GetFiles();
-            List<DiscordEmbedBuilder> embeds = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+            List<DiscordEmbedBuilder> embeds = [new DiscordEmbedBuilder()];
             string totalSize = Utils.GetMemorySize((ulong)sfxs.Select(f => f.Length).Sum());
             embeds[0].Title = $"Danh sách file ({sfxs.Length} file, {totalSize})";
             for (int i = 0; i < sfxs.Length; i++)
@@ -55,13 +79,13 @@ namespace CatBot.Voice
                 string description = embeds.Last().Description + Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
                 if (description.Length > 2048 - 38 + Config.gI().DefaultPrefix.Length)
                 {
-                    embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+                    embeds.Last().Description = embeds.Last().Description?.Trim(',', ' ');
                     embeds.Add(new DiscordEmbedBuilder());
                     description = Path.GetFileNameWithoutExtension(sfxs[i].Name) + ", ";
                 }
                 embeds.Last().Description = description;
             }
-            embeds.Last().Description = embeds.Last().Description.Trim(',', ' ');
+            embeds.Last().Description = embeds.Last().Description?.Trim(',', ' ');
             if (!ctx.User.IsInAdminUser())
                 embeds.Last().Description += Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
             await ctx.RespondAsync(new DiscordMessageBuilder().AddEmbed(embeds[0].Build()));
@@ -73,7 +97,7 @@ namespace CatBot.Voice
             if (ctx.User.IsInAdminUser())
             {
                 List<FileInfo> sfxSpecials = new DirectoryInfo(Config.gI().SFXFolderSpecial).GetFiles().ToList();
-                List<DiscordEmbedBuilder> embeds2 = new List<DiscordEmbedBuilder> { new DiscordEmbedBuilder() };
+                List<DiscordEmbedBuilder> embeds2 = [new DiscordEmbedBuilder()];
                 sfxSpecials.Sort((f1, f2) => f1.CreationTime.CompareTo(f2.CreationTime));
                 string totalSizeSpecial = Utils.GetMemorySize((ulong)sfxSpecials.Select(f => f.Length).Sum());
                 embeds2[0].Title = $"Danh sách file đặc biệt ({sfxSpecials.Count} file, {totalSizeSpecial})";
@@ -82,13 +106,13 @@ namespace CatBot.Voice
                     string description = embeds2.Last().Description + Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                     if (description.Length > 2048 - 38 + Config.gI().DefaultPrefix.Length)
                     {
-                        embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ');
+                        embeds2.Last().Description = embeds2.Last().Description?.Trim(',', ' ');
                         embeds2.Add(new DiscordEmbedBuilder());
                         description = Path.GetFileNameWithoutExtension(sfxSpecials[i].Name) + ", ";
                     }
                     embeds2.Last().Description = description;
                 }
-                embeds2.Last().Description = embeds2.Last().Description.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
+                embeds2.Last().Description = embeds2.Last().Description?.Trim(',', ' ') + Environment.NewLine + Environment.NewLine + "Dùng lệnh " + Config.gI().DefaultPrefix + "s <tên file> để bot nói!";
                 foreach (DiscordEmbedBuilder embed in embeds2)
                 {
                     await Task.Delay(200);
@@ -99,27 +123,42 @@ namespace CatBot.Voice
 
         internal static async Task Disconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
-            if (serverInstance.voiceChannelSFX == null)
+            if (serverInstance.voiceChannelSFX is null)
                 return;
             await serverInstance.voiceChannelSFX.InternalDisconnect(ctx);
         }
 
         internal static async Task Delay(CommandContext ctx, int delayValue)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             serverInstance.LastChannel = ctx.Channel;
-            if (serverInstance.voiceChannelSFX == null)
+            if (serverInstance.voiceChannelSFX is null)
                 return;
             await serverInstance.voiceChannelSFX.InternalDelay(ctx, delayValue);
         }
 
         internal static async Task SetVolume(CommandContext ctx, long volume)
         {
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
             try
             {
-                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+                BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
                 if (volume == -1)
                 {
                     await ctx.RespondAsync("Âm lượng SFX hiện tại: " + (int)(serverInstance.voiceChannelSFX.volume * 100));
@@ -143,11 +182,18 @@ namespace CatBot.Voice
                 await ctx.RespondAsync("Có người đang dùng lệnh rồi!");
                 return;
             }
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
             await ctx.DeferResponseAsync();
             BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(this);
             if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
-            MusicPlayerCore musicPlayer = BotServerInstance.GetMusicPlayer(ctx.Guild);
+            MusicPlayerCore? musicPlayer = BotServerInstance.GetMusicPlayer(ctx.Guild.Id);
+            if (musicPlayer is null || serverInstance.currentVoiceNextConnection is null)
+                return;
             VoiceTransmitSink transmitSink = serverInstance.currentVoiceNextConnection.GetTransmitSink();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = true;
             string filesNotFound = "";
@@ -192,7 +238,7 @@ namespace CatBot.Voice
                 if (musicPlayer.isPlaying && !musicPlayer.isPaused)
                 {
                     byte[] buffer = new byte[file.Length + file.Length % 2];
-                    file.Read(buffer, 0, (int)file.Length);
+                    file.ReadExactly(buffer, 0, (int)file.Length);
                     for (int j = 0; j < buffer.Length; j += 2)
                         Array.Copy(BitConverter.GetBytes((short)(BitConverter.ToInt16(buffer, j) * volume)), 0, buffer, j, sizeof(short));
                     for (int j = 0; j < repeatTimes - 1; j++)
@@ -227,13 +273,13 @@ namespace CatBot.Voice
             if (!string.IsNullOrEmpty(response))
                 await ctx.RespondAsync(new DiscordFollowupMessageBuilder().WithContent(response));
             else 
-                await ctx.DeleteReplyAsync();
+                await ctx.DeleteResponseAsync();
             BotServerInstance.GetBotServerInstance(this).isVoicePlaying = false;
         }
         
         async Task InternalDisconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             try
             {
                 if (!await serverInstance.InitializeVoiceNext(ctx))
@@ -256,7 +302,7 @@ namespace CatBot.Voice
             serverInstance.suppressOnVoiceStateUpdatedEvent = true;
             isStop = true;
             serverInstance.isVoicePlaying = false;
-            await ctx.RespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await ctx.RespondAsync($"Đã ngắt kết nối {(serverInstance.currentVoiceNextConnection!.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
             serverInstance.currentVoiceNextConnection.Disconnect();
             serverInstance.musicPlayer.playMode = new PlayMode();
             await Task.Delay(1000);
@@ -278,7 +324,12 @@ namespace CatBot.Voice
 
         async Task InternalReconnect(CommandContext ctx)
         {
-            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild);
+            if (ctx.Guild is null)
+            {
+                await ctx.RespondAsync("Lệnh này chỉ có thể dùng trong máy chủ!");
+                return;
+            }
+            BotServerInstance serverInstance = BotServerInstance.GetBotServerInstance(ctx.Guild.Id);
             if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
             isStop = true;
@@ -286,7 +337,7 @@ namespace CatBot.Voice
             bool isPaused = serverInstance.musicPlayer.isPaused;
             serverInstance.musicPlayer.isPaused = true;
             await Task.Delay(600);
-            serverInstance.currentVoiceNextConnection.Disconnect();
+            serverInstance.currentVoiceNextConnection?.Disconnect();
             serverInstance.currentVoiceNextConnection?.Dispose();
             if (!await serverInstance.InitializeVoiceNext(ctx))
                 return;
@@ -294,7 +345,7 @@ namespace CatBot.Voice
             serverInstance.suppressOnVoiceStateUpdatedEvent = false;
 
             isStop = false;
-            await ctx.RespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
+            await ctx.RespondAsync($"Đã kết nối lại với {(serverInstance.currentVoiceNextConnection!.TargetChannel.Type == DiscordChannelType.Stage ? "sân khấu" : "kênh thoại")} <#{serverInstance.currentVoiceNextConnection.TargetChannel.Id}>!");
         }
 
         async Task InternalDelay(CommandContext ctx, int delayValue)

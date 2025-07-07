@@ -1,4 +1,8 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Xml;
 using AngleSharp.Dom;
@@ -16,24 +20,24 @@ namespace CatBot.Music.NhacCuaTui
           if (linkOrKeyword.StartsWith(NhacCuaTuiMusic.nhacCuaTuiLink))
             {
                 XmlDocument xmlDoc = NhacCuaTuiMusic.GetXML(linkOrKeyword);
-                return new List<SearchResult>()
-                {
-                    new SearchResult(linkOrKeyword, $"{xmlDoc.DocumentElement["track"].SelectSingleNode("title").InnerText}", xmlDoc.DocumentElement["track"].SelectSingleNode("creator").InnerText, "", xmlDoc.DocumentElement["track"].SelectSingleNode("avatar").InnerText)
-                };
+                return
+                [
+                    new SearchResult(linkOrKeyword, $"{xmlDoc.DocumentElement?["track"]?.SelectSingleNode("title")?.InnerText}", xmlDoc.DocumentElement?["track"]?.SelectSingleNode("creator")?.InnerText ?? "", "", xmlDoc.DocumentElement?["track"]?.SelectSingleNode("avatar")?.InnerText ?? "")
+                ];
             }
-            string html = new WebClient() { Encoding = Encoding.UTF8 }.DownloadString(searchLink + Uri.EscapeDataString(linkOrKeyword));
+            string html = new HttpClient().GetStringAsync(searchLink + Uri.EscapeDataString(linkOrKeyword)).Result;
             HtmlParser parser = new HtmlParser();
             IHtmlDocument document = parser.ParseDocument(html);
-            var node1 = document.Body.Children.First(n => n.GetType().GetInterface(nameof(IHtmlDivElement)) != null && ((IHtmlDivElement)n).ClassName == "box-content");
-            var node2 = node1.Children[0].Children[0].Children[0].Children[3].Children[0];
-            var nodes = node2.Children.Where(n => n.ClassName == "sn_search_single_song");
+            var node1 = document.Body?.Children.First(n => n.GetType().GetInterface(nameof(IHtmlDivElement)) is not null && ((IHtmlDivElement)n).ClassName == "box-content");
+            var node2 = node1?.Children[0].Children[0].Children[0].Children[3].Children[0];
+            var nodes = node2?.Children.Where(n => n.ClassName == "sn_search_single_song");
             var result = new List<SearchResult>();
-            foreach (IElement element in nodes)
+            foreach (IElement element in nodes ?? [])
             {
-                string thumbnailLink = ((IHtmlImageElement)element.Children[0].Children[0]).Dataset["src"];
+                string thumbnailLink = ((IHtmlImageElement?)element.Children?[0].Children[0])?.Dataset?["src"] ?? "";
                 if (string.IsNullOrWhiteSpace(thumbnailLink))
-                    thumbnailLink = ((IHtmlImageElement)element.Children[0].Children[0]).Source;
-                result.Add(new SearchResult("ID: " + NhacCuaTuiMusic.GetSongID(((IHtmlAnchorElement)element.Children[0]).Href), ((IHtmlAnchorElement)element.Children[1].Children[0].Children[0]).Text, string.Join(", ", element.Children[1].Children[1].Children.Select(n => ((IHtmlAnchorElement)n).Text)), string.Join(", ", element.Children[1].Children[1].Children.Select(n => ((IHtmlAnchorElement)n).Href)), thumbnailLink));
+                    thumbnailLink = ((IHtmlImageElement?)element.Children?[0].Children[0])?.Source ?? "";
+                result.Add(new SearchResult("ID: " + NhacCuaTuiMusic.GetSongID(((IHtmlAnchorElement?)element.Children?[0])?.Href ?? ""), ((IHtmlAnchorElement?)element.Children?[1].Children?[0].Children?[0])?.Text ?? "", string.Join(", ", element.Children?[1].Children?[1].Children?.Select(n => ((IHtmlAnchorElement?)n)?.Text ?? "") ?? []), string.Join(", ", element.Children?[1].Children?[1].Children?.Select(n => ((IHtmlAnchorElement?)n)?.Href ?? "") ?? []), thumbnailLink));
                 if (result.Count == count)
                     break;
             }

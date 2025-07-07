@@ -1,4 +1,6 @@
-﻿namespace CatBot.Music.SponsorBlock
+﻿using System.Collections.Generic;
+
+namespace CatBot.Music.SponsorBlock
 {
     internal class SponsorBlockOptions
     {
@@ -48,7 +50,7 @@
 
         internal string[] GetCategory()
         {
-            List<string> result = new List<string>();
+            List<string> result = [];
             if (options.HasFlag(SponsorBlockCategory.Sponsor))
                 result.Add("sponsor");
             if (options.HasFlag(SponsorBlockCategory.Intro))

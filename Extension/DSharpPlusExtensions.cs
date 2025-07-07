@@ -1,25 +1,30 @@
-﻿#pragma warning disable CS8604 // Possible null reference argument.
-#pragma warning disable CS8605 // Unboxing a possibly null value.
+﻿#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable CS8605 // Unboxing a possibly null value.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning disable CS8604 // Possible null reference argument.
 
-using System.Reflection;
 using DSharpPlus;
-using DSharpPlus.Commands;
-using DSharpPlus.Commands.Processors.SlashCommands;
-using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
 using DSharpPlus.Net.Abstractions;
-using static CatBot.CustomDiscordActivity;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Reflection;
+using System.Threading.Tasks;
+using static CatBot.Extensions.CustomDiscordActivity;
 
-namespace CatBot.Extension
+namespace CatBot.Extensions
 {
     internal static class DSharpPlusExtensions
     {
         internal static async Task UpdateStatusAsync(this DiscordClient discordClient, CustomDiscordActivity customActivity, DiscordUserStatus? userStatus = null, DateTimeOffset? idleSince = null)
         {
-            long num = (idleSince != null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
+            long num = (idleSince is not null) ? Utilities.GetUnixTime(idleSince.Value) : 0;
             StatusUpdate statusUpdate = new StatusUpdate
             {
                 Activities = new List<TransportActivity>()
@@ -33,142 +38,141 @@ namespace CatBot.Extension
                     }
                 },
                 IdleSince = num,
-                IsAFK = idleSince != null,
+                IsAFK = idleSince is not null,
                 Status = userStatus ?? DiscordUserStatus.Online,
             };
-            if (customActivity.ApplicationID == 0)
-                statusUpdate.Activities[0].ApplicationId = discordClient.CurrentApplication.Id;
-#pragma warning disable DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
             await discordClient.SendPayloadAsync(GatewayOpCode.StatusUpdate, statusUpdate, 0);
-#pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
         }
 
         internal static async ValueTask ModifyVoiceStatusAsync(this DiscordChannel discordChannel, string status)
         {
             BaseDiscordClient client = (BaseDiscordClient)typeof(SnowflakeObject).GetProperty("Discord", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(discordChannel);
-            DiscordApiClient apiClient = (DiscordApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
-            object rest = typeof(DiscordApiClient).GetField("rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
+            DiscordRestApiClient apiClient = (DiscordRestApiClient)typeof(BaseDiscordClient).GetProperty("ApiClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(client);
+            RestClient rest = (RestClient)typeof(DiscordRestApiClient).GetField("rest", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(apiClient);
             Type restRequest = typeof(DiscordClient).Assembly.GetType("DSharpPlus.Net.RestRequest");
             object restRequestInst = Activator.CreateInstance(restRequest, true);
-            restRequest.GetProperty("Route").SetValue(restRequestInst, "/channels/:channel_id/voice-status");
+
+            restRequest.GetProperty("Route").SetValue(restRequestInst, $"/channels/{discordChannel.Id}/voice-status");
             restRequest.GetProperty("Url").SetValue(restRequestInst, $"/channels/{discordChannel.Id}/voice-status");
             restRequest.GetProperty("Method").SetValue(restRequestInst, HttpMethod.Put);
             restRequest.GetProperty("Payload").SetValue(restRequestInst, $"{{\"status\":\"{status}\"}}");
             ValueTask<RestResponse> response = (ValueTask<RestResponse>)rest.GetType().GetMethod("ExecuteRequestAsync", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(restRequest).Invoke(rest, [restRequestInst]);
             await response.ConfigureAwait(false);
         }
+    }
 
-        internal static async Task DeferAsync(this CommandContext ctx, bool ephemeral = false)
+    internal class CustomDiscordActivity
+    {
+        [JsonProperty(nameof(ApplicationID))]
+        internal ulong ApplicationID { get; set; }
+
+        [JsonProperty(nameof(Name))]
+        internal string Name { get; set; } = "";
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty(nameof(ActivityType))]
+        internal DiscordActivityType ActivityType { get; set; }
+
+        [JsonProperty(nameof(State))]
+        internal string State { get; set; } = " ";
+
+        [JsonProperty(nameof(Delay))]
+        internal int Delay { get; set; }
+
+        internal CustomDiscordActivity() { }
+        internal CustomDiscordActivity(ulong applicationID = 0, DiscordActivityType type = DiscordActivityType.Playing, string name = "", string state = " ", int delay = 60000)
         {
-            if (ctx is SlashCommandContext sctx)
-                await sctx.DeferResponseAsync(ephemeral);
-            else
-                await ctx.DeferResponseAsync();
+            ApplicationID = applicationID;
+            ActivityType = type;
+            Name = name;
+            State = state;
+            Delay = delay;
         }
 
-        internal static async Task ReplyAsync(this CommandContext ctx, string content, bool ephemeral = false)
+        internal class TransportActivity
         {
-            if (ctx is SlashCommandContext sctx)
-                await sctx.RespondAsync(content, ephemeral);
-            else
-                await ctx.RespondAsync(content);
-        }
+            [JsonIgnore]
+            internal ulong? ApplicationId { get; set; }
 
-        internal static async Task ReplyAsync(this CommandContext ctx, DiscordEmbed embed, bool ephemeral = false)
-        {
-            if (ctx is SlashCommandContext sctx)
-                await sctx.RespondAsync(embed, ephemeral);
-            else
-                await ctx.RespondAsync(embed);
-        }
-
-        internal static async Task ReplyAsync(this CommandContext ctx, string content, DiscordEmbed embed, bool ephemeral = false)
-        {
-            if (ctx is SlashCommandContext sctx)
-                await sctx.RespondAsync(content, embed, ephemeral);
-            else
-                await ctx.RespondAsync(content, embed);
-        }
-
-        internal static async Task DeleteReplyAsync(this CommandContext ctx)
-        {
-            if (ctx is SlashCommandContext sctx)
-                await sctx.DeleteResponseAsync();
-            else if (ctx is TextCommandContext tctx && tctx.Response is not null)
-                await tctx.DeleteResponseAsync();
-        }
-
-        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, string content, bool ephemeral = false)
-        {
-            if (ctx is SlashCommandContext sctx)
-                return await sctx.FollowupAsync(content, ephemeral);
-            else if (ctx is TextCommandContext tctx)
+            [JsonProperty("application_id", NullValueHandling = NullValueHandling.Ignore)]
+            public string ApplicationIdStr
             {
-                if (tctx.Response is not null)
-                    return await tctx.FollowupAsync(content);
-                else
+                get => ApplicationId?.ToString() ?? "";
+                set => ApplicationId = ulong.Parse(value);
+            }
+
+            [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+            public DiscordActivityType ActivityType { get; set; }
+
+            [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+            public string Name { get; set; }
+
+            [JsonProperty("state", NullValueHandling = NullValueHandling.Ignore)]
+            public string State { get; set; }
+        }
+
+        internal class StatusUpdate
+        {
+            [JsonProperty("status")]
+            public string StatusString
+            {
+                get
                 {
-                    await tctx.RespondAsync(content);
-                    return tctx.Response;
+                    switch (Status)
+                    {
+                        case DiscordUserStatus.Offline:
+                        case DiscordUserStatus.Invisible:
+                            return "invisible";
+                        case DiscordUserStatus.Online:
+                            return "online";
+                        case DiscordUserStatus.Idle:
+                            return "idle";
+                        case DiscordUserStatus.DoNotDisturb:
+                            return "dnd";
+                    }
+                    return "online";
+                }
+                set
+                {
+                    switch (value)
+                    {
+                        case "invisible":
+                            Status = DiscordUserStatus.Invisible;
+                            break;
+                        case "online":
+                            Status = DiscordUserStatus.Online;
+                            break;
+                        case "idle":
+                            Status = DiscordUserStatus.Idle;
+                            break;
+                        case "dnd":
+                            Status = DiscordUserStatus.DoNotDisturb;
+                            break;
+                        default:
+                            Status = DiscordUserStatus.Offline;
+                            break;
+                    }
                 }
             }
-            return null;
-        }
 
-        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, DiscordEmbed embed, bool ephemeral = false)
-        {
-            if (ctx is SlashCommandContext sctx)
-                return await sctx.FollowupAsync(embed, ephemeral);
-            else if (ctx is TextCommandContext tctx)
-            {
-                if (tctx.Response is not null)
-                    return await tctx.FollowupAsync(embed);
-                else
-                {
-                    await tctx.RespondAsync(embed);
-                    return tctx.Response;
-                }
-            }
-            return null;
-        }
+            [JsonIgnore]
+            internal DiscordUserStatus Status { get; set; }
 
-        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, string content, DiscordEmbed embed, bool ephemeral = false)
-        {
-            if (ctx is SlashCommandContext sctx)
-                return await sctx.FollowupAsync(content, embed, ephemeral);
-            else if (ctx is TextCommandContext tctx)
-            {
-                if (tctx.Response is not null)
-                    return await tctx.FollowupAsync(content, embed);
-                else
-                {
-                    await tctx.RespondAsync(content, embed);
-                    return tctx.Response;
-                }
-            }
-            return null;
-        }
+            [JsonProperty("since", NullValueHandling = NullValueHandling.Ignore)]
+            public long? IdleSince { get; set; }
 
-        internal static async ValueTask<DiscordMessage?> FollowUpAsync(this CommandContext ctx, IDiscordMessageBuilder messageBuilder)
-        {
-            if (ctx is SlashCommandContext sctx)
-                return await sctx.FollowupAsync(messageBuilder);
-            else if (ctx is TextCommandContext tctx)
-            {
-                if (tctx.Response is not null)
-                    return await tctx.FollowupAsync(messageBuilder);
-                else
-                {
-                    await tctx.RespondAsync(messageBuilder);
-                    return tctx.Response;
-                }
-            }
-            return null;
+            [JsonProperty("activities", NullValueHandling = NullValueHandling.Ignore)]
+            public List<TransportActivity> Activities { get; set; }
+
+            [JsonProperty("afk")]
+            public bool IsAFK { get; set; }
         }
     }
 }
 
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8605 // Unboxing a possibly null value.
 #pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+#pragma warning restore CS8605 // Unboxing a possibly null value.
+#pragma warning restore DSP0004 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.

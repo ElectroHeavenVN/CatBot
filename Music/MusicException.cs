@@ -1,4 +1,6 @@
-﻿namespace CatBot.Music
+﻿using System;
+
+namespace CatBot.Music
 {
     internal class MusicException : Exception
     {

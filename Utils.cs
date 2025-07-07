@@ -1,4 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using CatBot.Instance;
 using CatBot.Music;
@@ -14,7 +18,7 @@ namespace CatBot
         {
             Process? ffmpeg = Process.Start(new ProcessStartInfo
             {
-                FileName = "ffmpeg\\ffmpeg",
+                FileName = "Files\\ffmpeg\\ffmpeg",
                 Arguments = "-nostdin -hide_banner -loglevel panic -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 pipe:1",
                 RedirectStandardOutput = true,
                 UseShellExecute = false
@@ -36,15 +40,15 @@ namespace CatBot
 
         internal static List<string> GetAllFilesInUse()
         {
-            List<string> result = new List<string>();
+            List<string> result = [];
             foreach (BotServerInstance serverInstance in BotServerInstance.serverInstances)
             {
                 foreach (IMusic music in serverInstance.musicPlayer.musicQueue)     
                 {
-                    if (music != null)
+                    if (music is not null)
                         result.AddRange(music.GetFilesInUse());
                 }
-                if (serverInstance.musicPlayer.currentlyPlayingSong != null)
+                if (serverInstance.musicPlayer.currentlyPlayingSong is not null)
                     result.AddRange(serverInstance.musicPlayer.currentlyPlayingSong.GetFilesInUse());
             }
             return result.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
@@ -69,7 +73,7 @@ namespace CatBot
             return num + suf[place];
         }
 
-        internal static bool IsBotOwner(ulong userId) => Config.gI().BotOwnerIDs.Contains(userId) || DiscordBotMain.botClient.CurrentApplication.Owners.Any(u => u.Id == userId);
+        internal static bool IsBotOwner(ulong userId) => Config.gI().BotOwnerIDs.Contains(userId) || (DiscordBotMain.botClient.CurrentApplication?.Owners?.Any(u => u.Id == userId) ?? false);
 
         internal static string ComputeSHA256Hash(byte[] data)
         {

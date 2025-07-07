@@ -4,9 +4,9 @@ namespace CatBot.Music
 {
     public class PlayMode
     {
-        public bool isLoopQueue;    
-        public bool isRandom;    
-        public bool isLoopASong;    
+        public bool isLoopQueue;
+        public bool isRandom;
+        public bool isLoopASong;
     }
 
     public enum PlayModeChoice

@@ -21,7 +21,7 @@ namespace CatBot.Music
 
         public MusicQueue(IEnumerable<IMusic> collection) : this()
         {
-            if (collection == null)
+            if (collection is null)
                 throw new ArgumentNullException(nameof(collection));
             foreach (IMusic item in collection)
                 Enqueue(item);
@@ -45,7 +45,7 @@ namespace CatBot.Music
         public int Count => _items.Count;
         public bool IsReadOnly => false;
         public bool IsSynchronized => false;
-        public object SyncRoot => typeof(List<IMusic>).GetProperty("SyncRoot", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_items);
+        public object SyncRoot => typeof(List<IMusic>).GetProperty("SyncRoot", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(_items)!;
         public bool IsFixedSize => false;
 
         public void Add(IMusic item) => _items.Add(item);

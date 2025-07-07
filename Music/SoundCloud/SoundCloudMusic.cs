@@ -1,4 +1,11 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -46,17 +53,19 @@ namespace CatBot.Music.SoundCloud
                 List<TrackSearchResult> result = scClient.Search.GetTracksAsync(linkOrKeyword).ToListAsync().Result;
                 if (result.Count == 0)
                     throw new MusicException("songs not found");
-                linkOrKeyword = result[0].PermalinkUrl.AbsoluteUri;
+                linkOrKeyword = result[0].PermalinkUrl?.AbsoluteUri ?? "";
             }
             ValueTask<Track?> valueTask = scClient.Tracks.GetAsync(linkOrKeyword);
             while (!valueTask.IsCompleted)
                 Thread.Sleep(100);
             track = valueTask.Result;
-            link = track.PermalinkUrl.AbsoluteUri;
-            title = track.Title;
-            artists = [track.User.Username];
-            artistsWithLinks = [Formatter.MaskedUrl(track.User.Username, new Uri(track.User.PermalinkUrl))];
-            if (track.ArtworkUrl != null)
+            if (track is null)
+                throw new MusicException("not found");
+            link = track.PermalinkUrl?.AbsoluteUri ?? "";
+            title = track.Title ?? "";
+            artists = [track.User?.Username ?? ""];
+            artistsWithLinks = [Formatter.MaskedUrl(track.User?.Username ?? "", new Uri(track.User?.PermalinkUrl ?? ""))];
+            if (track.ArtworkUrl is not null)
                 albumThumbnailLink = track.ArtworkUrl.AbsoluteUri;
         }
         ~SoundCloudMusic() => Dispose(false);
@@ -66,7 +75,9 @@ namespace CatBot.Music.SoundCloud
             ValueTask<string?> valueTask = scClient.Tracks.GetDownloadUrlAsync(track);
             while (!valueTask.IsCompleted)
                 Thread.Sleep(100);
-            string downloadUrl = valueTask.Result;
+            string? downloadUrl = valueTask.Result;
+            if (string.IsNullOrEmpty(downloadUrl))
+                throw new MusicException("Download link not found");
             mp3FilePath = Path.GetTempFileName();
             HttpClient httpClient = new HttpClient();
             byte[] data = httpClient.GetByteArrayAsync(downloadUrl).Result;

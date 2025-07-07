@@ -1,4 +1,6 @@
-﻿namespace CatBot.Music
+﻿using System.IO;
+
+namespace CatBot.Music
 {
     internal class MusicFileDownload
     {

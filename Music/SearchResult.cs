@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CatBot.Music
+﻿namespace CatBot.Music
 {
     internal class SearchResult
     {
@@ -18,10 +12,10 @@ namespace CatBot.Music
             Thumbnail = thumbnail;
         }
 
-        internal string LinkOrID { get; set; }
-        internal string Title { get; set; }
-        internal string Author { get; set; }
-        internal string AuthorLink { get; set; }
-        internal string Thumbnail { get; set; }
+        internal string LinkOrID { get; set; } = "";
+        internal string Title { get; set; } = "";
+        internal string Author { get; set; } = "";
+        internal string AuthorLink { get; set; } = "";
+        internal string Thumbnail { get; set; } = "";
     }
 }

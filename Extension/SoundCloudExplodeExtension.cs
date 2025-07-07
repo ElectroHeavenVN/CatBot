@@ -4,16 +4,22 @@
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
 
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using SoundCloudExplode;
 using SoundCloudExplode.Bridge;
 using SoundCloudExplode.Common;
 using SoundCloudExplode.Exceptions;
 using SoundCloudExplode.Tracks;
 using SoundCloudExplode.Users;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CatBot.SoundCloudExplodeExtension
 {

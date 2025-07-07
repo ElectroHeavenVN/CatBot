@@ -1,11 +1,14 @@
-﻿using System.ComponentModel;
-using DSharpPlus.Commands;
+﻿using DSharpPlus.Commands;
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.ArgumentModifiers;
-using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Trees.Metadata;
 using DSharpPlus.Entities;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CatBot.Voice
 {

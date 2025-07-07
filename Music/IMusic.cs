@@ -1,5 +1,7 @@
 ﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
+using System;
+using System.IO;
 
 namespace CatBot.Music
 {

@@ -5,9 +5,9 @@ namespace CatBot.Music.SponsorBlock
     internal class SponsorBlockSkipSegment
     {
         [JsonProperty("segment")]
-        internal SponsorBlockSegment Segment { get; set; }
+        internal SponsorBlockSegment Segment { get; set; } = new SponsorBlockSegment();
         [JsonProperty("UUID")]
-        internal string UUID { get; set; }
+        internal string UUID { get; set; } = "";
         [JsonProperty("category")]
         internal SponsorBlockCategory Category { get; set; }
         [JsonProperty("videoDuration")]
@@ -19,6 +19,6 @@ namespace CatBot.Music.SponsorBlock
         [JsonProperty("votes")]
         internal int Votes { get; set; }
         [JsonProperty("description")]
-        internal string Description { get; set; }
+        internal string Description { get; set; } = "";
     }
 }

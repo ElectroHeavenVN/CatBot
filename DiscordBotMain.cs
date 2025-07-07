@@ -1,9 +1,5 @@
-﻿using System.Diagnostics;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using CatBot.Admin;
-using CatBot.Extension;
+﻿using CatBot.Admin;
+using CatBot.Extensions;
 using CatBot.Instance;
 using CatBot.Music;
 using CatBot.Music.Local;
@@ -14,7 +10,6 @@ using DSharpPlus.Commands.Exceptions;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.TextCommands;
 using DSharpPlus.Commands.Processors.TextCommands.Parsing;
-using DSharpPlus.Commands.Trees;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
@@ -22,6 +17,13 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.VoiceNext;
 using HarmonyLib;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CatBot
 {
@@ -48,7 +50,7 @@ namespace CatBot
                 new Harmony("Hook").PatchAll();
             }
             catch (Exception ex) { Utils.LogException(ex, false); }
-            string configPath = $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule?.FileName)}_config.json";
+            string configPath = Path.Combine(Path.GetDirectoryName(typeof(DiscordBotMain).Assembly?.Location ?? Environment.ProcessPath) ?? "", "Files", $"{Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().MainModule?.FileName)}_config.json");
             try
             {
                 Config.ImportConfig(configPath);
@@ -124,7 +126,7 @@ namespace CatBot
 
         public static async Task MainAsync()
         {
-            if (botClient == null)
+            if (botClient is null)
                 throw new NullReferenceException();
             //await botRESTClient.InitializeAsync();
             await botClient.ConnectAsync();
@@ -142,7 +144,7 @@ namespace CatBot
                     {
                         StartInfo = new ProcessStartInfo
                         {
-                            FileName = "yt-dlp\\yt-dlp",
+                            FileName = "Files\\yt-dlp\\yt-dlp",
                             Arguments = "-U",
                             WindowStyle = ProcessWindowStyle.Hidden,
                             UseShellExecute = false,
@@ -189,7 +191,7 @@ namespace CatBot
 
         static async Task BotClient_GuildDownloadCompleted(DiscordClient sender, GuildDownloadCompletedEventArgs args)
         {
-            if (botClient == null)
+            if (botClient is null)
                 throw new NullReferenceException();
             await Task.Run(() =>
             {
@@ -206,12 +208,12 @@ namespace CatBot
 
         static async Task ChangeStatus()
         {
-            if (botClient == null)
+            if (botClient is null)
                 throw new NullReferenceException();
             int count = 0;
             while (true)
             {
-                if (activity == null)
+                if (activity is null)
                 {
                     CustomDiscordActivity discordActivity = Config.gI().DefaultPresences[count];
                     count++;
@@ -224,12 +226,12 @@ namespace CatBot
                     catch { }
                     for (int i = 0; i < 30; i++)
                     {
-                        if (activity != null)
+                        if (activity is not null)
                             break;
                         await Task.Delay(1000);
                     }
                 }
-                if (activity != null)
+                if (activity is not null)
                 {
                     try
                     {
@@ -238,7 +240,7 @@ namespace CatBot
                     catch { }
                     for (int i = 0; i < 30; i++)
                     {
-                        if (activity == null)
+                        if (activity is null)
                             break;
                         await Task.Delay(1000);
                     }

@@ -1,7 +1,7 @@
-﻿using System.Reflection;
-using CatBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
-using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
 
 namespace CatBot.Music.Local
 {
@@ -62,7 +62,7 @@ namespace CatBot.Music.Local
         {
             get
             {
-                if (albumThumbnailData == null)
+                if (albumThumbnailData is null)
                     return "";
                 string hash = Utils.ComputeSHA256Hash(albumThumbnailData);
                 if (Data.gI().CachedLocalSongAlbumArtworks.TryGetValue(hash, out string? cachedLink))
@@ -96,7 +96,7 @@ namespace CatBot.Music.Local
 
         public LyricData? GetLyric()
         {
-            if (lyric != null)
+            if (lyric is not null)
                 return lyric;
             if (this.TryGetLyricsFromLRCLIB(out LyricData? result))
                 return lyric = result;

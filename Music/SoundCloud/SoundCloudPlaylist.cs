@@ -43,19 +43,19 @@ namespace CatBot.Music.SoundCloud
                 Playlist playlist;
                 User user;
                 if (domain == "on.soundcloud.com")
-                    link = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, link), HttpCompletionOption.ResponseHeadersRead).Result.RequestMessage.RequestUri.ToString();
+                    link = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, link), HttpCompletionOption.ResponseHeadersRead).Result?.RequestMessage?.RequestUri?.ToString() ?? link;
                 if (link.Contains("/sets/"))
                 {
                     type = "set";
                     try
                     {
                         playlist = SoundCloudMusic.scClient.Playlists.GetAsync(link).Result;
-                        title = Formatter.MaskedUrl(playlist.Title, playlist.PermalinkUrl);
-                        author = Formatter.MaskedUrl(playlist.User.Username, playlist.User.PermalinkUrl);
-                        description = playlist.Description;
-                        if (playlist.ArtworkUrl != null)
+                        title = $"[{playlist.Title}]({playlist.PermalinkUrl})";
+                        author = $"[{playlist.User?.Username}]({playlist.User?.PermalinkUrl})";
+                        description = playlist.Description ?? "";
+                        if (playlist.ArtworkUrl is not null)
                             thumbnailLink = playlist.ArtworkUrl.AbsoluteUri;
-                        songsCount = playlist.TrackCount.Value;
+                        songsCount = playlist.TrackCount ?? 0;
                     }
                     catch (Exception) { throw new MusicException("playlist not found"); }
                 }
@@ -68,33 +68,33 @@ namespace CatBot.Music.SoundCloud
                     {
                         link = link.ReplaceFirst(type, "");
                         user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
-                        title = "Nhạc của " + Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        author = Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        if (user.AvatarUrl != null)
+                        title = $"Nhạc của [{user.Username}]({user.PermalinkUrl})";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl is not null)
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
                     else if (type == "popular-tracks")
                     {
                         user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
-                        title = Formatter.MaskedUrl("Nhạc nổi bật", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        author = Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        if (user.AvatarUrl != null)
+                        title = $"Nhạc nổi bật của [{user.Username}]({user.PermalinkUrl})";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl is not null)
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
                     else if (type == "likes")
                     {
                         user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
-                        title = Formatter.MaskedUrl("Nhạc đã thích", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        author = Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        if (user.AvatarUrl != null)
+                        title = $"Nhạc [{user.Username}]({user.PermalinkUrl}) đã thích";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl is not null)
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
                     else if (type == "reposts")
                     {
                         user = SoundCloudMusic.scClient.Users.GetAsync(link).Result;
-                        title = Formatter.MaskedUrl("Nhạc repost", new Uri(link + "/" + type)) + " của " + Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        author = Formatter.MaskedUrl(user.Username, new Uri(user.PermalinkUrl));
-                        if (user.AvatarUrl != null)
+                        title = $"Nhạc [{user.Username}]({user.PermalinkUrl}) đã repost";
+                        author = $"[{user.Username}]({user.PermalinkUrl})";
+                        if (user.AvatarUrl is not null)
                             thumbnailLink = user.AvatarUrl.AbsoluteUri;
                     }
                 }
@@ -134,7 +134,7 @@ namespace CatBot.Music.SoundCloud
 
         async void AddTracks(string link)
         {
-            IEnumerable<Track> tracks = null;
+            IEnumerable<Track> tracks;
             if (type == "tracks")
                 tracks = await SoundCloudMusic.scClient.Users.GetTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "popular-tracks")
@@ -145,10 +145,12 @@ namespace CatBot.Music.SoundCloud
                 tracks = await SoundCloudMusic.scClient.Users.GetLikedTracksAsync(link, 0, 200).ToListAsync();
             else if (type == "reposts")
                 tracks = await SoundCloudMusic.scClient.Users.GetRepostedTracksAsync(link, 0, 200).ToListAsync();
+            else 
+                throw new MusicException("playlist not found");
             await Task.Run(() =>
             {
                 foreach (Track track in tracks)
-                    musicQueue.Add(new SoundCloudMusic(track.PermalinkUrl.AbsoluteUri));
+                    musicQueue?.Add(new SoundCloudMusic(track.PermalinkUrl?.AbsoluteUri ?? ""));
             });
         }
 

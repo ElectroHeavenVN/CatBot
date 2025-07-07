@@ -1,7 +1,10 @@
-﻿using System.Text.RegularExpressions;
-using CatBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Threading;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
@@ -42,10 +45,10 @@ namespace CatBot.Music.YouTube
                             link = channel.Url;
                         }
                         else
-                            channel = YouTubeMusic.ytClient.Channels.GetAsync(link).Result;                        
-                        title = $"Video tải lên của " + Formatter.MaskedUrl(channel.Title, new Uri(channel.Url));
+                            channel = YouTubeMusic.ytClient.Channels.GetAsync(link).Result;
+                        title = $"Video [{channel.Title}]({channel.Url}) tải lên";
                         author = Formatter.MaskedUrl(channel.Title, new Uri(channel.Url));
-                        thumbnailLink = channel.Thumbnails.TryGetWithHighestResolution().Url;
+                        thumbnailLink = channel.Thumbnails?.TryGetWithHighestResolution()?.Url ?? "";
                     }
                     catch (Exception) { throw new MusicException(MusicType.YouTube, "channel not found"); }
                 }
@@ -56,9 +59,9 @@ namespace CatBot.Music.YouTube
                         Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(link).Result;
                         title = Formatter.MaskedUrl(playlist.Title, new Uri(playlist.Url));
                         description = playlist.Description;
-                        if (playlist.Author != null)
+                        if (playlist.Author is not null)
                             author = Formatter.MaskedUrl(playlist.Author.ChannelTitle, new Uri(playlist.Author.ChannelUrl));
-                        thumbnailLink = playlist.Thumbnails.TryGetWithHighestResolution().Url;
+                        thumbnailLink = playlist.Thumbnails?.TryGetWithHighestResolution()?.Url ?? "";
                     }
                     catch (Exception) { throw new MusicException("playlist not found"); }
                 }
@@ -93,16 +96,18 @@ namespace CatBot.Music.YouTube
 
         async void AddVideos(string link)
         {
-            IEnumerable<PlaylistVideo> videos = null;
+            IEnumerable<PlaylistVideo> videos;
             if (link.Contains('@') || link.Contains("channel/"))
                 videos = await YouTubeMusic.ytClient.Channels.GetUploadsAsync(link);
             else if (link.Contains("playlist?list="))
                 videos = await YouTubeMusic.ytClient.Playlists.GetVideosAsync(link);
+            else
+                return;
             foreach (var video in videos)
             {
                 try
                 {
-                    musicQueue.Add(new YouTubeMusic(video.Url) { SponsorBlockOptions = sponsorBlockOptions });
+                    musicQueue?.Add(new YouTubeMusic(video.Url) { SponsorBlockOptions = sponsorBlockOptions });
                 }
                 catch (MusicException ex)
                 {

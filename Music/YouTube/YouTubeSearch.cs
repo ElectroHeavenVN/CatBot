@@ -1,4 +1,8 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
@@ -22,31 +26,31 @@ namespace CatBot.Music.YouTube
                         channel = YouTubeMusic.ytClient.Channels.GetByHandleAsync(linkOrKeyword).Result;
                     else
                         channel = YouTubeMusic.ytClient.Channels.GetAsync(linkOrKeyword).Result;
-                    return new List<SearchResult>()
-                    {
-                        new SearchResult(channel.Url, "Video tải lên", channel.Title, channel.Url, channel.Thumbnails.TryGetWithHighestResolution().Url)
-                    };
+                    return
+                    [
+                        new SearchResult(channel.Url, $"Video {channel.Title} tải lên", channel.Title, channel.Url, channel.Thumbnails?.TryGetWithHighestResolution()?.Url ?? "")
+                    ];
                 }
                 else if (linkOrKeyword.Contains("playlist?list="))
                 {
                     Playlist playlist = YouTubeMusic.ytClient.Playlists.GetAsync(linkOrKeyword).Result;
-                    return new List<SearchResult>()
-                    {
-                        new SearchResult(playlist.Url, playlist.Title, playlist.Author.ChannelTitle, playlist.Author.ChannelUrl, playlist.Thumbnails.TryGetWithHighestResolution().Url)
-                    };
+                    return
+                    [
+                        new SearchResult(playlist.Url, playlist.Title, playlist.Author?.ChannelTitle ?? "", playlist.Author?.ChannelUrl ?? "", playlist.Thumbnails?.TryGetWithHighestResolution()?.Url ?? "")
+                    ];
                 }
             }
             if (YouTubeMusic.GetRegexMatchYTVideoLink().IsMatch(linkOrKeyword))
             {
                 Video video = YouTubeMusic.ytClient.Videos.GetAsync(linkOrKeyword).Result;
-                return new List<SearchResult>()
-                {
-                    new SearchResult(video.Url, video.Title, video.Author.ChannelTitle, video.Author.ChannelUrl, video.Thumbnails.TryGetWithHighestResolution().Url)
-                };
+                return
+                [
+                    new SearchResult(video.Url, video.Title, video.Author.ChannelTitle, video.Author.ChannelUrl, video.Thumbnails?.TryGetWithHighestResolution()?.Url ?? "")
+                ];
             }
             HttpClient httpClient = new HttpClient();
             JObject searchResult = JObject.Parse(httpClient.GetStringAsync($"{searchVideoAPI}&maxResults={count}&key={Config.gI().GoogleAPIKey}&q={Uri.EscapeDataString(linkOrKeyword)}").Result);
-            return searchResult["items"].Select(sR => new SearchResult($"https://www.youtube.com/watch?v={sR["id"]["videoId"]}", WebUtility.HtmlDecode(sR["snippet"]["title"].ToString()), $"{WebUtility.HtmlDecode(sR["snippet"]["channelTitle"].ToString())}", $"https://www.youtube.com/channel/{sR["snippet"]["channelId"]}", sR["snippet"]["thumbnails"]["high"]["url"].ToString())).ToList();
+            return searchResult["items"]?.Select(sR => new SearchResult($"https://www.youtube.com/watch?v={sR["id"]?["videoId"]}", WebUtility.HtmlDecode(sR["snippet"]?["title"]?.ToString() ?? ""), $"{WebUtility.HtmlDecode(sR["snippet"]?["channelTitle"]?.ToString() ?? "")}", $"https://www.youtube.com/channel/{sR["snippet"]?["channelId"]}", sR["snippet"]?["thumbnails"]?["high"]?["url"]?.ToString() ?? ""))?.ToList() ?? [];
         }
     }
 }

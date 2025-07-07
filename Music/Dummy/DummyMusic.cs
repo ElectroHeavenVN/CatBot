@@ -1,5 +1,7 @@
 ﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus.Entities;
+using System;
+using System.IO;
 
 namespace CatBot.Music.Dummy
 {
@@ -15,7 +17,7 @@ namespace CatBot.Music.Dummy
 
         public LyricData? GetLyric()
         {
-            if (lyrics != null)
+            if (lyrics is not null)
                 return lyrics;
             if (this.TryGetLyricsFromLRCLIB(out LyricData? result))
                 return lyrics = result;

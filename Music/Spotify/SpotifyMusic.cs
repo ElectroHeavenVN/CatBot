@@ -1,12 +1,15 @@
-﻿using System.Net;
-using System.Text.RegularExpressions;
-using CatBot.Music.SponsorBlock;
+﻿using CatBot.Music.SponsorBlock;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json.Linq;
-using SpotifyExplode;
-using SpotifyExplode.Search;
-using SpotifyExplode.Tracks;
+using SpotifyAPI.Web;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace CatBot.Music.Spotify
 {
@@ -22,17 +25,21 @@ namespace CatBot.Music.Spotify
         {
             get
             {
-                if (spClient == null)
+                if (spClient is null)
                 {
-                    if (!string.IsNullOrEmpty(Config.gI().SpotifyCookie))
-                        spClient = new SpotifyClient(new HttpClient(new HttpClientHandler() { CookieContainer = MusicUtils.GetCookie(".spotify.com", Config.gI().SpotifyCookie), ServerCertificateCustomValidationCallback = delegate { return true; } }));
-                    else
-                        spClient = new SpotifyClient();
+                    var config = SpotifyClientConfig
+                        .CreateDefault()
+                        .WithAuthenticator(new ClientCredentialsAuthenticator(Config.gI().SpotifyClientID, Config.gI().SpotifyClientSecret));
+                    spClient = new SpotifyClient(config);
+                    //if (!string.IsNullOrEmpty(Config.gI().SpotifyCookie))
+                    //    spClient = new SpotifyClient(new HttpClient(new HttpClientHandler() { CookieContainer = MusicUtils.GetCookie(".spotify.com", Config.gI().SpotifyCookie), ServerCertificateCustomValidationCallback = delegate { return true; } }));
+                    //else
+                    //    spClient = new SpotifyClient();
                 }
                 return spClient;
             }
         }
-        Track? track;
+        FullTrack? track;
         string mimeType = "";
         string link = "";
         TimeSpan duration;
@@ -53,16 +60,16 @@ namespace CatBot.Music.Spotify
         {
             if (!GetRegexMatchSpotifyLink().IsMatch(linkOrKeyword))
             {
-                List<TrackSearchResult> result = SPClient.Search.GetTracksAsync(linkOrKeyword, 0, 1).Result;
+                var result = SPClient.Search.Item(new SearchRequest(SearchRequest.Types.Track, linkOrKeyword) { Limit = 1 }).Result.Tracks.Items ?? [];
                 if (result.Count == 0)
                     throw new MusicException("songs not found");
-                linkOrKeyword = result[0].Url;
+                linkOrKeyword = result[0].Uri;
             }
             if (linkOrKeyword.Contains("spotify.link"))
-                linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).Result.RequestMessage.RequestUri.ToString();
+                linkOrKeyword = new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, linkOrKeyword), HttpCompletionOption.ResponseHeadersRead).Result?.RequestMessage?.RequestUri?.ToString() ?? linkOrKeyword;
             link = linkOrKeyword;
-            track = SPClient.Tracks.GetAsync(linkOrKeyword).Result;
-            title = track.Title;
+            track = SPClient.Tracks.Get(linkOrKeyword).Result;
+            title = track.Name;
             artists = track.Artists.Select(a => a.Name).ToArray();
             artistsWithLinks = track.Artists.Select(a => Formatter.MaskedUrl(a.Name, new Uri($"https://open.spotify.com/artist/{a.Id}"))).ToArray();
             album = track.Album.Name;
@@ -92,22 +99,12 @@ namespace CatBot.Music.Spotify
                     GetTrackFromSpotdl();
                     mimeType = "taglib/mp3";
                 }
-                catch
-                {
-                    try
-                    {
-                        HttpClient httpClient = new HttpClient();
-                        byte[] data = httpClient.GetByteArrayAsync(GetLinkFromSpotifyDown()).Result;
-                        File.WriteAllBytes(audioFilePath, data);
-                        mimeType = "taglib/mp3";
-                    }
-                    catch { throw new MusicException(MusicType.Spotify, "not found"); }
-                }
+                catch { throw new MusicException(MusicType.Spotify, "not found"); }
             }
             TagLib.File mp3OrWEBMFile = TagLib.File.Create(audioFilePath, mimeType, TagLib.ReadStyle.Average);
             duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
-            if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
+            if (Math.Abs(duration.TotalMilliseconds - (track?.DurationMs ?? 0)) > 15000)
                 throw new MusicException("not found");
             canGetStream = true;
             musicPCMDataStream = File.OpenRead(MusicUtils.GetPCMFile(audioFilePath, ref pcmFile));
@@ -187,29 +184,8 @@ namespace CatBot.Music.Spotify
             TagLib.File mp3OrWEBMFile = TagLib.File.Create(audioFilePath, "taglib/mp3", TagLib.ReadStyle.Average);
             TimeSpan duration = mp3OrWEBMFile.Properties.Duration;
             mp3OrWEBMFile.Dispose();
-            if (Math.Abs(duration.TotalMilliseconds - track.DurationMs) > 15000)
+            if (Math.Abs(duration.TotalMilliseconds - (track?.DurationMs ?? 0)) > 15000)
                 throw new MusicException("Wrong track");
-        }
-
-        string GetLinkFromSpotifyDown()
-        {
-            string url = $"https://api.spotifydown.com/download/{trackID}";
-            HttpClient httpClient = new HttpClient(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate }) { Timeout = TimeSpan.FromSeconds(10) };
-            httpClient.DefaultRequestHeaders.Add("User-Agent", Config.gI().UserAgent);
-            httpClient.DefaultRequestHeaders.Add("origin", "https://spotifydown.com");
-            httpClient.DefaultRequestHeaders.Add("referer", "https://spotifydown.com/");
-            HttpResponseMessage response;
-            try
-            {
-                response = httpClient.GetAsync(url).Result;
-            }
-            catch (TaskCanceledException)
-            {
-                throw new MusicException(MusicType.Spotify, "music download timeout");
-            }
-            JObject responseData = JObject.Parse(response.Content.ReadAsStringAsync().Result);
-            string downloadUrl = responseData["link"].ToString();
-            return downloadUrl;
         }
 
         public bool isLinkMatch(string link) => GetRegexMatchSpotifyLink().IsMatch(link);

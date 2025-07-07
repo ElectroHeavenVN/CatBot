@@ -1,10 +1,16 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using CatBot.Music.Dummy;
 using CatBot.Music.Local;
 using CatBot.Music.SponsorBlock;
@@ -90,7 +96,7 @@ namespace CatBot.Music
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg\\ffmpeg",
+                    FileName = "Files\\ffmpeg\\ffmpeg",
                     Arguments = "-nostdin -hide_banner -i \"" + filePath + "\" -ac 2 -f s16le -ar 48000 -y -threads:a 1 \"" + tempFile + "\"",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
@@ -108,14 +114,16 @@ namespace CatBot.Music
         internal static void DownloadOGGFromSpotify(string link, ref string tempFile)
         {
             string randomString = "tmp" + Utils.RandomString(10);
-            string tempFolder = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), randomString);
-            Directory.CreateDirectory(tempFolder);
+            string tempFolder = Environment.ExpandEnvironmentVariables("%temp%");
+            if (Directory.Exists(tempFolder))
+                Directory.CreateDirectory(tempFolder);
+            tempFile = Path.Combine(tempFolder, $"tmp{randomString}.ogg");
             Process zotify = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "Zotify\\Zotify",
-                    Arguments = $"--username {Config.gI().SpotifyUsername} --password {Config.gI().SpotifyPassword} --root-path .\\ --temp-download-dir .\\ --output ..tmp {link}",
+                    FileName = "Files\\Zotify\\Zotify",
+                    Arguments = $"--lyrics-file --artwork-size large --audio-format vorbis --bitrate -1  -o \"{tempFile}\" --library \"{tempFolder}\"",
                     WorkingDirectory = tempFolder,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
@@ -126,9 +134,6 @@ namespace CatBot.Music
             zotify.Start();
             zotify.WaitForExit();
             Console.WriteLine("--------------End of Zotify Console output--------------");
-            tempFile = tempFolder + ".tmp";
-            File.Move(Path.Combine(tempFolder, "..tmp"), tempFile);
-            Directory.Delete(tempFolder, true);
         }
 
         internal static void DownloadTrackUsingSpotdl(string link, ref string tempFile)
@@ -140,7 +145,7 @@ namespace CatBot.Music
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "spotdl\\spotdl",
+                    FileName = "Files\\spotdl\\spotdl",
                     Arguments = $"--ffmpeg ../ffmpeg/ffmpeg.exe --threads 1 --ffmpeg-args \"-threads:a 1\" --output {tempFolder} {link}",
                     WorkingDirectory = "spotdl",
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -166,7 +171,7 @@ namespace CatBot.Music
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "yt-dlp\\yt-dlp",
+                    FileName = "Files\\yt-dlp\\yt-dlp",
                     Arguments = $"-f bestaudio --paths {Path.GetDirectoryName(tempFile)} -o {Path.GetFileName(tempFile)} --force-overwrites {link}",
                     WorkingDirectory = "yt-dlp",
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -178,7 +183,7 @@ namespace CatBot.Music
             yt_dlp.Start();
             yt_dlp.WaitForExit();
             Console.WriteLine("--------------End of yt-dlp Console output--------------");
-            if (sponsorBlockSkipSegments != null && sponsorBlockSkipSegments.Length > 0)
+            if (sponsorBlockSkipSegments is not null && sponsorBlockSkipSegments.Length > 0)
             {
                 string tempWEBMFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.temp.webm");
                 string concatFile = Path.Combine(Environment.ExpandEnvironmentVariables("%temp%"), $"tmp{randomString}.temp.webm.concat");
@@ -188,7 +193,7 @@ namespace CatBot.Music
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "ffmpeg\\ffmpeg",
+                        FileName = "Files\\ffmpeg\\ffmpeg",
                         Arguments = $"-y -hide_banner -f concat -safe 0 -i \"{concatFile}\" -map 0 -dn -ignore_unknown -c copy -movflags +faststart \"{tempFile}\"",
                         WindowStyle = ProcessWindowStyle.Hidden,
                         UseShellExecute = false,
@@ -366,7 +371,7 @@ namespace CatBot.Music
 
         internal static bool IsFFMPEGInPATH()
         {
-            return Environment.GetEnvironmentVariable("PATH").Split(';').Any(p => File.Exists(Path.Combine(p, "ffmpeg.exe")));
+            return (Environment.GetEnvironmentVariable("PATH") ?? "").Split(';').Any(p => File.Exists(Path.Combine(p, "ffmpeg.exe")));
         }
 
         internal static bool TryGetLyricsFromLRCLIB(this IMusic music, out LyricData? lyricData)
@@ -409,18 +414,18 @@ namespace CatBot.Music
             using HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>()!.Value})");
             string jsonLyric = client.GetStringAsync(address).Result;
             JObject lyricData = JObject.Parse(jsonLyric);
-            if (lyricData["name"].Value<string>() == "TrackNotFound")
+            if (lyricData["name"]?.Value<string>() == "TrackNotFound")
                 return false;
-            if (lyricData["instrumental"].Value<bool>())
-                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+            if (lyricData["instrumental"]?.Value<bool>() ?? false)
+                result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
             else
-                result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink)
+                result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", music.AlbumThumbnailLink)
                 {
-                    PlainLyrics = lyricData["plainLyrics"].Value<string>(),
-                    SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                    PlainLyrics = lyricData["plainLyrics"]?.Value<string>() ?? "",
+                    SyncedLyrics = lyricData["syncedLyrics"]?.Value<string>() ?? ""
                 };
             return true;
         }
@@ -444,28 +449,28 @@ namespace CatBot.Music
             using HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>()!.Value})");
             string jsonLyric = client.GetStringAsync(address).Result;
             JArray lyricDatas = JArray.Parse(jsonLyric);
             foreach (JToken lyricData in lyricDatas)
             {
-                if (music is not DummyMusic && Math.Abs(lyricData["duration"].Value<long>() - music.Duration.TotalSeconds) > 10)
+                if (music is not DummyMusic && Math.Abs((lyricData["duration"]?.Value<long>() ?? 0) - music.Duration.TotalSeconds) > 10)
                     continue;
-                if (lyricData["name"].Value<string>() == "TrackNotFound")
+                if (lyricData["name"]?.Value<string>() == "TrackNotFound")
                     return false;
-                if (lyricData["instrumental"].Value<bool>())
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+                if (lyricData["instrumental"]?.Value<bool>() ?? false)
+                    result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", music.AlbumThumbnailLink) { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
                 else
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), music.AlbumThumbnailLink)
+                    result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", music.AlbumThumbnailLink)
                     {
-                        PlainLyrics = lyricData["plainLyrics"].Value<string>(),
-                        SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                        PlainLyrics = lyricData["plainLyrics"]?.Value<string>() ?? "",
+                        SyncedLyrics = lyricData["syncedLyrics"]?.Value<string>() ?? ""
                     };
                 return true;
             }
             return false;
         }
-        
+
         static bool FindLyricsFromLRCLIB(string trackName, out LyricData? result)
         {
             result = null;
@@ -476,20 +481,20 @@ namespace CatBot.Music
             using HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>().Value})");
+            client.DefaultRequestHeaders.Add("User-Agent", $"CatBot v{typeof(LocalMusic).Assembly.GetName().Version} ({typeof(LocalMusic).Assembly.GetCustomAttribute<AssemblyMetadataAttribute>()!.Value})");
             string jsonLyric = client.GetStringAsync(address).Result;
             JArray lyricDatas = JArray.Parse(jsonLyric);
             foreach (JToken lyricData in lyricDatas)
             {
-                if (lyricData["name"].Value<string>() == "TrackNotFound")
+                if (lyricData["name"]?.Value<string>() == "TrackNotFound")
                     return false;
-                if (lyricData["instrumental"].Value<bool>())
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), "") { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
+                if (lyricData["instrumental"]?.Value<bool>() ?? false)
+                    result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", "") { PlainLyrics = "Bài hát này là bản nhạc không lời!" };
                 else
-                    result = new LyricData(lyricData["trackName"].Value<string>(), lyricData["artistName"].Value<string>(), lyricData["albumName"].Value<string>(), "")
+                    result = new LyricData(lyricData["trackName"]?.Value<string>() ?? "", lyricData["artistName"]?.Value<string>() ?? "", lyricData["albumName"]?.Value<string>() ?? "", "")
                     {
-                        PlainLyrics = lyricData["plainLyrics"].Value<string>(),
-                        SyncedLyrics = lyricData["syncedLyrics"].Value<string>()
+                        PlainLyrics = lyricData["plainLyrics"]?.Value<string>() ?? "",
+                        SyncedLyrics = lyricData["syncedLyrics"]?.Value<string>() ?? ""
                     };
                 return true;
             }

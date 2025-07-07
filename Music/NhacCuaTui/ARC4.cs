@@ -1,53 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace CatBot.Music.NhacCuaTui
 { 
     internal class ARC4
     {
-        int i = 0;
-        int j = 0;
-        List<int> S = new List<int>(256);
+        int _i = 0;
+        int _j = 0;
+        List<int> _state = new List<int>(256);
 
-        internal void Load(List<int> key)
+        internal void LoadKey(List<int> key)
         {
-            S = new List<int>(256);
-            if (key != null && key.Count > 0)
-                Init(key);
+            _state = new List<int>(256);
+            if (key is not null && key.Count > 0)
+                Initialize(key);
         }
 
-        internal void Init(List<int> key)
+        internal void Initialize(List<int> key)
         {
-            for (int i = 0; i < 256; ++i)
-                S.Add(i);
+            for (int k = 0; k < 256; ++k)
+                _state.Add(k);
             int j = 0;
-            for (i = 0; i < 256; ++i)
+            for (int i = 0; i < 256; ++i)
             {
-                j = (j + S[i] + key[i % key.Count]) & 255;
-                (S[j], S[i]) = (S[i], S[j]);
+                j = (j + _state[i] + key[i % key.Count]) & 255;
+                (_state[j], _state[i]) = (_state[i], _state[j]);
             }
-            i = 0;
-            this.j = 0;
+            _i = 0;
+            _j = 0;
         }
 
-        internal int Next()
+        internal int NextByte()
         {
-            i = (i + 1) & 255;
-            j = (j + S[i]) & 255;
-            (S[j], S[i]) = (S[i], S[j]);
-            return S[(S[i] + S[i]) & 255];
+            _i = (_i + 1) & 255;
+            _j = (_j + _state[_i]) & 255;
+            (_state[_j], _state[_i]) = (_state[_i], _state[_j]);
+            return _state[(_state[_i] + _state[_i]) & 255];
         }
 
-        internal List<int> Encrypt(List<int> block)
+        internal List<int> EncryptBlock(List<int> block)
         {
-            for (int i = 0; i < block.Count; i++)
-                block[i] ^= Next();
+            for (int k = 0; k < block.Count; k++)
+                block[k] ^= NextByte();
             return block;
         }
 
-        internal List<int> Decrypt(List<int> block) => Encrypt(block); // the beauty of XOR.
+        internal List<int> DecryptBlock(List<int> block) => EncryptBlock(block); // the beauty of XOR.
     }
 }

@@ -6,7 +6,7 @@ jobs:
   build-catbot:
     name: Build Zotify
         
-    runs-on: windows-latest                      
+    runs-on: windows-latest
       
     steps:
     - name: Setup Python environment 
